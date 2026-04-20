@@ -1,0 +1,598 @@
+﻿@{
+    ViewData["Title"] = "SSG Portal";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SSG Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    background: #fff;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+  }
+
+  /* ══════════════════════════════
+     LEFT PANEL — scrollable viewport
+  ══════════════════════════════ */
+  .left-panel {
+    width: 45%;
+    height: 100vh;
+    overflow: hidden;           /* clip the inner scroll track */
+    position: relative;
+    flex-shrink: 0;
+    border-radius: 0 18px 18px 0;
+    box-shadow: inset 25px 25px 50px rgba(0, 0, 0, 0.88);
+  }
+
+  /* the scrolling track — 2 screens tall */
+  .left-track {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    transition: transform 0.85s cubic-bezier(0.77, 0, 0.18, 1);
+    will-change: transform;
+  }
+
+  /* each "screen" inside the track */
+  .left-screen {
+    width: 100%;
+    height: 100vh;
+    background: #27a744;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 36px 44px 32px 44px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .left-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .left-top {
+    position: absolute;
+    top: 36px;
+    left: 44px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #f5c518;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .school-info { display: flex; flex-direction: column; }
+
+  .school-name {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .school-sub {
+    color: rgba(255,255,255,0.85);
+    font-size: 12px;
+    font-weight: 400;
+    margin-top: 2px;
+  }
+
+  .left-middle {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 32px 0 16px 0;
+  }
+  #Lmiddle {
+    margin-bottom: 150px;
+  }
+
+  #Lmiddle1 {
+    margin-bottom: 65px;
+  }
+
+  #Lmiddle2 {
+    margin-top: 100px;
+  }
+
+  #Lmiddle3 {
+    margin-top: -60px;
+  }
+
+  .left-headline {
+    color: #fff;
+    font-size: 52px;
+    font-weight: 800;
+    line-height: 1.12;
+    margin-bottom: 22px;
+    letter-spacing: -1px;
+  }
+
+  .left-desc {
+    color: rgba(255,255,255,0.80);
+    font-size: 13px;
+    line-height: 1.65;
+    max-width: 320px;
+  }
+
+  .left-bottom {
+    position: absolute;
+    bottom: 32px;
+    left: 44px;
+    z-index: 1;
+  }
+
+  .no-copyright {
+    color: rgba(255,255,255,0.45);
+    font-size: 12px;
+  }
+
+  /* ══════════════════════════════
+     RIGHT PANEL — fixed, never scrolls
+  ══════════════════════════════ */
+  .right-panel {
+    flex: 1;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* right track — 2 screens, same trick */
+  .right-track {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    transition: transform 0.85s cubic-bezier(0.77, 0, 0.18, 1);
+    will-change: transform;
+  }
+
+  .right-screen {
+    width: 100%;
+    height: 100vh;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    padding: 60px 72px;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  /* ── SIGN IN ── */
+  .right-screen h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #27a744;
+    margin-bottom: 24px;
+    letter-spacing: -0.3px;
+  }
+
+  .role-label {
+    font-size: 13px;
+    color: #444;
+    margin-bottom: 12px;
+  }
+
+  .role-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .role-btn {
+    padding: 9px 24px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1.5px solid #d0d0d0;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #fff;
+    color: #666;
+    transition: background 0.16s, color 0.16s, border-color 0.16s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .role-btn.active {
+    background: #27a744;
+    color: #fff;
+    border-color: #27a744;
+  }
+
+  .input-field {
+    width: 100%;
+    max-width: 450px;
+    padding: 15px 18px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    color: #333;
+    background: #fff;
+    margin-bottom: 14px;
+    outline: none;
+    transition: border-color 0.16s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .input-field::placeholder { color: #bbb; font-size: 13.5px; }
+  .input-field:focus { border-color: #27a744; }
+
+  .forgot-link {
+    font-size: 13px;
+    color: #555;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 24px;
+    cursor: pointer;
+  }
+
+  .forgot-link strong { color: #111; font-weight: 700; }
+  .forgot-link:hover { text-decoration: underline; }
+
+  .btn-signin {
+    width: 100%;
+    max-width: 450px;
+    padding: 15px;
+    background: #27a744;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: background 0.16s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .btn-signin:hover { background: #218c3a; }
+
+  .signup-text {
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 12px;
+  }
+
+  .signup-text strong { color: #111; font-weight: 700; }
+
+  .btn-signup {
+    display: block;
+    width: 100%;
+    max-width: 450px;
+    padding: 14px;
+    background: #fff;
+    color: #27a744;
+    border: 1.5px solid #27a744;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.16s, color 0.16s;
+    font-family: 'Inter', sans-serif;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .btn-signup:hover { background: #27a744; color: #fff; }
+
+  /* ── SIGN UP right screen ── */
+  .signup-screen-inner {
+    max-width: 520px;
+    width: 100%;
+    margin-top: 60px;
+    padding: 60px 0 20px 0;
+  }
+
+  .signup-screen-inner h1 { margin-bottom: 6px; }
+
+  .form-subtitle {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 28px;
+  }
+
+  .form-section { margin-bottom: 18px; }
+
+  .section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 14px;
+    padding-bottom: 7px;
+    border-bottom: 2px solid #27a744;
+  }
+
+  .form-group { margin-bottom: 14px; }
+
+  .form-label {
+    display: block;
+    font-size: 12.5px;
+    color: #555;
+    margin-bottom: 5px;
+    font-weight: 500;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 9px;
+    font-size: 13.5px;
+    color: #333;
+    background: #fff;
+    outline: none;
+    transition: border-color 0.16s;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .form-input::placeholder { color: #bbb; font-size: 13px; }
+  .form-input:focus { border-color: #27a744; }
+
+  .form-row { display: flex; gap: 14px; }
+  .form-row .form-group { flex: 1; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: #27a744;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.16s;
+    font-family: 'Inter', sans-serif;
+    margin-top: 8px;
+    margin-bottom: 18px;
+  }
+
+  .submit-btn:hover { background: #218c3a; }
+
+  .back-to-login {
+    font-size: 13px;
+    color: #555;
+    text-align: center;
+  }
+
+  .back-to-login a {
+    color: #27a744;
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .back-to-login a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+  <!-- ═══ LEFT PANEL ═══ -->
+  <div class="left-panel">
+    <!-- Fixed elements outside track -->
+    <div class="left-top">
+      <div class="logo-circle">
+        <img src="/images/ssg.jpeg" alt="SSG Logo" />
+      </div>
+      <div class="school-info">
+        <span class="school-name">CTU - Ginatilan</span>
+        <span class="school-sub">Supreme Student Government</span>
+      </div>
+    </div>
+
+    <div class="left-track" id="leftTrack">
+
+      <!-- SCREEN 1: Login branding -->
+      <div class="left-screen">
+        <div class="left-middle" id="Lmiddle1">
+          <div class="left-headline">Track your<br>Organizational<br>Fees!</div>
+          <p class="left-desc">A transparent and real-time system for tracking and managing organizational fees.</p>
+        </div>
+      </div>
+
+      <!-- SCREEN 2: Sign-up branding -->
+      <div class="left-screen">
+        <div class="left-middle">
+          <div class="left-headline">Let's  Start!</div>
+          <p class="left-desc">Create your account and start tracking your organizational fees with transparency and ease.</p>
+        </div>
+      </div>
+
+      <!-- SCREEN 3: Forgot password branding -->
+      <div class="left-screen">
+        <div class="left-middle" id="Lmiddle">
+          <div class="left-headline">Reset Your<br>Password</div>
+          <p class="left-desc">Enter your email address and we'll send you a verification code to reset your password.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Fixed copyright outside track -->
+    <div class="left-bottom">
+      <span class="no-copyright">No Copyright</span>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div class="right-panel">
+    <div class="right-track" id="rightTrack">
+
+      <!-- SCREEN 1: Sign In form -->
+      <div class="right-screen" id="Lmiddle2">
+        <h1>Sign in</h1>
+
+        <p class="role-label">Please choose your role</p>
+        <div class="role-toggle">
+          <button class="role-btn active" onclick="setRole(this)">Student</button>
+          <button class="role-btn" onclick="setRole(this)">Treasurer</button>
+          <button class="role-btn" onclick="setRole(this)">Admin</button>
+        </div>
+
+        <input class="input-field" type="email" placeholder="Enter your Email" />
+        <input class="input-field" type="password" placeholder="Enter your Password" />
+
+        <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
+
+        <button class="btn-signin">Sign in</button>
+
+        <p class="signup-text">Don't have an <strong>account</strong>?</p>
+        <button class="btn-signup" onclick="goToSignUp()">Sign up</button>
+      </div>
+
+      <!-- SCREEN 2: Sign Up form -->
+      <div class="right-screen" id="Lmiddle3">
+        <div class="signup-screen-inner" id="Lmiddle3">
+          <h1>Create Account</h1>
+          <p class="form-subtitle">Fill requirements below.</p>
+
+          <!-- NAME -->
+          <div class="form-section">
+            <div class="section-title">Name</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">First name</label>
+                <input type="text" class="form-input" placeholder="Enter here" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Family name</label>
+                <input type="text" class="form-input" placeholder="Enter here" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Middle name (I.)</label>
+              <input type="text" class="form-input" placeholder="Enter here" />
+            </div>
+          </div>
+
+          <!-- ACADEMIC -->
+          <div class="form-section">
+            <div class="section-title">Academic</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Course</label>
+                <input type="text" class="form-input" placeholder="Enter here" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Section</label>
+                <input type="text" class="form-input" placeholder="Enter here" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Year Level</label>
+              <input type="text" class="form-input" placeholder="Enter here" />
+            </div>
+          </div>
+
+
+          <!-- ACCOUNT -->
+          <div class="form-section">
+            <div class="section-title">Account</div>
+            <div class="form-group">
+              <label class="form-label">Username</label>
+              <input type="text" class="form-input" placeholder="Enter here" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-input" placeholder="Enter here" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Re-enter Password</label>
+                <input type="password" class="form-input" placeholder="Enter here" />
+              </div>
+            </div>
+          </div>
+
+          <button class="submit-btn">Submit</button>
+
+          <p class="back-to-login">
+            Already have an account? <a onclick="goToSignIn()">Back to Sign in</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- SCREEN 3: Forgot Password form -->
+      <div class="right-screen">
+        <div class="signup-screen-inner">
+          <h1>Forgot Password</h1>
+          <p class="form-subtitle">Don't worry! It happens. Please enter the email associated with your account.</p>
+
+          <div class="form-section">
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input" placeholder="Enter your Email" />
+            </div>
+          </div>
+
+          <button class="submit-btn">Send Verification Code</button>
+
+          <p class="back-to-login">
+            Remember your password? <a onclick="goToSignIn()">Back to Sign in</a>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  const leftTrack  = document.getElementById('leftTrack');
+  const rightTrack = document.getElementById('rightTrack');
+  let currentScreen = 0; // 0=signin, 1=signup, 2=forgot
+
+  function goToSignUp() {
+    currentScreen = 1;
+    leftTrack.style.transform  = 'translateY(-100vh)';
+    rightTrack.style.transform = 'translateY(-100vh)';
+  }
+
+  function goToSignIn() {
+    currentScreen = 0;
+    leftTrack.style.transform  = 'translateY(0)';
+    rightTrack.style.transform = 'translateY(0)';
+  }
+
+  function goToForgotPassword() {
+    currentScreen = 2;
+    leftTrack.style.transform  = 'translateY(-200vh)';
+    rightTrack.style.transform = 'translateY(-200vh)';
+  }
+
+  function setRole(btn) {
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

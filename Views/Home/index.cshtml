@@ -8,6 +8,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SSG Portal</title>
+<link rel="icon" type="image/png" href="/images/favicon.png" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -26,11 +27,10 @@
   .left-panel {
     width: 45%;
     height: 100vh;
-    overflow: hidden;           /* clip the inner scroll track */
+    overflow: hidden;
     position: relative;
     flex-shrink: 0;
     border-radius: 0 18px 18px 0;
-    box-shadow: inset 25px 25px 50px rgba(0, 0, 0, 0.88);
   }
 
   /* the scrolling track — 2 screens tall */
@@ -221,6 +221,7 @@
     color: #666;
     transition: background 0.16s, color 0.16s, border-color 0.16s;
     font-family: 'Inter', sans-serif;
+    box-shadow: -3px 3px 8px rgba(0, 0, 0, 0.15);
   }
 
   .role-btn.active {
@@ -245,7 +246,11 @@
   }
 
   .input-field::placeholder { color: #bbb; font-size: 13.5px; }
-  .input-field:focus { border-color: #27a744; }
+  .input-field:focus { 
+    border-color: #27a744; 
+    transform: scale(1.02);
+    transition: border-color 0.16s, transform 0.16s;
+  }
 
   .forgot-link {
     font-size: 13px;
@@ -356,7 +361,11 @@
   }
 
   .form-input::placeholder { color: #bbb; font-size: 13px; }
-  .form-input:focus { border-color: #27a744; }
+  .form-input:focus { 
+    border-color: #27a744; 
+    transform: scale(1.02);
+    transition: border-color 0.16s, transform 0.16s;
+  }
 
   .form-row { display: flex; gap: 14px; }
   .form-row .form-group { flex: 1; }
@@ -402,7 +411,7 @@
     <!-- Fixed elements outside track -->
     <div class="left-top">
       <div class="logo-circle">
-        <img src="/images/ssg.jpeg" alt="SSG Logo" />
+        <img src="/images/logo.png" alt="Ginatilan Logo" />
       </div>
       <div class="school-info">
         <span class="school-name">CTU - Ginatilan</span>
@@ -592,6 +601,90 @@
   function setRole(btn) {
     document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
+    
+    const signupSection = document.querySelector('.signup-text');
+    const signupButton = document.querySelector('.btn-signup');
+    const emailInput = document.querySelector('input[type="email"]');
+    const passwordInput = document.querySelector('input[type="password"]');
+    const forgotLink = document.querySelector('.forgot-link');
+    const signinButton = document.querySelector('.btn-signin');
+    const headline = document.querySelector('.left-headline');
+    const description = document.querySelector('.left-desc');
+    
+    // Hide form elements initially for all roles
+    emailInput.style.opacity = '0';
+    passwordInput.style.opacity = '0';
+    forgotLink.style.opacity = '0';
+    signinButton.style.opacity = '0';
+    signupSection.style.opacity = '0';
+    signupButton.style.opacity = '0';
+    headline.style.opacity = '0';
+    description.style.opacity = '0';
+    
+    // Show with delay animation for all roles
+    setTimeout(() => {
+      emailInput.style.transition = 'opacity 0.5s ease-in-out';
+      emailInput.style.opacity = '1';
+    }, 350);
+    
+    setTimeout(() => {
+      passwordInput.style.transition = 'opacity 0.5s ease-in-out';
+      passwordInput.style.opacity = '1';
+    }, 350);
+    
+    setTimeout(() => {
+      forgotLink.style.transition = 'opacity 0.5s ease-in-out';
+      forgotLink.style.opacity = '1';
+    }, 350);
+    
+    setTimeout(() => {
+      signinButton.style.transition = 'opacity 0.5s ease-in-out';
+      signinButton.style.opacity = '1';
+    }, 350);
+    
+    // Update headline and description based on role (after fade-out)
+    setTimeout(() => {
+      if (btn.textContent === 'Student') {
+        headline.innerHTML = 'Track your<br>Organizational<br>Fees!';
+        description.textContent = 'A transparent and real-time system for tracking and managing organizational fees.';
+      } else if (btn.textContent === 'Treasurer') {
+        headline.innerHTML = 'Manage the<br>School\'s<br>Organizational<br>Fees!';
+        description.textContent = 'Efficiently manage and monitor all organizational fee collections and transactions.';
+      } else if (btn.textContent === 'Admin') {
+        headline.innerHTML = 'Oversee the<br>Fee<br>Management<br>System!';
+        description.textContent = 'Complete administrative control over the organizational fee tracking and reporting system.';
+      }
+      
+      // Fade in headline and description with animation
+      setTimeout(() => {
+        headline.style.transition = 'opacity 0.5s ease-in-out';
+        headline.style.opacity = '1';
+      }, 50);
+      
+      setTimeout(() => {
+        description.style.transition = 'opacity 0.5s ease-in-out';
+        description.style.opacity = '1';
+      }, 100);
+    }, 350);
+    
+    if (btn.textContent === 'Treasurer' || btn.textContent === 'Admin') {
+      signupSection.style.display = 'none';
+      signupButton.style.display = 'none';
+    } else {
+      signupSection.style.display = 'block';
+      signupButton.style.display = 'block';
+      
+      // Add delayed animation for signup section
+      setTimeout(() => {
+        signupSection.style.transition = 'opacity 0.5s ease-in-out';
+        signupSection.style.opacity = '1';
+      }, 350);
+      
+      setTimeout(() => {
+        signupButton.style.transition = 'opacity 0.5s ease-in-out';
+        signupButton.style.opacity = '1';
+      }, 350);
+    }
   }
 </script>
 </body>

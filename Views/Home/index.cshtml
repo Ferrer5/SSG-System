@@ -402,43 +402,198 @@
   }
 
   .back-to-login a:hover { text-decoration: underline; }
+
+
+  /* ══════════════════════════════
+     MOBILE RESPONSIVE — ≤ 768px
+     Left panel → top banner
+     Right panel → scrollable bottom
+  ══════════════════════════════ */
+  @@media (max-width: 768px) {
+
+    body {
+      flex-direction: column;
+      height: auto;
+      min-height: 100vh;
+      overflow: auto;
+    }
+
+    /* ── LEFT PANEL: compact top banner ── */
+    .left-panel {
+      width: 100%;
+      height: auto;
+      border-radius: 0 0 24px 24px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .left-track {
+      /* Each mobile screen is auto-height, not 100vh */
+    }
+
+    .left-screen {
+      height: auto;
+      min-height: unset;
+      padding: 20px 24px 24px 24px;
+      flex-shrink: 0;
+    }
+
+    /* Logo row stays, but reposition from absolute to static */
+    .left-top {
+      position: static;
+      margin-bottom: 18px;
+    }
+
+    .left-top .logo-circle {
+      width: 40px;
+      height: 40px;
+    }
+
+    .school-name { font-size: 14px; }
+    .school-sub  { font-size: 11px; }
+
+    /* Headline compact on mobile */
+    .left-middle {
+      padding: 0;
+      flex: unset;
+      justify-content: flex-start;
+    }
+
+    #Lmiddle, #Lmiddle1, #Lmiddle2, #Lmiddle3 {
+      margin: 0;
+    }
+
+    .left-headline {
+      font-size: 28px;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .left-desc {
+      font-size: 12px;
+      max-width: 100%;
+      line-height: 1.5;
+    }
+
+    /* Hide copyright on mobile — saves space */
+    .left-bottom { display: none; }
+
+    /* ── RIGHT PANEL: full scrollable area below ── */
+    .right-panel {
+      flex: 1;
+      height: auto;
+      overflow: visible;
+    }
+
+    .right-track {
+      /* No translateY trick on mobile — each screen stacks naturally */
+      /* We'll use display toggling via JS instead */
+    }
+
+    .right-screen {
+      height: auto;
+      min-height: unset;
+      padding: 28px 24px 40px 24px;
+      overflow-y: visible;
+      flex-shrink: 0;
+    }
+
+    .right-screen h1 {
+      font-size: 22px;
+      margin-bottom: 18px;
+    }
+
+    /* Make inputs full-width on mobile */
+    .input-field,
+    .btn-signin,
+    .btn-signup {
+      max-width: 100%;
+    }
+
+    /* Role buttons slightly smaller */
+    .role-btn {
+      padding: 8px 16px;
+      font-size: 12px;
+    }
+
+    /* Sign-up inner form */
+    .signup-screen-inner {
+      margin-top: 0;
+      padding: 0;
+      max-width: 100%;
+    }
+
+    /* Stack form rows on very small screens */
+    .form-row {
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .form-input {
+      font-size: 14px;
+    }
+  }
+
+  /* Extra small phones */
+  @@media (max-width: 400px) {
+    .left-headline { font-size: 24px; }
+    .role-toggle { gap: 6px; }
+    .role-btn { padding: 7px 12px; font-size: 11px; }
+  }
+
 </style>
 </head>
 <body>
 
   <!-- ═══ LEFT PANEL ═══ -->
   <div class="left-panel">
-    <!-- Fixed elements outside track -->
-    <div class="left-top">
-      <div class="logo-circle">
-        <img src="/images/logo.png" alt="Ginatilan Logo" />
-      </div>
-      <div class="school-info">
-        <span class="school-name">CTU - Ginatilan</span>
-        <span class="school-sub">Supreme Student Government</span>
-      </div>
-    </div>
-
     <div class="left-track" id="leftTrack">
 
       <!-- SCREEN 1: Login branding -->
-      <div class="left-screen">
+      <div class="left-screen" id="mobileLeftScreen0">
+        <div class="left-top">
+          <div class="logo-circle">
+            <img src="/images/logo.png" alt="Ginatilan Logo" />
+          </div>
+          <div class="school-info">
+            <span class="school-name">CTU - Ginatilan</span>
+            <span class="school-sub">Supreme Student Government</span>
+          </div>
+        </div>
         <div class="left-middle" id="Lmiddle1">
-          <div class="left-headline">Track your<br>Organizational<br>Fees!</div>
-          <p class="left-desc">A transparent and real-time system for tracking and managing organizational fees.</p>
+          <div class="left-headline" id="mobileHeadline">Track your<br>Organizational<br>Fees!</div>
+          <p class="left-desc" id="mobileDesc">A transparent and real-time system for tracking and managing organizational fees.</p>
         </div>
       </div>
 
-      <!-- SCREEN 2: Sign-up branding -->
-      <div class="left-screen">
+      <!-- SCREEN 2: Sign-up branding (desktop only visible via transform) -->
+      <div class="left-screen" id="mobileLeftScreen1">
+        <div class="left-top">
+          <div class="logo-circle">
+            <img src="/images/logo.png" alt="Ginatilan Logo" />
+          </div>
+          <div class="school-info">
+            <span class="school-name">CTU - Ginatilan</span>
+            <span class="school-sub">Supreme Student Government</span>
+          </div>
+        </div>
         <div class="left-middle">
-          <div class="left-headline">Let's  Start!</div>
+          <div class="left-headline">Let's Start!</div>
           <p class="left-desc">Create your account and start tracking your organizational fees with transparency and ease.</p>
         </div>
       </div>
 
       <!-- SCREEN 3: Forgot password branding -->
-      <div class="left-screen">
+      <div class="left-screen" id="mobileLeftScreen2">
+        <div class="left-top">
+          <div class="logo-circle">
+            <img src="/images/logo.png" alt="Ginatilan Logo" />
+          </div>
+          <div class="school-info">
+            <span class="school-name">CTU - Ginatilan</span>
+            <span class="school-sub">Supreme Student Government</span>
+          </div>
+        </div>
         <div class="left-middle" id="Lmiddle">
           <div class="left-headline">Reset Your<br>Password</div>
           <p class="left-desc">Enter your email address and we'll send you a verification code to reset your password.</p>
@@ -447,7 +602,7 @@
 
     </div>
 
-    <!-- Fixed copyright outside track -->
+    <!-- Fixed copyright (desktop only) -->
     <div class="left-bottom">
       <span class="no-copyright">No Copyright</span>
     </div>
@@ -458,7 +613,8 @@
     <div class="right-track" id="rightTrack">
 
       <!-- SCREEN 1: Sign In form -->
-      <div class="right-screen" id="Lmiddle2">
+      <div class="right-screen" id="screenSignIn" style="display:flex;">
+        <div style="margin-top: 40px;" class="desktop-only-margin"><!-- spacer desktop --></div>
         <h1>Sign in</h1>
 
         <p class="role-label">Please choose your role</p>
@@ -468,20 +624,37 @@
           <button class="role-btn" onclick="setRole(this)">Admin</button>
         </div>
 
-        <input class="input-field" type="email" placeholder="Enter your Email" />
-        <input class="input-field" type="password" placeholder="Enter your Password" />
+        <!-- Student Login Form -->
+        <div id="studentLoginForm" class="role-form">
+          <input class="input-field" type="email" name="studentEmail" placeholder="Enter your Student Email" />
+          <input class="input-field" type="password" name="studentPassword" placeholder="Enter your Student Password" />
+          <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
+          <button class="btn-signin" onclick="handleSignIn('student')">Student Sign in</button>
+        </div>
 
-        <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
+        <!-- Treasurer Login Form -->
+        <div id="treasurerLoginForm" class="role-form" style="display: none;">
+          <input class="input-field" type="email" name="treasurerEmail" placeholder="Enter your Treasurer Email" />
+          <input class="input-field" type="password" name="treasurerPassword" placeholder="Enter your Treasurer Password" />
+          <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
+          <button class="btn-signin" onclick="handleSignIn('treasurer')">Treasurer Sign in</button>
+        </div>
 
-        <button class="btn-signin">Sign in</button>
+        <!-- Admin Login Form -->
+        <div id="adminLoginForm" class="role-form" style="display: none;">
+          <input class="input-field" type="email" name="adminEmail" placeholder="Enter your Admin Email" />
+          <input class="input-field" type="password" name="adminPassword" placeholder="Enter your Admin Password" />
+          <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
+          <button class="btn-signin" onclick="handleSignIn('admin')">Admin Sign in</button>
+        </div>
 
         <p class="signup-text">Don't have an <strong>account</strong>?</p>
         <button class="btn-signup" onclick="goToSignUp()">Sign up</button>
       </div>
 
       <!-- SCREEN 2: Sign Up form -->
-      <div class="right-screen" id="Lmiddle3">
-        <div class="signup-screen-inner" id="Lmiddle3">
+      <div class="right-screen" id="screenSignUp" style="display:none;">
+        <div class="signup-screen-inner">
           <h1>Create Account</h1>
           <p class="form-subtitle">Fill requirements below.</p>
 
@@ -517,12 +690,17 @@
                 <input type="text" class="form-input" placeholder="Enter here" />
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Year Level</label>
-              <input type="text" class="form-input" placeholder="Enter here" />
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Year Level</label>
+                <input type="text" class="form-input" placeholder="Enter here" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Student Id</label>
+                <input type="text" class="form-input" placeholder="Enter here" />
+              </div>
             </div>
           </div>
-
 
           <!-- ACCOUNT -->
           <div class="form-section">
@@ -530,6 +708,10 @@
             <div class="form-group">
               <label class="form-label">Username</label>
               <input type="text" class="form-input" placeholder="Enter here" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-input" placeholder="Enter your Email" />
             </div>
             <div class="form-row">
               <div class="form-group">
@@ -543,7 +725,7 @@
             </div>
           </div>
 
-          <button class="submit-btn">Submit</button>
+          <button class="submit-btn" onclick="handleSignUp()">Submit</button>
 
           <p class="back-to-login">
             Already have an account? <a onclick="goToSignIn()">Back to Sign in</a>
@@ -552,7 +734,7 @@
       </div>
 
       <!-- SCREEN 3: Forgot Password form -->
-      <div class="right-screen">
+      <div class="right-screen" id="screenForgot" style="display:none;">
         <div class="signup-screen-inner">
           <h1>Forgot Password</h1>
           <p class="form-subtitle">Don't worry! It happens. Please enter the email associated with your account.</p>
@@ -578,25 +760,60 @@
 <script>
   const leftTrack  = document.getElementById('leftTrack');
   const rightTrack = document.getElementById('rightTrack');
-  let currentScreen = 0; // 0=signin, 1=signup, 2=forgot
 
-  function goToSignUp() {
-    currentScreen = 1;
-    leftTrack.style.transform  = 'translateY(-100vh)';
-    rightTrack.style.transform = 'translateY(-100vh)';
+  const screens = {
+    signIn: document.getElementById('screenSignIn'),
+    signUp: document.getElementById('screenSignUp'),
+    forgot: document.getElementById('screenForgot'),
+  };
+
+  const mobileLeftScreens = [
+    document.getElementById('mobileLeftScreen0'),
+    document.getElementById('mobileLeftScreen1'),
+    document.getElementById('mobileLeftScreen2'),
+  ];
+
+  let currentScreen = 0;
+  const isMobile = () => window.innerWidth <= 768;
+
+  function showScreen(index) {
+    currentScreen = index;
+
+    if (isMobile()) {
+      // On mobile: toggle display of right screens + scroll to top
+      Object.values(screens).forEach(s => s.style.display = 'none');
+      mobileLeftScreens.forEach(s => s.style.display = 'none');
+
+      mobileLeftScreens[index].style.display = 'flex';
+
+      if (index === 0) screens.signIn.style.display = 'flex';
+      if (index === 1) screens.signUp.style.display = 'flex';
+      if (index === 2) screens.forgot.style.display = 'flex';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      // On desktop: use translateY slide animation
+      // All screens always display:flex, panels slide
+      Object.values(screens).forEach(s => s.style.display = 'flex');
+      mobileLeftScreens.forEach(s => s.style.display = 'flex');
+
+      const offset = index * -100;
+      leftTrack.style.transform  = `translateY(${offset}vh)`;
+      rightTrack.style.transform = `translateY(${offset}vh)`;
+    }
   }
 
-  function goToSignIn() {
-    currentScreen = 0;
-    leftTrack.style.transform  = 'translateY(0)';
-    rightTrack.style.transform = 'translateY(0)';
-  }
+  function goToSignUp()         { showScreen(1); }
+  function goToSignIn()         { showScreen(0); }
+  function goToForgotPassword() { showScreen(2); }
 
-  function goToForgotPassword() {
-    currentScreen = 2;
-    leftTrack.style.transform  = 'translateY(-200vh)';
-    rightTrack.style.transform = 'translateY(-200vh)';
-  }
+  // Re-evaluate layout on resize
+  window.addEventListener('resize', () => {
+    showScreen(currentScreen);
+  });
+
+  // Initial render
+  showScreen(0);
 
   function setRole(btn) {
     document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
@@ -604,87 +821,266 @@
     
     const signupSection = document.querySelector('.signup-text');
     const signupButton = document.querySelector('.btn-signup');
-    const emailInput = document.querySelector('input[type="email"]');
-    const passwordInput = document.querySelector('input[type="password"]');
-    const forgotLink = document.querySelector('.forgot-link');
-    const signinButton = document.querySelector('.btn-signin');
-    const headline = document.querySelector('.left-headline');
-    const description = document.querySelector('.left-desc');
     
-    // Hide form elements initially for all roles
-    emailInput.style.opacity = '0';
-    passwordInput.style.opacity = '0';
-    forgotLink.style.opacity = '0';
-    signinButton.style.opacity = '0';
+    // Hide all role forms
+    document.getElementById('studentLoginForm').style.display = 'none';
+    document.getElementById('treasurerLoginForm').style.display = 'none';
+    document.getElementById('adminLoginForm').style.display = 'none';
+    
+    // Get ALL left headlines (one per screen) - update screen 0 headline
+    const headline = mobileLeftScreens[0].querySelector('.left-headline');
+    const description = mobileLeftScreens[0].querySelector('.left-desc');
+    
+    // Fade out current elements
+    const currentForm = document.querySelector('.role-form:not([style*="display: none"])');
+    if (currentForm) {
+      currentForm.style.opacity = '0';
+    }
     signupSection.style.opacity = '0';
     signupButton.style.opacity = '0';
     headline.style.opacity = '0';
     description.style.opacity = '0';
     
-    // Show with delay animation for all roles
     setTimeout(() => {
-      emailInput.style.transition = 'opacity 0.5s ease-in-out';
-      emailInput.style.opacity = '1';
-    }, 350);
-    
-    setTimeout(() => {
-      passwordInput.style.transition = 'opacity 0.5s ease-in-out';
-      passwordInput.style.opacity = '1';
-    }, 350);
-    
-    setTimeout(() => {
-      forgotLink.style.transition = 'opacity 0.5s ease-in-out';
-      forgotLink.style.opacity = '1';
-    }, 350);
-    
-    setTimeout(() => {
-      signinButton.style.transition = 'opacity 0.5s ease-in-out';
-      signinButton.style.opacity = '1';
-    }, 350);
-    
-    // Update headline and description based on role (after fade-out)
-    setTimeout(() => {
+      // Show appropriate form and update content
       if (btn.textContent === 'Student') {
+        document.getElementById('studentLoginForm').style.display = 'block';
         headline.innerHTML = 'Track your<br>Organizational<br>Fees!';
         description.textContent = 'A transparent and real-time system for tracking and managing organizational fees.';
       } else if (btn.textContent === 'Treasurer') {
+        document.getElementById('treasurerLoginForm').style.display = 'block';
         headline.innerHTML = 'Manage the<br>School\'s<br>Organizational<br>Fees!';
         description.textContent = 'Efficiently manage and monitor all organizational fee collections and transactions.';
       } else if (btn.textContent === 'Admin') {
+        document.getElementById('adminLoginForm').style.display = 'block';
         headline.innerHTML = 'Oversee the<br>Fee<br>Management<br>System!';
         description.textContent = 'Complete administrative control over the organizational fee tracking and reporting system.';
       }
       
-      // Fade in headline and description with animation
+      // Fade in new form and elements
       setTimeout(() => {
+        const newForm = document.querySelector('.role-form:not([style*="display: none"])');
+        if (newForm) {
+          newForm.style.transition = 'opacity 0.5s ease-in-out';
+          newForm.style.opacity = '1';
+        }
         headline.style.transition = 'opacity 0.5s ease-in-out';
         headline.style.opacity = '1';
-      }, 50);
-      
-      setTimeout(() => {
         description.style.transition = 'opacity 0.5s ease-in-out';
         description.style.opacity = '1';
-      }, 100);
-    }, 350);
-    
-    if (btn.textContent === 'Treasurer' || btn.textContent === 'Admin') {
-      signupSection.style.display = 'none';
-      signupButton.style.display = 'none';
-    } else {
-      signupSection.style.display = 'block';
-      signupButton.style.display = 'block';
-      
-      // Add delayed animation for signup section
-      setTimeout(() => {
         signupSection.style.transition = 'opacity 0.5s ease-in-out';
         signupSection.style.opacity = '1';
-      }, 350);
-      
-      setTimeout(() => {
         signupButton.style.transition = 'opacity 0.5s ease-in-out';
         signupButton.style.opacity = '1';
-      }, 350);
+      }, 50);
+    }, 350);
+  }
+
+  function handleSignIn(role) {
+    // Get the appropriate form data based on role
+    let email, password;
+    
+    if (role === 'student') {
+      email = document.querySelector('input[name="studentEmail"]').value;
+      password = document.querySelector('input[name="studentPassword"]').value;
+    } else if (role === 'treasurer') {
+      email = document.querySelector('input[name="treasurerEmail"]').value;
+      password = document.querySelector('input[name="treasurerPassword"]').value;
+    } else if (role === 'admin') {
+      email = document.querySelector('input[name="adminEmail"]').value;
+      password = document.querySelector('input[name="adminPassword"]').value;
     }
+    
+    // Basic validation
+    if (!email || !password) {
+      alert(`Please enter your ${role.charAt(0).toUpperCase() + role.slice(1)} email and password`);
+      return;
+    }
+    
+    // Show loading state
+    const signinButton = event.target;
+    const originalText = signinButton.textContent;
+    signinButton.textContent = 'Signing in...';
+    signinButton.disabled = true;
+    
+    // Call backend authentication
+    fetch('/Home/Login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email,
+        password: password,
+        role: role
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        console.log(`${role} login successful:`, data);
+        // Store user data in localStorage for dashboard use
+        localStorage.setItem('currentUser', JSON.stringify(data.user));
+        // Redirect to dashboard
+        window.location.href = data.redirectUrl || '/Home/Dashboard';
+      } else {
+        alert(`Login failed: ${data.message}`);
+        signinButton.textContent = originalText;
+        signinButton.disabled = false;
+      }
+    })
+    .catch(error => {
+      console.error('Login error:', error);
+      alert('An error occurred during login. Please try again.');
+      signinButton.textContent = originalText;
+      signinButton.disabled = false;
+    });
+  }
+
+  function handleSignUp() {
+    // Get form data using label-based selectors
+    const getUsername = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Username');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getEmail = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Email');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getPassword = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Password');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getConfirmPassword = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Re-enter Password');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getFirstname = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'First name');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getLastname = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Family name');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getMiddleName = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Middle name (I.)');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getCourse = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Course');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getSection = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Section');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getYearLevel = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Year Level');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    const getStudentId = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Student Id');
+      return label ? label.nextElementSibling?.value || '' : '';
+    };
+    
+    // Get form values
+    const username = getUsername();
+    const email = getEmail();
+    const password = getPassword();
+    const confirmPassword = getConfirmPassword();
+    
+    // Get student-specific fields
+    const firstname = getFirstname();
+    const lastname = getLastname();
+    const middleName = getMiddleName();
+    const course = getCourse();
+    const section = getSection();
+    const yearLevel = getYearLevel();
+    const studentId = getStudentId();
+    
+    // Basic validation
+    if (!username || !email || !password || !confirmPassword) {
+      alert('Please fill in all required fields');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    
+    if (password.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+    if (!emailRegex.test(email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    
+    // Show loading state
+    const submitButton = event.target;
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Creating Account...';
+    submitButton.disabled = true;
+    
+    // Prepare registration data
+    const registrationData = {
+      username: username,
+      email: email,
+      password: password,
+      role: 0, // Student enum value (0)
+      firstname: firstname,
+      lastname: lastname,
+      MiddleName: middleName,
+      courseCode: course,
+      yearLevel: yearLevel ? parseInt(yearLevel) : null,
+      section: section,
+      studentId: studentId
+    };
+    
+    // Call backend registration
+    fetch('/Home/Register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(registrationData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert(`Registration successful! ${data.message}`);
+        // Clear form
+        document.querySelectorAll('.form-input').forEach(input => input.value = '');
+        // Redirect to sign-in page
+        goToSignIn();
+      } else {
+        alert(`Registration failed: ${data.message}`);
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+      }
+    })
+    .catch(error => {
+      console.error('Registration error:', error);
+      alert('An error occurred during registration. Please try again.');
+      submitButton.textContent = originalText;
+      submitButton.disabled = false;
+    });
   }
 </script>
 </body>

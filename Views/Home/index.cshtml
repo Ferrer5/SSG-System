@@ -629,23 +629,23 @@
           <input class="input-field" type="email" name="studentEmail" placeholder="Enter your Student Email" />
           <input class="input-field" type="password" name="studentPassword" placeholder="Enter your Student Password" />
           <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
-          <button class="btn-signin" onclick="handleSignIn('student')">Student Sign in</button>
+          <button class="btn-signin" onclick="handleSignIn('student')">Sign in</button>
         </div>
 
         <!-- Treasurer Login Form -->
         <div id="treasurerLoginForm" class="role-form" style="display: none;">
-          <input class="input-field" type="email" name="treasurerEmail" placeholder="Enter your Treasurer Email" />
-          <input class="input-field" type="password" name="treasurerPassword" placeholder="Enter your Treasurer Password" />
+          <input class="input-field" type="email" name="treasurerEmail" placeholder="Enter your Email" />
+          <input class="input-field" type="password" name="treasurerPassword" placeholder="Enter your Password" />
           <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
-          <button class="btn-signin" onclick="handleSignIn('treasurer')">Treasurer Sign in</button>
+          <button class="btn-signin" onclick="handleSignIn('treasurer')">Sign in</button>
         </div>
 
         <!-- Admin Login Form -->
         <div id="adminLoginForm" class="role-form" style="display: none;">
-          <input class="input-field" type="email" name="adminEmail" placeholder="Enter your Admin Email" />
-          <input class="input-field" type="password" name="adminPassword" placeholder="Enter your Admin Password" />
+          <input class="input-field" type="email" name="adminEmail" placeholder="Enter your Email" />
+          <input class="input-field" type="password" name="adminPassword" placeholder="Enter your Password" />
           <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
-          <button class="btn-signin" onclick="handleSignIn('admin')">Admin Sign in</button>
+          <button class="btn-signin" onclick="handleSignIn('admin')">Sign in</button>
         </div>
 
         <p class="signup-text">Don't have an <strong>account</strong>?</p>
@@ -868,10 +868,19 @@
         headline.style.opacity = '1';
         description.style.transition = 'opacity 0.5s ease-in-out';
         description.style.opacity = '1';
-        signupSection.style.transition = 'opacity 0.5s ease-in-out';
-        signupSection.style.opacity = '1';
-        signupButton.style.transition = 'opacity 0.5s ease-in-out';
-        signupButton.style.opacity = '1';
+        
+        // Hide signup section for Admin and Treasurer roles
+        if (btn.textContent === 'Admin' || btn.textContent === 'Treasurer') {
+          signupSection.style.display = 'none';
+          signupButton.style.display = 'none';
+        } else {
+          signupSection.style.display = 'block';
+          signupSection.style.transition = 'opacity 0.5s ease-in-out';
+          signupSection.style.opacity = '1';
+          signupButton.style.display = 'block';
+          signupButton.style.transition = 'opacity 0.5s ease-in-out';
+          signupButton.style.opacity = '1';
+        }
       }, 50);
     }, 350);
   }

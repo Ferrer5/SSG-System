@@ -23,7 +23,7 @@ namespace MyMvcApp.Data
                     Email = "admin@ssg.com",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                     Role = UserRole.Admin,
-                    RequestStatus = RequestStatus.Approve, // Auto-approve admin account
+                    RequestStatus = RequestStatus.Approved, // Auto-approve admin account
                     IsOnline = false,
                     CreatedAt = DateTime.UtcNow
                 };

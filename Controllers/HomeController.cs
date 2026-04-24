@@ -360,7 +360,7 @@ public class HomeController : Controller
             .Include(s => s.AcademicProfile)
                 .ThenInclude(ap => ap!.Course)
             .Include(s => s.Account)
-            .Where(s => s.Account != null && s.Account.RequestStatus == RequestStatus.Approve)
+            .Where(s => s.Account != null && s.Account.RequestStatus == RequestStatus.Approved)
             .Select(s => new StudentViewModel
             {
                 StudentId = s.StudentId,

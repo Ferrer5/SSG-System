@@ -58,7 +58,7 @@ namespace MyMvcApp.Models
     public enum RequestStatus
     {
         Pending,
-        Approve,
+        Approved,
         Rejected
     }
 }

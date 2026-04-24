@@ -9,11 +9,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSG Financial Management System</title>
+    <link rel="icon" type="image/png" href="~/favicon.png">
     <link rel="stylesheet" href="~/css/dashboard.css">
 </head>
 <body>
  
-<!-- HEADER -->
+<!-- HEADER  -->
 <div class="header">
   <div class="header-logo">
     <svg viewBox="0 0 24 24" fill="none">
@@ -296,7 +297,7 @@
                   <td class="status-@account.Status.ToString().ToLower()">@account.Status</td>
                   <td>
                     <div style="display: flex; gap: 5px; align-items: center;">
-                      <button class="btn-edit" onclick="updateAccountStatus(@account.AccountId, 'Approve')" style="background: rgba(50, 205, 50, 0.8);">✓ Approve</button>
+                      <button class="btn-edit" onclick="updateAccountStatus(@account.AccountId, 'Approved')" style="background: rgba(50, 205, 50, 0.8);">✓ Approve</button>
                       <button class="btn-edit" onclick="updateAccountStatus(@account.AccountId, 'Rejected')" style="background: rgba(255, 60, 22, 0.8);">✗ Reject</button>
                     </div>
                   </td>
@@ -509,7 +510,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'RequestVerificationToken': @antiforgeryToken
+          'RequestVerificationToken': '@Html.Raw(antiforgeryToken)'
         },
         body: JSON.stringify(requestData)
       })

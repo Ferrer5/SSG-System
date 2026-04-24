@@ -33,7 +33,7 @@ namespace MyMvcApp.Services
                 }
 
                 // Check if account is approved
-                if (account.RequestStatus != RequestStatus.Approve)
+                if (account.RequestStatus != RequestStatus.Approved)
                 {
                     return new AuthResult 
                     { 
@@ -94,7 +94,7 @@ namespace MyMvcApp.Services
                 }
 
                 // Check if account is approved
-                if (account.RequestStatus != RequestStatus.Approve)
+                if (account.RequestStatus != RequestStatus.Approved)
                 {
                     return new AuthResult 
                     { 

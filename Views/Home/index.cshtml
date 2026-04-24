@@ -742,14 +742,43 @@
           <div class="form-section">
             <div class="form-group">
               <label class="form-label">Email</label>
-              <input type="email" class="form-input" placeholder="Enter your Email" />
+              <input type="email" id="forgotEmail" class="form-input" placeholder="Enter your Email" />
             </div>
           </div>
 
-          <button class="submit-btn">Send Verification Code</button>
+          <button class="submit-btn" onclick="handleForgotPassword()">Send Verification Code</button>
 
           <p class="back-to-login">
             Remember your password? <a onclick="goToSignIn()">Back to Sign in</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- SCREEN 4: Reset Password form (with token) -->
+      <div class="right-screen" id="screenResetPassword" style="display:none;">
+        <div class="signup-screen-inner">
+          <h1>Reset Password</h1>
+          <p class="form-subtitle">Enter the verification code sent to your email and your new password.</p>
+
+          <div class="form-section">
+            <div class="form-group">
+              <label class="form-label">Verification Code</label>
+              <input type="text" id="resetToken" class="form-input" placeholder="Enter verification code" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input type="password" id="newPassword" class="form-input" placeholder="Enter new password" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Confirm New Password</label>
+              <input type="password" id="confirmNewPassword" class="form-input" placeholder="Confirm new password" />
+            </div>
+          </div>
+
+          <button class="submit-btn" onclick="handleResetPassword()">Reset Password</button>
+
+          <p class="back-to-login">
+            <a onclick="goToForgot()">Back to Forgot Password</a>
           </p>
         </div>
       </div>
@@ -765,6 +794,7 @@
     signIn: document.getElementById('screenSignIn'),
     signUp: document.getElementById('screenSignUp'),
     forgot: document.getElementById('screenForgot'),
+    resetPassword: document.getElementById('screenResetPassword'),
   };
 
   const mobileLeftScreens = [
@@ -931,7 +961,7 @@
         // Store user data in localStorage for dashboard use
         localStorage.setItem('currentUser', JSON.stringify(data.user));
         // Redirect to dashboard
-        window.location.href = data.redirectUrl || '/Home/Dashboard';
+        window.location.href = data.redirectUrl || '/Home/dashboard1';
       } else {
         alert(`Login failed: ${data.message}`);
         signinButton.textContent = originalText;
@@ -1087,6 +1117,142 @@
     .catch(error => {
       console.error('Registration error:', error);
       alert('An error occurred during registration. Please try again.');
+      submitButton.textContent = originalText;
+      submitButton.disabled = false;
+    });
+  }
+
+  function handleForgotPassword() {
+    const email = document.getElementById('forgotEmail').value;
+    
+    // Basic validation
+    if (!email) {
+      alert('Please enter your email address');
+      return;
+    }
+    
+    if (!email.includes('@@')) {
+      alert('Please enter a valid email address');
+      return;
+    }
+    
+    // Show loading state
+    const submitButton = event.target;
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Sending...';
+    submitButton.disabled = true;
+    
+    // Call backend forgot password
+    fetch('/Home/ForgotPassword', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert(data.message);
+        // Clear form and go to reset password screen
+        document.getElementById('forgotEmail').value = '';
+        goToResetPassword();
+      } else {
+        alert(`Failed to send reset email: ${data.message}`);
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+      }
+    })
+    .catch(error => {
+      console.error('Forgot password error:', error);
+      alert('An error occurred. Please try again.');
+      submitButton.textContent = originalText;
+      submitButton.disabled = false;
+    });
+  }
+
+  function goToResetPassword() { 
+    // For now, we'll use screen 2 (forgot) as reset password since we don't have a separate left screen
+    showScreen(2); 
+    // Hide forgot screen and show reset password screen
+    screens.forgot.style.display = 'none';
+    screens.resetPassword.style.display = 'flex';
+  }
+
+  function goToForgot() { 
+    // Show forgot screen and hide reset password screen
+    screens.resetPassword.style.display = 'none';
+    screens.forgot.style.display = 'flex';
+  }
+
+  function handleResetPassword() {
+    const token = document.getElementById('resetToken').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmNewPassword').value;
+    
+    // Basic validation
+    if (!token) {
+      alert('Please enter the verification code');
+      return;
+    }
+    
+    if (!newPassword) {
+      alert('Please enter a new password');
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters long');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    
+    // Show loading state
+    const submitButton = event.target;
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Resetting...';
+    submitButton.disabled = true;
+    
+    // Get email from URL parameter or stored value
+    const urlParams = new URLSearchParams(window.location.search);
+    const email = urlParams.get('email') || document.getElementById('forgotEmail').value;
+    
+    // Call backend reset password
+    fetch('/Home/ResetPassword', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        token: token,
+        email: email,
+        newPassword: newPassword
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert(data.message);
+        // Clear form and go back to sign in
+        document.getElementById('resetToken').value = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+        goToSignIn();
+      } else {
+        alert(`Failed to reset password: ${data.message}`);
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+      }
+    })
+    .catch(error => {
+      console.error('Reset password error:', error);
+      alert('An error occurred. Please try again.');
       submitButton.textContent = originalText;
       submitButton.disabled = false;
     });

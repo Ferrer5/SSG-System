@@ -1,8 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MyMvcApp.Data;
 using MyMvcApp.Models;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace MyMvcApp.Services
 {
@@ -139,23 +137,13 @@ namespace MyMvcApp.Services
 
         private bool VerifyPassword(string password, string passwordHash)
         {
-            try
-            {
-                // For now, using simple comparison. In production, use proper hashing like BCrypt
-                // This assumes passwords are stored as plain text for development
-                // TODO: Implement proper password hashing
-                return password == passwordHash;
-            }
-            catch
-            {
-                return false;
-            }
+            // Simple password comparison (plain text)
+            return password == passwordHash;
         }
 
         public static string HashPassword(string password)
         {
-            // Simple hashing for development - replace with proper hashing in production
-            // TODO: Implement proper password hashing with BCrypt or similar
+            // Store password as plain text (not secure, but as requested)
             return password;
         }
 

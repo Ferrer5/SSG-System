@@ -112,7 +112,6 @@ C:\Users\Janrey\SSG-System\obj\Debug\net10.0\rjimswa.dswa.cache.json
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\rjsmrazor.dswa.cache.json
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\rjsmcshtml.dswa.cache.json
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\scopedcss\bundle\MyMvcApp.styles.css
-C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\io1awhjeyg-{0}-5ipweew5fc-5ipweew5fc.gz
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\r42dj9v3f5-{0}-61n19gt1b8-61n19gt1b8.gz
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\5vtmfkbc5c-{0}-xtxxf3hu2r-xtxxf3hu2r.gz
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\mz1sqfxj73-{0}-bqjiyaj88i-bqjiyaj88i.gz
@@ -185,7 +184,6 @@ C:\Users\Janrey\SSG-System\obj\Debug\net10.0\MyMvcApp.pdb
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\MyMvcApp.genruntimeconfig.cache
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\ref\MyMvcApp.dll
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\MyMvcApp.sourcelink.json
-C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\59gfvrehvp-{0}-3muxo9hkpl-3muxo9hkpl.gz
 C:\Users\Janrey\SSG-System\bin\Debug\net10.0\Humanizer.dll
 C:\Users\Janrey\SSG-System\bin\Debug\net10.0\Microsoft.Bcl.AsyncInterfaces.dll
 C:\Users\Janrey\SSG-System\bin\Debug\net10.0\Microsoft.CodeAnalysis.dll
@@ -260,3 +258,5 @@ C:\Users\Janrey\SSG-System\bin\Debug\net10.0\zh-Hans\Microsoft.CodeAnalysis.Work
 C:\Users\Janrey\SSG-System\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\MyMvcApp.csproj.AssemblyReference.cache
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\MyMvcApp.csproj.Up2Date
+C:\Users\Janrey\SSG-System\bin\Debug\net10.0\BCrypt.Net-Next.dll
+C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\59gfvrehvp-{0}-d75fuzg9u9-d75fuzg9u9.gz

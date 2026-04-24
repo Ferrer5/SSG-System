@@ -37,6 +37,13 @@ namespace MyMvcApp.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [StringLength(255)]
+        [Column("password_reset_token")]
+        public string? PasswordResetToken { get; set; }
+
+        [Column("password_reset_token_expires")]
+        public DateTime? PasswordResetTokenExpires { get; set; }
+
         // Navigation properties
         public Student? Student { get; set; }
     }

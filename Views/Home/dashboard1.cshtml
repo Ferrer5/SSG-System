@@ -1,0 +1,539 @@
+@model MyMvcApp.Models.DashboardViewModel
+@{
+    Layout = null;
+    var antiforgeryToken = Html.AntiForgeryToken();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSG Financial Management System</title>
+    <link rel="stylesheet" href="~/css/dashboard.css">
+</head>
+<body>
+ 
+<!-- HEADER -->
+<div class="header">
+  <div class="header-logo">
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="#32b357" stroke-width="2"/>
+      <path d="M8 12l3 3 5-5" stroke="#32b357" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <div class="header-title">SSG Financial Management System</div>
+</div>
+ 
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="nav-list">
+    <div class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none">
+        <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
+        <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
+      </svg>
+      <span class="nav-label">Dashboard</span>
+    </div>
+    <div class="nav-item" id="nav-transactions" onclick="showPage('transactions')">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4 6h16M4 10h16M4 14h10M4 18h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <span class="nav-label">Transactions</span>
+    </div>
+    <div class="nav-item" id="nav-reports" onclick="showPage('reports')">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M13 21l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M9 7h6M9 11h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="nav-label">Reports</span>
+    </div>
+    <div class="nav-item" id="nav-settings" onclick="showPage('settings')">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8"/>
+      </svg>
+      <span class="nav-label">Settings</span>
+    </div>
+  </div>
+ 
+  <div class="sidebar-bottom">
+    <div class="user-card">
+      <div class="user-avatar">M</div>
+      <div class="user-info">
+        <div class="user-name">Ms. Cadungog</div>
+        <div class="user-role">Admin</div>
+      </div>
+    </div>
+    <div class="sign-out-btn" onclick="window.location.href='@Url.Action("Logout", "Home")'">
+      <div class="sign-out-icon"></div>
+      <span class="sign-out-label">Sign Out</span>
+    </div>
+  </div>
+</div>
+ 
+<!-- MAIN CONTENT -->
+<div class="main">
+ 
+  <!-- ═══════════ DASHBOARD PAGE ═══════════ -->
+  <div class="page active" id="page-dashboard">
+    <!-- Stat Cards -->
+    <div class="stat-cards">
+      <div class="stat-card blue">
+        <div class="stat-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#1c8aff" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M2 17l10 5 10-5" stroke="#1c8aff" stroke-width="1.8" stroke-linejoin="round"/>
+            <path d="M2 12l10 5 10-5" stroke="#1c8aff" stroke-width="1.8" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="stat-value">P 0.00</div>
+          <div class="stat-label">Total Funds Collected</div>
+        </div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke="#f55e5e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="stat-value">P 0.00</div>
+          <div class="stat-label">Total Expenses</div>
+        </div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#b0a800" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="12" cy="7" r="4" stroke="#b0a800" stroke-width="1.8"/>
+          </svg>
+        </div>
+        <div>
+          <div class="stat-value">@(Model.RequestedAccounts?.Count ?? 0)</div>
+          <div class="stat-label">Account Requests</div>
+        </div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#32b357" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="#32b357" stroke-width="1.8"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#32b357" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="stat-value">@(Model.Students?.Count ?? 0)</div>
+          <div class="stat-label">Registered Students</div>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- Middle Row: Financial Overview + Students Profile -->
+    <div class="mid-row">
+      <!-- Financial Overview -->
+      <div class="card fin-overview">
+        <div class="card-title">Financial Overview</div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-dot blue"></div>Monthly Collected Funds</div>
+          <div class="legend-item"><div class="legend-dot red"></div>Monthly Expenses</div>
+        </div>
+        <div class="chart-area">
+          <svg viewBox="0 0 460 200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+            <!-- Y axis labels -->
+            <text x="38" y="18" font-size="8" fill="#999" text-anchor="end">400,000</text>
+            <text x="38" y="38" font-size="8" fill="#999" text-anchor="end">380,000</text>
+            <text x="38" y="58" font-size="8" fill="#999" text-anchor="end">360,000</text>
+            <text x="38" y="78" font-size="8" fill="#999" text-anchor="end">340,000</text>
+            <text x="38" y="98" font-size="8" fill="#999" text-anchor="end">320,000</text>
+            <text x="38" y="118" font-size="8" fill="#999" text-anchor="end">300,000</text>
+            <text x="38" y="138" font-size="8" fill="#999" text-anchor="end">80,000</text>
+            <text x="38" y="158" font-size="8" fill="#999" text-anchor="end">60,000</text>
+            <text x="38" y="178" font-size="8" fill="#999" text-anchor="end">30,000</text>
+            <!-- Axis lines -->
+            <line x1="42" y1="12" x2="42" y2="182" stroke="#ddd" stroke-width="1"/>
+            <line x1="42" y1="182" x2="456" y2="182" stroke="#ddd" stroke-width="1"/>
+            <!-- Grid lines -->
+            <line x1="42" y1="32" x2="456" y2="32" stroke="#eee" stroke-width=".5" stroke-dasharray="3,3"/>
+            <line x1="42" y1="62" x2="456" y2="62" stroke="#eee" stroke-width=".5" stroke-dasharray="3,3"/>
+            <line x1="42" y1="92" x2="456" y2="92" stroke="#eee" stroke-width=".5" stroke-dasharray="3,3"/>
+            <line x1="42" y1="122" x2="456" y2="122" stroke="#eee" stroke-width=".5" stroke-dasharray="3,3"/>
+            <line x1="42" y1="152" x2="456" y2="152" stroke="#eee" stroke-width=".5" stroke-dasharray="3,3"/>
+            <!-- Blue line (collected funds) -->
+            <polyline points="55,155 89,140 123,125 157,115 191,100 225,88 259,78 293,68 327,58 361,72 395,62 429,50 450,44"
+              fill="none" stroke="#6ea1ff" stroke-width="2" stroke-linejoin="round"/>
+            <!-- Blue dots -->
+            <circle cx="55"  cy="155" r="3" fill="#6ea1ff"/>
+            <circle cx="89"  cy="140" r="3" fill="#6ea1ff"/>
+            <circle cx="123" cy="125" r="3" fill="#6ea1ff"/>
+            <circle cx="157" cy="115" r="3" fill="#6ea1ff"/>
+            <circle cx="191" cy="100" r="3" fill="#6ea1ff"/>
+            <circle cx="225" cy="88"  r="3" fill="#6ea1ff"/>
+            <circle cx="259" cy="78"  r="3" fill="#6ea1ff"/>
+            <circle cx="293" cy="68"  r="3" fill="#6ea1ff"/>
+            <circle cx="327" cy="58"  r="3" fill="#6ea1ff"/>
+            <circle cx="361" cy="72"  r="3" fill="#6ea1ff"/>
+            <circle cx="395" cy="62"  r="3" fill="#6ea1ff"/>
+            <circle cx="429" cy="50"  r="3" fill="#6ea1ff"/>
+            <!-- Red line (expenses) -->
+            <polyline points="55,162 89,155 123,148 157,158 191,145 225,140 259,150 293,138 327,132 361,142 395,130 429,120 450,128"
+              fill="none" stroke="#e73232" stroke-width="2" stroke-linejoin="round"/>
+            <!-- Red dots -->
+            <circle cx="55"  cy="162" r="3" fill="#e73232"/>
+            <circle cx="89"  cy="155" r="3" fill="#e73232"/>
+            <circle cx="123" cy="148" r="3" fill="#e73232"/>
+            <circle cx="157" cy="158" r="3" fill="#e73232"/>
+            <circle cx="191" cy="145" r="3" fill="#e73232"/>
+            <circle cx="225" cy="140" r="3" fill="#e73232"/>
+            <circle cx="259" cy="150" r="3" fill="#e73232"/>
+            <circle cx="293" cy="138" r="3" fill="#e73232"/>
+            <circle cx="327" cy="132" r="3" fill="#e73232"/>
+            <circle cx="361" cy="142" r="3" fill="#e73232"/>
+            <circle cx="395" cy="130" r="3" fill="#e73232"/>
+            <circle cx="429" cy="120" r="3" fill="#e73232"/>
+            <!-- X labels -->
+            <text x="55"  y="195" font-size="7" fill="#999" text-anchor="middle">Jan</text>
+            <text x="89"  y="195" font-size="7" fill="#999" text-anchor="middle">Feb</text>
+            <text x="123" y="195" font-size="7" fill="#999" text-anchor="middle">Mar</text>
+            <text x="157" y="195" font-size="7" fill="#999" text-anchor="middle">Apr</text>
+            <text x="191" y="195" font-size="7" fill="#999" text-anchor="middle">May</text>
+            <text x="225" y="195" font-size="7" fill="#999" text-anchor="middle">Jun</text>
+            <text x="259" y="195" font-size="7" fill="#999" text-anchor="middle">Jul</text>
+            <text x="293" y="195" font-size="7" fill="#999" text-anchor="middle">Aug</text>
+            <text x="327" y="195" font-size="7" fill="#999" text-anchor="middle">Sep</text>
+            <text x="361" y="195" font-size="7" fill="#999" text-anchor="middle">Oct</text>
+            <text x="395" y="195" font-size="7" fill="#999" text-anchor="middle">Nov</text>
+            <text x="429" y="195" font-size="7" fill="#999" text-anchor="middle">Dec</text>
+            <!-- Axis label -->
+            <text x="250" y="208" font-size="8" fill="#999" text-anchor="middle">Month</text>
+          </svg>
+        </div>
+      </div>
+ 
+      <!-- Students Profile -->
+      <div class="card students-profile">
+        <div class="card-title">Students Profile</div>
+        <div class="search-row">
+          <div class="search-label">Search</div>
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="rgba(0,0,0,.5)" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke="rgba(0,0,0,.5)" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>Search by ID or name</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:160px">Name</th>
+                <th>Course</th>
+                <th>Year &amp; Section</th>
+                <th style="width:70px">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (Model.Students != null && Model.Students.Any())
+              {
+                @foreach (var student in Model.Students)
+                {
+                  <tr>
+                    <td>@student.FullName</td>
+                    <td>@student.CourseCode</td>
+                    <td>@student.YearSection</td>
+                    <td><button class="btn-edit" onclick="editStudent(@student.StudentId)">✎ Edit</button></td>
+                  </tr>
+                }
+              }
+              else
+              {
+                <tr>
+                  <td colspan="4" style="text-align:center;padding:32px;color:rgba(0,0,0,.4);font-size:13px;">
+                    No students found.
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+ 
+    <!-- Requested Accounts -->
+    <div class="req-accounts-card">
+      <div class="card-title">Requested Accounts</div>
+      <div class="search-row">
+        <div class="search-label">Search</div>
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="rgba(0,0,0,.5)" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke="rgba(0,0,0,.5)" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <span>Search by ID or name</span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:100px">Student ID</th>
+              <th style="width:180px">Name</th>
+              <th>Course</th>
+              <th style="width:100px">Year &amp; Section</th>
+              <th style="width:130px">Date Requested</th>
+              <th>Status</th>
+              <th style="width:80px">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (Model.RequestedAccounts != null && Model.RequestedAccounts.Any())
+            {
+              @foreach (var account in Model.RequestedAccounts)
+              {
+                <tr>
+                  <td>@account.StudentId</td>
+                  <td>@account.Fullname</td>
+                  <td>@account.CourseCode</td>
+                  <td>@(account.YearLevel)-@(account.Section)</td>
+                  <td>@account.CreatedAt.ToString("MM-dd-yyyy")</td>
+                  <td class="status-@account.Status.ToString().ToLower()">@account.Status</td>
+                  <td>
+                    <div style="display: flex; gap: 5px; align-items: center;">
+                      <button class="btn-edit" onclick="updateAccountStatus(@account.AccountId, 'Approve')" style="background: rgba(50, 205, 50, 0.8);">✓ Approve</button>
+                      <button class="btn-edit" onclick="updateAccountStatus(@account.AccountId, 'Rejected')" style="background: rgba(255, 60, 22, 0.8);">✗ Reject</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr>
+                <td colspan="7" style="text-align:center;padding:32px;color:rgba(0,0,0,.4);font-size:13px;">
+                  No pending account requests found.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- ═══════════ TRANSACTIONS PAGE ═══════════ -->
+  <div class="page" id="page-transactions">
+    <div class="content-card">
+      <div class="page-header">
+        <div class="page-title">Transactions</div>
+        <div class="card-subtitle">Manage and track financial transactions</div>
+      </div>
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <div class="search-row">
+            <div class="search-label">Search</div>
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="rgba(0,0,0,.5)" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke="rgba(0,0,0,.5)" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>Search by Name</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;justify-content:flex-end;">
+            <div style="height:24px"></div>
+            <div class="filter-box">
+              <span>Filter</span>
+              <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M4 6h16M7 12h10M10 18h4" stroke="rgba(0,0,0,.7)" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;justify-content:flex-end;height:72px;">
+          <button class="btn-green">
+            <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+            New Transaction
+          </button>
+        </div>
+      </div>
+      <div>
+        <div class="tabs">
+          <div class="tab active">Organizational Fee</div>
+          <div class="tab inactive">Others</div>
+        </div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th style="width:130px">Transaction ID</th>
+                <th style="width:160px">Name</th>
+                <th>School Year</th>
+                <th>Semester</th>
+                <th>Amount</th>
+                <th>Balance</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th style="width:60px">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>32132143</td>
+                <td>ARIAS, RONALD</td>
+                <td>2025-2026</td>
+                <td>2nd</td>
+                <td>P300.00</td>
+                <td>P0.00</td>
+                <td>03-15-2026</td>
+                <td class="status-paid">Paid</td>
+                <td><span class="action-dots">···</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- ═══════════ REPORTS PAGE ═══════════ -->
+  <div class="page" id="page-reports">
+    <div class="content-card">
+      <div class="page-header">
+        <div class="page-title">Reports</div>
+        <div class="card-subtitle">View and track organizational expenses</div>
+      </div>
+      <div class="toolbar">
+        <div style="flex:1">
+          <div class="search-row">
+            <div class="search-label">Search</div>
+            <div class="search-box" style="width:100%;max-width:340px">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="rgba(0,0,0,.5)" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke="rgba(0,0,0,.5)" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span>Search by Definition</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:flex-end;height:72px;">
+          <button class="btn-green">
+            <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+            Add Expense
+          </button>
+          <button class="btn-outline-green">
+            <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="#32b357" stroke-width="1.8"/><polyline points="14 2 14 8 20 8" stroke="#32b357" stroke-width="1.8"/><line x1="16" y1="13" x2="8" y2="13" stroke="#32b357" stroke-width="1.8" stroke-linecap="round"/><line x1="16" y1="17" x2="8" y2="17" stroke="#32b357" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Create Report
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th style="width:180px">Recorded by</th>
+              <th>Definition</th>
+              <th style="width:160px">Amount</th>
+              <th style="width:160px">Date</th>
+              <th style="width:80px">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="5" style="text-align:center;padding:32px;color:rgba(0,0,0,.4);font-size:13px;">No records found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- ═══════════ SETTINGS PAGE ═══════════ -->
+  <div class="page" id="page-settings">
+    <div class="content-card">
+      <div class="page-header">
+        <div class="page-title">Settings</div>
+        <div class="card-subtitle">Manage system preferences and configuration</div>
+      </div>
+      <div style="color:rgba(0,0,0,.4);font-size:13px;padding:32px 0;text-align:center;">
+        Settings panel coming soon.
+      </div>
+    </div>
+  </div>
+ 
+</div><!-- /main -->
+ 
+<script>
+  function showPage(name) {
+    // hide all pages
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    // deactivate all nav
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    // show target
+    const targetPage = document.getElementById('page-' + name);
+    const targetNav = document.getElementById('nav-' + name);
+    
+    if (targetPage) {
+      targetPage.classList.add('active');
+    }
+    
+    if (targetNav) {
+      targetNav.classList.add('active');
+    }
+    
+    // Scroll to top when switching pages
+    window.scrollTo(0, 0);
+  }
+ 
+  // Tab switching in Transactions
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.tab').forEach(t => {
+        t.classList.remove('active');
+        t.classList.add('inactive');
+      });
+      this.classList.remove('inactive');
+      this.classList.add('active');
+    });
+  });
+
+  // Edit student function
+  function editStudent(studentId) {
+    console.log('Edit student:', studentId);
+    // TODO: Implement student edit functionality
+    alert('Edit functionality for student ID: ' + studentId + ' will be implemented.');
+  }
+
+  // Update account status function
+  function updateAccountStatus(accountId, status) {
+    console.log('updateAccountStatus called with:', accountId, status);
+    
+    if (confirm(`Are you sure you want to ${status.toLowerCase()} this account request?`)) {
+      console.log('User confirmed the action');
+      
+      const requestData = {
+        AccountId: accountId,
+        Status: status
+      };
+      console.log('Sending request:', requestData);
+      
+      fetch('/Home/UpdateAccountStatus', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'RequestVerificationToken': @antiforgeryToken
+        },
+        body: JSON.stringify(requestData)
+      })
+      .then(response => {
+        console.log('Response received:', response);
+        return response.json();
+      })
+      .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+          alert(data.message);
+          location.reload(); // Refresh the page to show updated data
+        } else {
+          alert('Error: ' + data.message);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the account status.');
+      });
+    } else {
+      console.log('User cancelled the action');
+    }
+  }
+</script>
+</body>
+</html>

@@ -30,6 +30,8 @@ namespace MyMvcApp.Data
                 entity.Property(e => e.RequestStatus).IsRequired().HasConversion<string>().HasDefaultValue(RequestStatus.Pending).HasColumnName("request_status");
                 entity.Property(e => e.IsOnline).IsRequired().HasDefaultValue(true).HasColumnName("is_online");
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+                entity.Property(e => e.PasswordResetToken).HasMaxLength(255).HasColumnName("password_reset_token");
+                entity.Property(e => e.PasswordResetTokenExpires).HasColumnName("password_reset_token_expires");
 
                 entity.HasIndex(e => e.Username).IsUnique().HasDatabaseName("uq_accounts_userename");
             });

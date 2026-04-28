@@ -244,34 +244,65 @@ public class HomeController : Controller
                 return Json(new { success = true, message = "If an account with that email exists, a password reset link has been sent." });
             }
 
-            // Generate reset token
-            var resetToken = Guid.NewGuid().ToString();
-            var expirationTime = DateTime.UtcNow.AddHours(1); // Token expires in 1 hour
+            // Generate 6-digit verification code
+            var random = new Random();
+            var verificationCode = random.Next(100000, 999999).ToString();
+            var expirationTime = DateTime.UtcNow.AddMinutes(15); // Code expires in 15 minutes
 
-            account.PasswordResetToken = resetToken;
+            account.PasswordResetToken = verificationCode;
             account.PasswordResetTokenExpires = expirationTime;
             
             await _context.SaveChangesAsync();
 
-            // Send reset email
-            var resetUrl = $"{Request.Scheme}://{Request.Host}/Home/ResetPassword?token={resetToken}&email={request.Email}";
-            var emailBody = $@"
-                <h2>Password Reset Request</h2>
-                <p>Hello {account.Username},</p>
-                <p>You requested a password reset for your account. Click the link below to reset your password:</p>
-                <p><a href='{resetUrl}'>Reset Password</a></p>
-                <p>This link will expire in 1 hour.</p>
-                <p>If you didn't request this, please ignore this email.</p>
-                <br>
-                <p>Best regards,<br>SSG System Team</p>";
+            // Send verification code email
+            var emailBody = $@"Hello {account.Username},<br><br>You requested a password reset for your account. this your verification code<br><br>{verificationCode}<br>This code will expire in 15 minutes.<br><br>If you didn't request this, please ignore this email.<br><br><br>Best regards,<br>SSG Financial Management System Team.";
 
-            await _emailService.SendEmailAsync(account.Email, "Password Reset Request", emailBody);
+            await _emailService.SendEmailAsync(account.Email, "Password Reset Verification Code", emailBody);
 
-            return Json(new { success = true, message = "If an account with that email exists, a password reset link has been sent." });
+            return Json(new { success = true, message = "If an account with that email exists, a verification code has been sent.", email = request.Email });
         }
         catch (Exception ex)
         {
             return Json(new { success = false, message = $"Failed to process forgot password: {ex.Message}" });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> VerifyResetCode([FromBody] VerifyCodeRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Code))
+            {
+                return Json(new { success = false, message = "Email and verification code are required." });
+            }
+
+            // Find account by email
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == request.Email);
+            
+            if (account == null)
+            {
+                return Json(new { success = false, message = "Invalid verification code." });
+            }
+
+            // Verify code and expiration
+            if (account.PasswordResetToken != request.Code || 
+                account.PasswordResetTokenExpires == null || 
+                DateTime.UtcNow > account.PasswordResetTokenExpires)
+            {
+                return Json(new { success = false, message = "Invalid or expired verification code." });
+            }
+
+            // Mark as verified and extend expiration for password reset
+            account.PasswordResetToken = "verified";
+            account.PasswordResetTokenExpires = DateTime.UtcNow.AddMinutes(30);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Code verified successfully. You can now reset your password." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Failed to verify code: {ex.Message}" });
         }
     }
 
@@ -287,9 +318,9 @@ public class HomeController : Controller
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Token) || string.IsNullOrWhiteSpace(request.Email))
+            if (string.IsNullOrWhiteSpace(request.Email))
             {
-                return Json(new { success = false, message = "Invalid reset request." });
+                return Json(new { success = false, message = "Email is required." });
             }
 
             if (string.IsNullOrWhiteSpace(request.NewPassword))
@@ -302,10 +333,10 @@ public class HomeController : Controller
                 return Json(new { success = false, message = "Password must be at least 6 characters long." });
             }
 
-            // Find account by email and token
+            // Find account by email (token should be 'verified' after code verification)
             var account = await _context.Accounts.FirstOrDefaultAsync(a => 
                 a.Email == request.Email && 
-                a.PasswordResetToken == request.Token && 
+                a.PasswordResetToken == "verified" && 
                 a.PasswordResetTokenExpires > DateTime.UtcNow);
 
             if (account == null)

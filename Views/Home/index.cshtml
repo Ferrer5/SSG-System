@@ -314,11 +314,11 @@
   .signup-screen-inner {
     max-width: 520px;
     width: 100%;
-    margin-top: 60px;
+    margin-top: 6px;
     padding: 60px 0 20px 0;
   }
 
-  .signup-screen-inner h1 { margin-bottom: 6px; }
+  .signup-screen-inner h1 { margin-bottom: 60px; }
 
   .form-subtitle {
     font-size: 13px;
@@ -754,17 +754,34 @@
         </div>
       </div>
 
-      <!-- SCREEN 4: Reset Password form (with token) -->
-      <div class="right-screen" id="screenResetPassword" style="display:none;">
+      <!-- SCREEN 4: Code Verification form -->
+      <div class="right-screen" id="screenCodeVerification" style="display:none;">
         <div class="signup-screen-inner">
-          <h1>Reset Password</h1>
-          <p class="form-subtitle">Enter the verification code sent to your email and your new password.</p>
+          <h1>Verify Code</h1>
+          <p class="form-subtitle">Enter the 6-digit verification code sent to your email.</p>
 
           <div class="form-section">
             <div class="form-group">
               <label class="form-label">Verification Code</label>
-              <input type="text" id="resetToken" class="form-input" placeholder="Enter verification code" />
+              <input type="text" id="verificationCode" class="form-input" placeholder="Enter 6-digit code" maxlength="6" />
             </div>
+          </div>
+
+          <button class="submit-btn" onclick="handleVerifyCode()">Verify Code</button>
+
+          <p class="back-to-login">
+            <a onclick="goToForgot()">Back to Forgot Password</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- SCREEN 5: Reset Password form (after code verification) -->
+      <div class="right-screen" id="screenResetPassword" style="display:none;">
+        <div class="signup-screen-inner">
+          <h1>Reset Password</h1>
+          <p class="form-subtitle">Enter your new password to complete the reset.</p>
+
+          <div class="form-section">
             <div class="form-group">
               <label class="form-label">New Password</label>
               <input type="password" id="newPassword" class="form-input" placeholder="Enter new password" />
@@ -794,6 +811,7 @@
     signIn: document.getElementById('screenSignIn'),
     signUp: document.getElementById('screenSignUp'),
     forgot: document.getElementById('screenForgot'),
+    codeVerification: document.getElementById('screenCodeVerification'),
     resetPassword: document.getElementById('screenResetPassword'),
   };
 
@@ -1156,9 +1174,11 @@
     .then(data => {
       if (data.success) {
         alert(data.message);
-        // Clear form and go to reset password screen
+        // Store email for code verification
+        window.forgotEmail = data.email;
+        // Clear form and go to code verification screen
         document.getElementById('forgotEmail').value = '';
-        goToResetPassword();
+        goToCodeVerification();
       } else {
         alert(`Failed to send reset email: ${data.message}`);
         submitButton.textContent = originalText;
@@ -1173,31 +1193,114 @@
     });
   }
 
-  function goToResetPassword() { 
-    // For now, we'll use screen 2 (forgot) as reset password since we don't have a separate left screen
+  function goToCodeVerification() { 
+    // Show code verification screen
     showScreen(2); 
-    // Hide forgot screen and show reset password screen
+    // Hide forgot screen and show code verification screen
     screens.forgot.style.display = 'none';
+    screens.codeVerification.style.display = 'flex';
+  }
+
+  function goToResetPassword() { 
+    // Hide code verification screen and show reset password screen
+    screens.codeVerification.style.display = 'none';
     screens.resetPassword.style.display = 'flex';
   }
 
   function goToForgot() { 
-    // Show forgot screen and hide reset password screen
+    // Show forgot screen and hide other screens
     screens.resetPassword.style.display = 'none';
+    screens.codeVerification.style.display = 'none';
     screens.forgot.style.display = 'flex';
   }
 
-  function handleResetPassword() {
-    const token = document.getElementById('resetToken').value;
-    const newPassword = document.getElementById('newPassword').value;
-    const confirmPassword = document.getElementById('confirmNewPassword').value;
+  function handleVerifyCode() {
+    const code = document.getElementById('verificationCode').value;
+    const email = window.forgotEmail;
     
     // Basic validation
-    if (!token) {
+    if (!code) {
       alert('Please enter the verification code');
       return;
     }
     
+    if (code.length !== 6) {
+      alert('Verification code must be 6 digits');
+      return;
+    }
+    
+    // Show loading state
+    const submitButton = event.target;
+    const originalText = submitButton.textContent;
+    submitButton.textContent = 'Verifying...';
+    submitButton.disabled = true;
+    
+    // Call backend verify code
+    fetch('/Home/VerifyResetCode', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email,
+        code: code
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        alert(data.message);
+        // Store verified email for password reset
+        window.verifiedEmail = email;
+        console.log('Email stored for reset password:', email);
+        // Go to reset password screen
+        goToResetPassword();
+      } else {
+        alert(`Failed to verify code: ${data.message}`);
+        submitButton.textContent = originalText;
+        submitButton.disabled = false;
+      }
+    })
+    .catch(error => {
+      console.error('Verify code error:', error);
+      alert('An error occurred. Please try again.');
+      submitButton.textContent = originalText;
+      submitButton.disabled = false;
+    });
+  }
+
+  function handleResetPassword() {
+    console.log('Reset password function called');
+    
+    const newPasswordInput = document.getElementById('newPassword');
+    const confirmPasswordInput = document.getElementById('confirmNewPassword');
+    const email = window.verifiedEmail;
+    
+    console.log('DOM elements:', { 
+      newPasswordInput: !!newPasswordInput, 
+      confirmPasswordInput: !!confirmPasswordInput, 
+      email: email 
+    });
+    
+    const newPassword = newPasswordInput?.value;
+    const confirmPassword = confirmPasswordInput?.value;
+    
+    // Check if email and DOM elements are available
+    if (!email) {
+      alert('Session expired. Please start the password reset process again.');
+      goToForgot();
+      return;
+    }
+    
+    if (!newPasswordInput || !confirmPasswordInput) {
+      alert('Form elements not found. Please try again.');
+      goToForgot();
+      return;
+    }
+    
+    console.log('Reset password attempt:', { email, newPassword: newPassword ? '***' : 'empty' });
+    
+    // Basic validation
     if (!newPassword) {
       alert('Please enter a new password');
       return;
@@ -1219,28 +1322,28 @@
     submitButton.textContent = 'Resetting...';
     submitButton.disabled = true;
     
-    // Get email from URL parameter or stored value
-    const urlParams = new URLSearchParams(window.location.search);
-    const email = urlParams.get('email') || document.getElementById('forgotEmail').value;
-    
     // Call backend reset password
+    console.log('Sending reset password request...');
     fetch('/Home/ResetPassword', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        token: token,
+        token: 'verified',
         email: email,
         newPassword: newPassword
       })
     })
-    .then(response => response.json())
+    .then(response => {
+      console.log('Reset password response:', response);
+      return response.json();
+    })
     .then(data => {
+      console.log('Reset password data:', data);
       if (data.success) {
         alert(data.message);
         // Clear form and go back to sign in
-        document.getElementById('resetToken').value = '';
         document.getElementById('newPassword').value = '';
         document.getElementById('confirmNewPassword').value = '';
         goToSignIn();

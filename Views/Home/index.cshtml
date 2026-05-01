@@ -19,6 +19,7 @@
     height: 100vh;
     overflow: hidden;
     display: flex;
+    margin-left: 10px;
   }
 
   /* ══════════════════════════════
@@ -54,6 +55,7 @@
     position: relative;
     overflow: hidden;
     flex-shrink: 0;
+    margin-bottom: 20px;
   }
 
   .left-screen::before {
@@ -152,6 +154,7 @@
     bottom: 32px;
     left: 44px;
     z-index: 1;
+    margin-bottom: 10px;
   }
 
   .no-copyright {
@@ -198,38 +201,9 @@
     letter-spacing: -0.3px;
   }
 
-  .role-label {
-    font-size: 13px;
-    color: #444;
-    margin-bottom: 12px;
-  }
-
-  .role-toggle {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 28px;
-  }
-
-  .role-btn {
-    padding: 9px 24px;
-    font-size: 13px;
-    font-weight: 500;
-    border: 1.5px solid #d0d0d0;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #fff;
-    color: #666;
-    transition: background 0.16s, color 0.16s, border-color 0.16s;
-    font-family: 'Inter', sans-serif;
-    box-shadow: -3px 3px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  .role-btn.active {
-    background: #27a744;
-    color: #fff;
-    border-color: #27a744;
-  }
-
+  
+  
+  
   .input-field {
     width: 100%;
     max-width: 450px;
@@ -318,12 +292,12 @@
     padding: 60px 0 20px 0;
   }
 
-  .signup-screen-inner h1 { margin-bottom: 60px; }
+  .signup-screen-inner h1 { margin-bottom: 8px; }
 
   .form-subtitle {
     font-size: 13px;
     color: #888;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
 
   .form-section { margin-bottom: 18px; }
@@ -510,12 +484,7 @@
       max-width: 100%;
     }
 
-    /* Role buttons slightly smaller */
-    .role-btn {
-      padding: 8px 16px;
-      font-size: 12px;
-    }
-
+    
     /* Sign-up inner form */
     .signup-screen-inner {
       margin-top: 0;
@@ -537,9 +506,7 @@
   /* Extra small phones */
   @@media (max-width: 400px) {
     .left-headline { font-size: 24px; }
-    .role-toggle { gap: 6px; }
-    .role-btn { padding: 7px 12px; font-size: 11px; }
-  }
+      }
 
 </style>
 </head>
@@ -617,37 +584,14 @@
         <div style="margin-top: 40px;" class="desktop-only-margin"><!-- spacer desktop --></div>
         <h1>Sign in</h1>
 
-        <p class="role-label">Please choose your role</p>
-        <div class="role-toggle">
-          <button class="role-btn active" onclick="setRole(this)">Student</button>
-          <button class="role-btn" onclick="setRole(this)">Treasurer</button>
-          <button class="role-btn" onclick="setRole(this)">Admin</button>
-        </div>
-
-        <!-- Student Login Form -->
-        <div id="studentLoginForm" class="role-form">
-          <input class="input-field" type="email" name="studentEmail" placeholder="Enter your Student Email" />
-          <input class="input-field" type="password" name="studentPassword" placeholder="Enter your Student Password" />
+        <div id="LoginForm" class="role-form">
+          <input class="input-field" type="text" name="studentId" placeholder="Student ID" />
+          <input class="input-field" type="password" name="studentPassword" placeholder="Password" />
           <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
-          <button class="btn-signin" onclick="handleSignIn('student')">Sign in</button>
+          <button class="btn-signin" onclick="handleSignIn()">Sign in</button>
         </div>
 
-        <!-- Treasurer Login Form -->
-        <div id="treasurerLoginForm" class="role-form" style="display: none;">
-          <input class="input-field" type="email" name="treasurerEmail" placeholder="Enter your Email" />
-          <input class="input-field" type="password" name="treasurerPassword" placeholder="Enter your Password" />
-          <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
-          <button class="btn-signin" onclick="handleSignIn('treasurer')">Sign in</button>
-        </div>
-
-        <!-- Admin Login Form -->
-        <div id="adminLoginForm" class="role-form" style="display: none;">
-          <input class="input-field" type="email" name="adminEmail" placeholder="Enter your Email" />
-          <input class="input-field" type="password" name="adminPassword" placeholder="Enter your Password" />
-          <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
-          <button class="btn-signin" onclick="handleSignIn('admin')">Sign in</button>
-        </div>
-
+        
         <p class="signup-text">Don't have an <strong>account</strong>?</p>
         <button class="btn-signup" onclick="goToSignUp()">Sign up</button>
       </div>
@@ -658,36 +602,39 @@
           <h1>Create Account</h1>
           <p class="form-subtitle">Fill requirements below.</p>
 
-          <!-- NAME -->
+          <!-- PERSONAL INFORMATION -->
           <div class="form-section">
-            <div class="section-title">Name</div>
+            <div class="section-title">Personal Information</div>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">First name</label>
                 <input type="text" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
-                <label class="form-label">Family name</label>
+                <label class="form-label">Middle name</label>
                 <input type="text" class="form-input" placeholder="Enter here" />
               </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">Middle name (I.)</label>
-              <input type="text" class="form-input" placeholder="Enter here" />
-            </div>
-          </div>
-
-          <!-- ACADEMIC -->
-          <div class="form-section">
-            <div class="section-title">Academic</div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Course</label>
+                <label class="form-label">Last name</label>
                 <input type="text" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
-                <label class="form-label">Section</label>
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" placeholder="Enter here" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Student ID</label>
                 <input type="text" class="form-input" placeholder="Enter here" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Course</label>
+                <select id="courseSelect" class="form-input" style="appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 20px; padding-right: 40px;">
+                  <option value="">Select a course</option>
+                </select>
               </div>
             </div>
             <div class="form-row">
@@ -696,30 +643,22 @@
                 <input type="text" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
-                <label class="form-label">Student Id</label>
+                <label class="form-label">Section</label>
                 <input type="text" class="form-input" placeholder="Enter here" />
               </div>
             </div>
           </div>
 
-          <!-- ACCOUNT -->
+          <!-- SECURITY -->
           <div class="form-section">
-            <div class="section-title">Account</div>
-            <div class="form-group">
-              <label class="form-label">Username</label>
-              <input type="text" class="form-input" placeholder="Enter here" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-input" placeholder="Enter your Email" />
-            </div>
+            <div class="section-title">Security</div>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">Password</label>
                 <input type="password" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
-                <label class="form-label">Re-enter Password</label>
+                <label class="form-label">Confirm password</label>
                 <input type="password" class="form-input" placeholder="Enter here" />
               </div>
             </div>
@@ -741,8 +680,8 @@
 
           <div class="form-section">
             <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" id="forgotEmail" class="form-input" placeholder="Enter your Email" />
+              <label class="form-label">Student ID</label>
+              <input type="text" id="forgotStudentId" class="form-input" placeholder="Enter your Student ID" />
             </div>
           </div>
 
@@ -870,10 +809,7 @@
     const signupSection = document.querySelector('.signup-text');
     const signupButton = document.querySelector('.btn-signup');
     
-    // Hide all role forms
-    document.getElementById('studentLoginForm').style.display = 'none';
-    document.getElementById('treasurerLoginForm').style.display = 'none';
-    document.getElementById('adminLoginForm').style.display = 'none';
+    document.getElementById('LoginForm').style.display = 'none';
     
     // Get ALL left headlines (one per screen) - update screen 0 headline
     const headline = mobileLeftScreens[0].querySelector('.left-headline');
@@ -901,8 +837,8 @@
         description.textContent = 'Efficiently manage and monitor all organizational fee collections and transactions.';
       } else if (btn.textContent === 'Admin') {
         document.getElementById('adminLoginForm').style.display = 'block';
-        headline.innerHTML = 'Oversee the<br>Fee<br>Management<br>System!';
-        description.textContent = 'Complete administrative control over the organizational fee tracking and reporting system.';
+        headline.innerHTML = 'Oversee the Fee<br>Management<br>System!';
+        description.textContent = 'Complete administrative control over the organizational fee tracking and report system.';
       }
       
       // Fade in new form and elements
@@ -935,10 +871,10 @@
 
   function handleSignIn(role) {
     // Get the appropriate form data based on role
-    let email, password;
+    let studentId, password;
     
     if (role === 'student') {
-      email = document.querySelector('input[name="studentEmail"]').value;
+      studentId = document.querySelector('input[name="studentId"]').value;
       password = document.querySelector('input[name="studentPassword"]').value;
     } else if (role === 'treasurer') {
       email = document.querySelector('input[name="treasurerEmail"]').value;
@@ -949,8 +885,8 @@
     }
     
     // Basic validation
-    if (!email || !password) {
-      alert(`Please enter your ${role.charAt(0).toUpperCase() + role.slice(1)} email and password`);
+    if (!studentId || !password) {
+      alert(`Please enter your ${role.charAt(0).toUpperCase() + role.slice(1)} ID and password`);
       return;
     }
     
@@ -967,7 +903,7 @@
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: email,
+        studentId: studentId,
         password: password,
         role: role
       })
@@ -1012,7 +948,7 @@
     };
     
     const getConfirmPassword = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Re-enter Password');
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Confirm password');
       return label ? label.nextElementSibling?.value || '' : '';
     };
     
@@ -1021,19 +957,19 @@
       return label ? label.nextElementSibling?.value || '' : '';
     };
     
-    const getLastname = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Family name');
+    const getMiddleName = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Middle name');
       return label ? label.nextElementSibling?.value || '' : '';
     };
     
-    const getMiddleName = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Middle name (I.)');
+    const getLastname = () => {
+      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Last name');
       return label ? label.nextElementSibling?.value || '' : '';
     };
     
     const getCourse = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Course');
-      return label ? label.nextElementSibling?.value || '' : '';
+      const courseSelect = document.getElementById('courseSelect');
+      return courseSelect ? courseSelect.value : '';
     };
     
     const getSection = () => {
@@ -1052,22 +988,21 @@
     };
     
     // Get form values
-    const username = getUsername();
+    const firstname = getFirstname();
+    const lastname = getLastname();
+    const middleName = getMiddleName();
     const email = getEmail();
     const password = getPassword();
     const confirmPassword = getConfirmPassword();
     
     // Get student-specific fields
-    const firstname = getFirstname();
-    const lastname = getLastname();
-    const middleName = getMiddleName();
     const course = getCourse();
     const section = getSection();
     const yearLevel = getYearLevel();
     const studentId = getStudentId();
     
     // Basic validation
-    if (!username || !email || !password || !confirmPassword) {
+    if (!firstname || !lastname || !middleName || !email || !studentId || !course || !yearLevel || !section || !password || !confirmPassword) {
       alert('Please fill in all required fields');
       return;
     }
@@ -1097,13 +1032,12 @@
     
     // Prepare registration data
     const registrationData = {
-      username: username,
+      firstname: firstname,
+      lastname: lastname,
+      middleName: middleName,
       email: email,
       password: password,
       role: 0, // Student enum value (0)
-      firstname: firstname,
-      lastname: lastname,
-      MiddleName: middleName,
       courseCode: course,
       yearLevel: yearLevel ? parseInt(yearLevel) : null,
       section: section,
@@ -1141,16 +1075,11 @@
   }
 
   function handleForgotPassword() {
-    const email = document.getElementById('forgotEmail').value;
+    const studentId = document.getElementById('forgotStudentId').value;
     
     // Basic validation
-    if (!email) {
-      alert('Please enter your email address');
-      return;
-    }
-    
-    if (!email.includes('@@')) {
-      alert('Please enter a valid email address');
+    if (!studentId) {
+      alert('Please enter your student ID');
       return;
     }
     
@@ -1167,17 +1096,17 @@
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: email
+        studentId: studentId
       })
     })
     .then(response => response.json())
     .then(data => {
       if (data.success) {
         alert(data.message);
-        // Store email for code verification
-        window.forgotEmail = data.email;
+        // Store student ID for code verification
+        window.forgotStudentId = data.studentId;
         // Clear form and go to code verification screen
-        document.getElementById('forgotEmail').value = '';
+        document.getElementById('forgotStudentId').value = '';
         goToCodeVerification();
       } else {
         alert(`Failed to send reset email: ${data.message}`);
@@ -1216,7 +1145,7 @@
 
   function handleVerifyCode() {
     const code = document.getElementById('verificationCode').value;
-    const email = window.forgotEmail;
+    const studentId = window.forgotStudentId;
     
     // Basic validation
     if (!code) {
@@ -1242,7 +1171,7 @@
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        email: email,
+        studentId: studentId,
         code: code
       })
     })
@@ -1250,9 +1179,9 @@
     .then(data => {
       if (data.success) {
         alert(data.message);
-        // Store verified email for password reset
-        window.verifiedEmail = email;
-        console.log('Email stored for reset password:', email);
+        // Store verified student ID for password reset
+        window.verifiedStudentId = studentId;
+        console.log('Student ID stored for reset password:', studentId);
         // Go to reset password screen
         goToResetPassword();
       } else {
@@ -1274,19 +1203,19 @@
     
     const newPasswordInput = document.getElementById('newPassword');
     const confirmPasswordInput = document.getElementById('confirmNewPassword');
-    const email = window.verifiedEmail;
+    const studentId = window.verifiedStudentId;
     
     console.log('DOM elements:', { 
       newPasswordInput: !!newPasswordInput, 
       confirmPasswordInput: !!confirmPasswordInput, 
-      email: email 
+      studentId: studentId 
     });
     
     const newPassword = newPasswordInput?.value;
     const confirmPassword = confirmPasswordInput?.value;
     
-    // Check if email and DOM elements are available
-    if (!email) {
+    // Check if student ID and DOM elements are available
+    if (!studentId) {
       alert('Session expired. Please start the password reset process again.');
       goToForgot();
       return;
@@ -1298,7 +1227,7 @@
       return;
     }
     
-    console.log('Reset password attempt:', { email, newPassword: newPassword ? '***' : 'empty' });
+    console.log('Reset password attempt:', { studentId, newPassword: newPassword ? '***' : 'empty' });
     
     // Basic validation
     if (!newPassword) {
@@ -1331,7 +1260,7 @@
       },
       body: JSON.stringify({
         token: 'verified',
-        email: email,
+        studentId: studentId,
         newPassword: newPassword
       })
     })
@@ -1360,6 +1289,40 @@
       submitButton.disabled = false;
     });
   }
+
+  // Function to populate course dropdown
+  async function loadCourses() {
+    console.log('Loading courses...');
+    try {
+      const response = await fetch('/Home/GetCourses');
+      console.log('Response received:', response);
+      const data = await response.json();
+      console.log('Data received:', data);
+      
+      if (data.success) {
+        const courseSelect = document.getElementById('courseSelect');
+        courseSelect.innerHTML = '<option value="">Select a course</option>';
+        
+        console.log(`Found ${data.courses.length} courses`);
+        data.courses.forEach(course => {
+          const option = document.createElement('option');
+          option.value = course.courseCode;
+          option.textContent = course.courseCode;
+          courseSelect.appendChild(option);
+          console.log(`Added course: ${course.courseCode}`);
+        });
+      } else {
+        console.error('Failed to load courses:', data.message);
+      }
+    } catch (error) {
+      console.error('Error loading courses:', error);
+    }
+  }
+
+  // Load courses when page loads
+  document.addEventListener('DOMContentLoaded', function() {
+    loadCourses();
+  });
 </script>
 </body>
 </html>

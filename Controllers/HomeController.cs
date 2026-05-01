@@ -62,7 +62,17 @@ public class HomeController : Controller
             }
 
             // Authenticate user
-            var result = await _authService.AuthenticateAsync(request.Email, request.Password, userRole);
+            AuthResult result;
+            if (userRole == UserRole.Student && !string.IsNullOrWhiteSpace(request.StudentId))
+            {
+                // For students, authenticate by student ID
+                result = await _authService.AuthenticateByStudentIdAsync(request.StudentId, request.Password, userRole);
+            }
+            else
+            {
+                // For other roles or fallback, authenticate by email
+                result = await _authService.AuthenticateAsync(request.Email, request.Password, userRole);
+            }
 
             if (result.Success)
             {
@@ -230,19 +240,23 @@ public class HomeController : Controller
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Email))
+            if (string.IsNullOrWhiteSpace(request.StudentId))
             {
-                return Json(new { success = false, message = "Email is required." });
+                return Json(new { success = false, message = "Student ID is required." });
             }
 
-            // Find account by email
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == request.Email);
+            // Find student by student ID
+            var student = await _context.Students
+                .Include(s => s.Account)
+                .FirstOrDefaultAsync(s => s.StudentId.ToString() == request.StudentId);
             
-            if (account == null)
+            if (student == null || student.Account == null)
             {
-                // Don't reveal that email doesn't exist
-                return Json(new { success = true, message = "If an account with that email exists, a password reset link has been sent." });
+                // Don't reveal that student ID doesn't exist
+                return Json(new { success = true, message = $"We have sent an email to the Student ID {request.StudentId}, please check your gmail and write the verification code to reset your account's password." });
             }
+
+            var account = student.Account;
 
             // Generate 6-digit verification code
             var random = new Random();
@@ -259,7 +273,7 @@ public class HomeController : Controller
 
             await _emailService.SendEmailAsync(account.Email, "Password Reset Verification Code", emailBody);
 
-            return Json(new { success = true, message = "If an account with that email exists, a verification code has been sent.", email = request.Email });
+            return Json(new { success = true, message = $"We have sent an email to the Student ID {request.StudentId}, please check your gmail and write the verification code to reset your account's password.", studentId = request.StudentId });
         }
         catch (Exception ex)
         {
@@ -272,18 +286,22 @@ public class HomeController : Controller
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Code))
+            if (string.IsNullOrWhiteSpace(request.StudentId) || string.IsNullOrWhiteSpace(request.Code))
             {
-                return Json(new { success = false, message = "Email and verification code are required." });
+                return Json(new { success = false, message = "Student ID and verification code are required." });
             }
 
-            // Find account by email
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == request.Email);
+            // Find student by student ID
+            var student = await _context.Students
+                .Include(s => s.Account)
+                .FirstOrDefaultAsync(s => s.StudentId.ToString() == request.StudentId);
             
-            if (account == null)
+            if (student == null || student.Account == null)
             {
                 return Json(new { success = false, message = "Invalid verification code." });
             }
+
+            var account = student.Account;
 
             // Verify code and expiration
             if (account.PasswordResetToken != request.Code || 
@@ -307,9 +325,9 @@ public class HomeController : Controller
     }
 
     [HttpGet]
-    public IActionResult ResetPassword(string token, string email)
+    public IActionResult ResetPassword(string token, string studentId)
     {
-        var model = new ResetPasswordViewModel { Token = token, Email = email };
+        var model = new ResetPasswordViewModel { Token = token, StudentId = studentId };
         return View(model);
     }
 
@@ -318,9 +336,9 @@ public class HomeController : Controller
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(request.Email))
+            if (string.IsNullOrWhiteSpace(request.StudentId))
             {
-                return Json(new { success = false, message = "Email is required." });
+                return Json(new { success = false, message = "Student ID is required." });
             }
 
             if (string.IsNullOrWhiteSpace(request.NewPassword))
@@ -333,19 +351,28 @@ public class HomeController : Controller
                 return Json(new { success = false, message = "Password must be at least 6 characters long." });
             }
 
-            // Find account by email (token should be 'verified' after code verification)
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => 
-                a.Email == request.Email && 
-                a.PasswordResetToken == "verified" && 
-                a.PasswordResetTokenExpires > DateTime.UtcNow);
-
-            if (account == null)
+            // Find student by student ID
+            var student = await _context.Students
+                .Include(s => s.Account)
+                .FirstOrDefaultAsync(s => s.StudentId.ToString() == request.StudentId);
+            
+            if (student == null || student.Account == null)
             {
                 return Json(new { success = false, message = "Invalid or expired reset token." });
             }
 
-            // Update password (plain text as requested)
-            account.PasswordHash = request.NewPassword;
+            var account = student.Account;
+
+            // Find account by student ID (token should be 'verified' after code verification)
+            if (account.PasswordResetToken != "verified" || 
+                account.PasswordResetTokenExpires == null || 
+                account.PasswordResetTokenExpires <= DateTime.UtcNow)
+            {
+                return Json(new { success = false, message = "Invalid or expired reset token." });
+            }
+
+            // Update password with proper hashing
+            account.PasswordHash = MyMvcApp.Services.AuthService.HashPassword(request.NewPassword);
             account.PasswordResetToken = null;
             account.PasswordResetTokenExpires = null;
 
@@ -446,6 +473,25 @@ public class HomeController : Controller
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetCourses()
+    {
+        try
+        {
+            var courses = await _context.Courses
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.CourseCode)
+                .Select(c => new { c.CourseId, c.CourseCode })
+                .ToListAsync();
+
+            return Json(new { success = true, courses = courses });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Failed to get courses: {ex.Message}" });
+        }
+    }
+
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult Error()
     {
@@ -456,26 +502,27 @@ public class HomeController : Controller
 public class LoginRequest
 {
     public string Email { get; set; } = string.Empty;
+    public string StudentId { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
 }
 
 public class ForgotPasswordRequest
 {
-    public string Email { get; set; } = string.Empty;
+    public string StudentId { get; set; } = string.Empty;
 }
 
 public class ResetPasswordRequest
 {
     public string Token { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
+    public string StudentId { get; set; } = string.Empty;
     public string NewPassword { get; set; } = string.Empty;
 }
 
 public class ResetPasswordViewModel
 {
     public string Token { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
+    public string StudentId { get; set; } = string.Empty;
 }
 
 public class UpdateAccountStatusRequest

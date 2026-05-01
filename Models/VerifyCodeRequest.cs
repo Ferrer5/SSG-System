@@ -5,8 +5,7 @@ namespace MyMvcApp.Models
     public class VerifyCodeRequest
     {
         [Required]
-        [EmailAddress]
-        public required string Email { get; set; }
+        public required string StudentId { get; set; }
 
         [Required]
         [StringLength(6, MinimumLength = 6)]

@@ -6,6 +6,7 @@ namespace MyMvcApp.Services
     {
         Task<AuthResult> AuthenticateAsync(string email, string password, UserRole role);
         Task<AuthResult> AuthenticateByUsernameAsync(string username, string password, UserRole role);
+        Task<AuthResult> AuthenticateByStudentIdAsync(string studentId, string password, UserRole role);
         Task<RegistrationResult> RegisterAccountAsync(RegistrationRequest request);
     }
 

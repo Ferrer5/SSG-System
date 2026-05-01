@@ -135,16 +135,80 @@ namespace MyMvcApp.Services
             }
         }
 
+        public async Task<AuthResult> AuthenticateByStudentIdAsync(string studentId, string password, UserRole role)
+        {
+            try
+            {
+                // Find student by student ID with account
+                var student = await _context.Students
+                    .Include(s => s.Account)
+                    .ThenInclude(a => a!.Student)
+                        .ThenInclude(s => s!.AcademicProfile)
+                    .FirstOrDefaultAsync(s => s.StudentId.ToString() == studentId && s.Account != null && s.Account.Role == role);
+
+                if (student == null || student.Account == null)
+                {
+                    return new AuthResult 
+                    { 
+                        Success = false, 
+                        Message = $"No {role} account found with this student ID." 
+                    };
+                }
+
+                var account = student.Account;
+
+                // Check if account is approved
+                if (account.RequestStatus != RequestStatus.Approved)
+                {
+                    return new AuthResult 
+                    { 
+                        Success = false, 
+                        Message = $"Account is {account.RequestStatus.ToString().ToLower()}. Please contact administrator." 
+                    };
+                }
+
+                // Verify password
+                if (!VerifyPassword(password, account.PasswordHash))
+                {
+                    return new AuthResult 
+                    { 
+                        Success = false, 
+                        Message = "Invalid password." 
+                    };
+                }
+
+                // Update online status
+                account.IsOnline = true;
+                await _context.SaveChangesAsync();
+
+                return new AuthResult 
+                { 
+                    Success = true, 
+                    Message = "Authentication successful.",
+                    Account = account,
+                    Student = student
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AuthResult 
+                { 
+                    Success = false, 
+                    Message = $"An error occurred during authentication: {ex.Message}" 
+                };
+            }
+        }
+
         private bool VerifyPassword(string password, string passwordHash)
         {
-            // Simple password comparison (plain text)
-            return password == passwordHash;
+            // Verify password using BCrypt
+            return BCrypt.Net.BCrypt.Verify(password, passwordHash);
         }
 
         public static string HashPassword(string password)
         {
-            // Store password as plain text (not secure, but as requested)
-            return password;
+            // Hash password using BCrypt
+            return BCrypt.Net.BCrypt.HashPassword(password);
         }
 
         private static string ConvertYearLevelToString(YearLevel? yearLevel)

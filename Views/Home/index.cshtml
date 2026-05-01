@@ -1,1328 +1,511 @@
-﻿@{
-    ViewData["Title"] = "SSG Portal";
+@{
+    Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SSG Portal</title>
-<link rel="icon" type="image/png" href="/images/favicon.png" />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Inter', 'Segoe UI', sans-serif;
-    background: #fff;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    margin-left: 10px;
-  }
-
-  /* ══════════════════════════════
-     LEFT PANEL — scrollable viewport
-  ══════════════════════════════ */
-  .left-panel {
-    width: 45%;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
-    flex-shrink: 0;
-    border-radius: 0 18px 18px 0;
-  }
-
-  /* the scrolling track — 2 screens tall */
-  .left-track {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    transition: transform 0.85s cubic-bezier(0.77, 0, 0.18, 1);
-    will-change: transform;
-  }
-
-  /* each "screen" inside the track */
-  .left-screen {
-    width: 100%;
-    height: 100vh;
-    background: #27a744;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 36px 44px 32px 44px;
-    position: relative;
-    overflow: hidden;
-    flex-shrink: 0;
-    margin-bottom: 20px;
-  }
-
-  .left-screen::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .left-top {
-    position: absolute;
-    top: 36px;
-    left: 44px;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .logo-circle {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: #f5c518;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .logo-circle img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .school-info { display: flex; flex-direction: column; }
-
-  .school-name {
-    color: #fff;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  .school-sub {
-    color: rgba(255,255,255,0.85);
-    font-size: 12px;
-    font-weight: 400;
-    margin-top: 2px;
-  }
-
-  .left-middle {
-    position: relative;
-    z-index: 1;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 32px 0 16px 0;
-  }
-  #Lmiddle {
-    margin-bottom: 150px;
-  }
-
-  #Lmiddle1 {
-    margin-bottom: 65px;
-  }
-
-  #Lmiddle2 {
-    margin-top: 100px;
-  }
-
-  #Lmiddle3 {
-    margin-top: -60px;
-  }
-
-  .left-headline {
-    color: #fff;
-    font-size: 52px;
-    font-weight: 800;
-    line-height: 1.12;
-    margin-bottom: 22px;
-    letter-spacing: -1px;
-  }
-
-  .left-desc {
-    color: rgba(255,255,255,0.80);
-    font-size: 13px;
-    line-height: 1.65;
-    max-width: 320px;
-  }
-
-  .left-bottom {
-    position: absolute;
-    bottom: 32px;
-    left: 44px;
-    z-index: 1;
-    margin-bottom: 10px;
-  }
-
-  .no-copyright {
-    color: rgba(255,255,255,0.45);
-    font-size: 12px;
-  }
-
-  /* ══════════════════════════════
-     RIGHT PANEL — fixed, never scrolls
-  ══════════════════════════════ */
-  .right-panel {
-    flex: 1;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
-  }
-
-  /* right track — 2 screens, same trick */
-  .right-track {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    transition: transform 0.85s cubic-bezier(0.77, 0, 0.18, 1);
-    will-change: transform;
-  }
-
-  .right-screen {
-    width: 100%;
-    height: 100vh;
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    padding: 60px 72px;
-    flex-shrink: 0;
-    overflow-y: auto;
-  }
-
-  /* ── SIGN IN ── */
-  .right-screen h1 {
-    font-size: 28px;
-    font-weight: 700;
-    color: #27a744;
-    margin-bottom: 24px;
-    letter-spacing: -0.3px;
-  }
-
-  
-  
-  
-  .input-field {
-    width: 100%;
-    max-width: 450px;
-    padding: 15px 18px;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 10px;
-    font-size: 14px;
-    color: #333;
-    background: #fff;
-    margin-bottom: 14px;
-    outline: none;
-    transition: border-color 0.16s;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .input-field::placeholder { color: #bbb; font-size: 13.5px; }
-  .input-field:focus { 
-    border-color: #27a744; 
-    transform: scale(1.02);
-    transition: border-color 0.16s, transform 0.16s;
-  }
-
-  .forgot-link {
-    font-size: 13px;
-    color: #555;
-    text-decoration: none;
-    display: block;
-    margin-bottom: 24px;
-    cursor: pointer;
-  }
-
-  .forgot-link strong { color: #111; font-weight: 700; }
-  .forgot-link:hover { text-decoration: underline; }
-
-  .btn-signin {
-    width: 100%;
-    max-width: 450px;
-    padding: 15px;
-    background: #27a744;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 24px;
-    transition: background 0.16s;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .btn-signin:hover { background: #218c3a; }
-
-  .signup-text {
-    font-size: 13px;
-    color: #555;
-    margin-bottom: 12px;
-  }
-
-  .signup-text strong { color: #111; font-weight: 700; }
-
-  .btn-signup {
-    display: block;
-    width: 100%;
-    max-width: 450px;
-    padding: 14px;
-    background: #fff;
-    color: #27a744;
-    border: 1.5px solid #27a744;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.16s, color 0.16s;
-    font-family: 'Inter', sans-serif;
-    text-align: center;
-    text-decoration: none;
-  }
-
-  .btn-signup:hover { background: #27a744; color: #fff; }
-
-  /* ── SIGN UP right screen ── */
-  .signup-screen-inner {
-    max-width: 520px;
-    width: 100%;
-    margin-top: 6px;
-    padding: 60px 0 20px 0;
-  }
-
-  .signup-screen-inner h1 { margin-bottom: 8px; }
-
-  .form-subtitle {
-    font-size: 13px;
-    color: #888;
-    margin-bottom: 24px;
-  }
-
-  .form-section { margin-bottom: 18px; }
-
-  .section-title {
-    font-size: 14px;
-    font-weight: 700;
-    color: #111;
-    margin-bottom: 14px;
-    padding-bottom: 7px;
-    border-bottom: 2px solid #27a744;
-  }
-
-  .form-group { margin-bottom: 14px; }
-
-  .form-label {
-    display: block;
-    font-size: 12.5px;
-    color: #555;
-    margin-bottom: 5px;
-    font-weight: 500;
-  }
-
-  .form-input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 9px;
-    font-size: 13.5px;
-    color: #333;
-    background: #fff;
-    outline: none;
-    transition: border-color 0.16s;
-    font-family: 'Inter', sans-serif;
-  }
-
-  .form-input::placeholder { color: #bbb; font-size: 13px; }
-  .form-input:focus { 
-    border-color: #27a744; 
-    transform: scale(1.02);
-    transition: border-color 0.16s, transform 0.16s;
-  }
-
-  .form-row { display: flex; gap: 14px; }
-  .form-row .form-group { flex: 1; }
-
-  .submit-btn {
-    width: 100%;
-    padding: 14px;
-    background: #27a744;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.16s;
-    font-family: 'Inter', sans-serif;
-    margin-top: 8px;
-    margin-bottom: 18px;
-  }
-
-  .submit-btn:hover { background: #218c3a; }
-
-  .back-to-login {
-    font-size: 13px;
-    color: #555;
-    text-align: center;
-  }
-
-  .back-to-login a {
-    color: #27a744;
-    text-decoration: none;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .back-to-login a:hover { text-decoration: underline; }
-
-
-  /* ══════════════════════════════
-     MOBILE RESPONSIVE — ≤ 768px
-     Left panel → top banner
-     Right panel → scrollable bottom
-  ══════════════════════════════ */
-  @@media (max-width: 768px) {
-
-    body {
-      flex-direction: column;
-      height: auto;
-      min-height: 100vh;
-      overflow: auto;
-    }
-
-    /* ── LEFT PANEL: compact top banner ── */
-    .left-panel {
-      width: 100%;
-      height: auto;
-      border-radius: 0 0 24px 24px;
-      flex-shrink: 0;
-      overflow: hidden;
-    }
-
-    .left-track {
-      /* Each mobile screen is auto-height, not 100vh */
-    }
-
-    .left-screen {
-      height: auto;
-      min-height: unset;
-      padding: 20px 24px 24px 24px;
-      flex-shrink: 0;
-    }
-
-    /* Logo row stays, but reposition from absolute to static */
-    .left-top {
-      position: static;
-      margin-bottom: 18px;
-    }
-
-    .left-top .logo-circle {
-      width: 40px;
-      height: 40px;
-    }
-
-    .school-name { font-size: 14px; }
-    .school-sub  { font-size: 11px; }
-
-    /* Headline compact on mobile */
-    .left-middle {
-      padding: 0;
-      flex: unset;
-      justify-content: flex-start;
-    }
-
-    #Lmiddle, #Lmiddle1, #Lmiddle2, #Lmiddle3 {
-      margin: 0;
-    }
-
-    .left-headline {
-      font-size: 28px;
-      margin-bottom: 8px;
-      letter-spacing: -0.5px;
-    }
-
-    .left-desc {
-      font-size: 12px;
-      max-width: 100%;
-      line-height: 1.5;
-    }
-
-    /* Hide copyright on mobile — saves space */
-    .left-bottom { display: none; }
-
-    /* ── RIGHT PANEL: full scrollable area below ── */
-    .right-panel {
-      flex: 1;
-      height: auto;
-      overflow: visible;
-    }
-
-    .right-track {
-      /* No translateY trick on mobile — each screen stacks naturally */
-      /* We'll use display toggling via JS instead */
-    }
-
-    .right-screen {
-      height: auto;
-      min-height: unset;
-      padding: 28px 24px 40px 24px;
-      overflow-y: visible;
-      flex-shrink: 0;
-    }
-
-    .right-screen h1 {
-      font-size: 22px;
-      margin-bottom: 18px;
-    }
-
-    /* Make inputs full-width on mobile */
-    .input-field,
-    .btn-signin,
-    .btn-signup {
-      max-width: 100%;
-    }
-
-    
-    /* Sign-up inner form */
-    .signup-screen-inner {
-      margin-top: 0;
-      padding: 0;
-      max-width: 100%;
-    }
-
-    /* Stack form rows on very small screens */
-    .form-row {
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .form-input {
-      font-size: 14px;
-    }
-  }
-
-  /* Extra small phones */
-  @@media (max-width: 400px) {
-    .left-headline { font-size: 24px; }
-      }
-
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSG Finance System</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Ionicons -->
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+
+    <style>
+        :root {
+            --gold: #c8a96e;
+            --gold-light: #e2c99a;
+            --white: #ffffff;
+            --dark: rgba(0, 0, 0, 0.55);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* ── HERO ── */
+        .hero {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--white);
+            overflow: hidden;
+        }
+
+        /* Background image */
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background: url('/images/CtuGinatilan.jpg') no-repeat center / cover;
+            filter: blur(3px);
+            transform: scale(1.08);
+            z-index: 0;
+            transition: filter 1.2s ease;
+        }
+
+        /* Gradient overlay — darker at top & bottom, lighter in center */
+        .hero-overlay {
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(to bottom,
+                    rgba(0,0,0,0.72) 0%,
+                    rgba(0,0,0,0.35) 40%,
+                    rgba(0,0,0,0.38) 65%,
+                    rgba(0,0,0,0.68) 100%);
+            z-index: 1;
+        }
+
+        /* Gold accent line at very top */
+        .top-accent {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            z-index: 10;
+        }
+
+        /* ── CONTENT ── */
+        .hero-content {
+            position: relative;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0 72px;
+        }
+
+        /* ── NAVBAR ── */
+        .navbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 28px 0 24px;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            animation: fadeDown 0.8s ease both;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo img {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--gold);
+            object-fit: cover;
+            box-shadow: 0 0 14px rgba(200,169,110,0.4);
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+
+        .logo-text .brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: var(--white);
+        }
+
+        .logo-text .sub {
+            font-size: 10px;
+            letter-spacing: 0.14em;
+            color: var(--gold-light);
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        /* NAV LINKS */
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: rgba(255,255,255,0.82);
+            font-size: 13.5px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            padding: 7px 14px;
+            border-radius: 6px;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%) scaleX(0);
+            width: 60%;
+            height: 1.5px;
+            background: var(--gold);
+            border-radius: 2px;
+            transition: transform 0.25s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--white);
+            background: rgba(255,255,255,0.07);
+        }
+
+        .nav-links a:hover::after {
+            transform: translateX(-50%) scaleX(1);
+        }
+
+        .nav-links a.active {
+            color: var(--white);
+        }
+
+        .nav-links a.nav-login {
+            background: rgba(200,169,110,0.18);
+            border: 1px solid var(--gold);
+            color: var(--gold-light);
+            border-radius: 20px;
+            padding: 7px 20px;
+            margin-left: 8px;
+        }
+
+        .nav-links a.nav-login:hover {
+            background: var(--gold);
+            color: #1a1208;
+        }
+
+        .nav-links a.nav-login::after { display: none; }
+
+        /* CLOCK */
+        .clock {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            color: rgba(255,255,255,0.75);
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            padding: 7px 14px;
+            border-radius: 8px;
+            backdrop-filter: blur(8px);
+            min-width: 130px;
+            text-align: center;
+        }
+
+        /* ── MAIN SECTION ── */
+        .main-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-bottom: 60px;
+            max-width: 680px;
+        }
+
+        .eyebrow {
+            font-size: 11px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--gold);
+            font-weight: 600;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: fadeUp 0.7s 0.2s ease both;
+        }
+
+        .eyebrow::before {
+            content: '';
+            display: inline-block;
+            width: 28px;
+            height: 1.5px;
+            background: var(--gold);
+            border-radius: 2px;
+        }
+
+        .main-title {
+            font-family: 'Inter', sans-serif;
+            font-size: clamp(38px, 5vw, 58px);
+            font-weight: 700;
+            line-height: 1.12;
+            margin-bottom: 14px;
+            letter-spacing: -0.01em;
+            animation: fadeUp 0.7s 0.35s ease both;
+        }
+
+        .main-title span {
+            color: var(--gold-light);
+        }
+
+        .main-desc {
+            font-size: 15px;
+            color: rgba(255,255,255,0.65);
+            line-height: 1.7;
+            margin-bottom: 40px;
+            max-width: 480px;
+            font-weight: 300;
+            animation: fadeUp 0.7s 0.5s ease both;
+        }
+
+        /* SEARCH BOX */
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: fadeUp 0.7s 0.65s ease both;
+        }
+
+        .search-box {
+            flex: 1;
+            max-width: 480px;
+            display: flex;
+            align-items: center;
+            background: rgba(255,255,255,0.09);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 12px;
+            padding: 0 20px;
+            gap: 12px;
+            backdrop-filter: blur(12px);
+            transition: border-color 0.3s, background 0.3s;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--gold);
+            background: rgba(255,255,255,0.13);
+        }
+
+        .search-box ion-icon {
+            font-size: 18px;
+            color: rgba(255,255,255,0.45);
+            flex-shrink: 0;
+        }
+
+        .search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 15px;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 400;
+            padding: 16px 0;
+        }
+
+        .search-box input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        .btn-search {
+            padding: 15px 32px;
+            border-radius: 12px;
+            border: none;
+            background: var(--gold);
+            color: #1a1208;
+            font-size: 14px;
+            font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+        }
+
+        .btn-search:hover {
+            background: var(--gold-light);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(200,169,110,0.35);
+        }
+
+        .btn-search ion-icon {
+            font-size: 16px;
+        }
+
+        /* ── BOTTOM STRIP ── */
+        .bottom-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 5;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 72px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.25);
+            backdrop-filter: blur(6px);
+            animation: fadeUp 0.7s 0.9s ease both;
+        }
+
+        .bottom-bar p {
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 0.04em;
+        }
+
+        .bottom-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--gold);
+            font-weight: 500;
+            letter-spacing: 0.08em;
+        }
+
+        .bottom-badge span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #4ade80;
+            display: inline-block;
+            box-shadow: 0 0 6px #4ade80;
+        }
+
+        /* ── ANIMATIONS ── */
+        @@keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @@keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── RESPONSIVE ── */
+        @@media (max-width: 900px) {
+            .hero-content { padding: 0 28px; }
+            .bottom-bar   { padding: 16px 28px; }
+            .nav-links a  { font-size: 12.5px; padding: 6px 10px; }
+            .clock        { display: none; }
+        }
+
+        @@media (max-width: 640px) {
+            .nav-links { gap: 2px; }
+            .nav-links a:not(.nav-login) { display: none; }
+            .main-title { font-size: 34px; }
+            .search-wrapper { flex-direction: column; align-items: stretch; }
+            .search-box { max-width: 100%; }
+        }
+    </style>
 </head>
+
 <body>
+    <div class="hero">
+        <div class="top-accent"></div>
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
 
-  <!-- ═══ LEFT PANEL ═══ -->
-  <div class="left-panel">
-    <div class="left-track" id="leftTrack">
+        <div class="hero-content">
 
-      <!-- SCREEN 1: Login branding -->
-      <div class="left-screen" id="mobileLeftScreen0">
-        <div class="left-top">
-          <div class="logo-circle">
-            <img src="/images/logo.png" alt="Ginatilan Logo" />
-          </div>
-          <div class="school-info">
-            <span class="school-name">CTU - Ginatilan</span>
-            <span class="school-sub">Supreme Student Government</span>
-          </div>
-        </div>
-        <div class="left-middle" id="Lmiddle1">
-          <div class="left-headline" id="mobileHeadline">Track your<br>Organizational<br>Fees!</div>
-          <p class="left-desc" id="mobileDesc">A transparent and real-time system for tracking and managing organizational fees.</p>
-        </div>
-      </div>
+            <!-- NAVBAR -->
+            <nav class="navbar">
+                <div class="logo">
+                    <img src="/images/logo.png" alt="SSG Logo">
+                    <div class="logo-text">
+                        <span class="brand">Admission Portal</span>
+                        <span class="sub">SSG Finance System</span>
+                    </div>
+                </div>
 
-      <!-- SCREEN 2: Sign-up branding (desktop only visible via transform) -->
-      <div class="left-screen" id="mobileLeftScreen1">
-        <div class="left-top">
-          <div class="logo-circle">
-            <img src="/images/logo.png" alt="Ginatilan Logo" />
-          </div>
-          <div class="school-info">
-            <span class="school-name">CTU - Ginatilan</span>
-            <span class="school-sub">Supreme Student Government</span>
-          </div>
-        </div>
-        <div class="left-middle">
-          <div class="left-headline">Let's Start!</div>
-          <p class="left-desc">Create your account and start tracking your organizational fees with transparency and ease.</p>
-        </div>
-      </div>
+                <div class="nav-links">
+                    <a href="#" class="active">Home</a>
+                    <a href="#" target="_blank">University Website</a>
+                    <a href="#">About</a>
+                    <a href="#">FAQ</a>
+                    <a href="#">Contacts</a>
+                    <a href="/Home/Login" class="nav-login">Login</a>
+                </div>
 
-      <!-- SCREEN 3: Forgot password branding -->
-      <div class="left-screen" id="mobileLeftScreen2">
-        <div class="left-top">
-          <div class="logo-circle">
-            <img src="/images/logo.png" alt="Ginatilan Logo" />
-          </div>
-          <div class="school-info">
-            <span class="school-name">CTU - Ginatilan</span>
-            <span class="school-sub">Supreme Student Government</span>
-          </div>
-        </div>
-        <div class="left-middle" id="Lmiddle">
-          <div class="left-headline">Reset Your<br>Password</div>
-          <p class="left-desc">Enter your email address and we'll send you a verification code to reset your password.</p>
-        </div>
-      </div>
+                <div id="clock" class="clock"></div>
+            </nav>
 
+            <!-- MAIN -->
+            <div class="main-section">
+                <p class="eyebrow">Student Government Finance</p>
+                <h1 class="main-title">Track your<br><span>Application</span></h1>
+                <p class="main-desc">
+                    Easily monitor your organizational fee status, track submissions, and stay updated with the SSG Finance System.
+                </p>
+
+                <div class="search-wrapper">
+                    <div class="search-box">
+                        <ion-icon name="search-outline"></ion-icon>
+                        <input type="text" placeholder="Enter your Student ID or Name…" id="trackInput">
+                    </div>
+                    <button class="btn-search" onclick="handleSearch()">
+                        Search
+                        <ion-icon name="arrow-forward-outline"></ion-icon>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BOTTOM BAR -->
+        <div class="bottom-bar">
+            <p>© 2025 SSG Finance System · Cebu Technological University</p>
+            <div class="bottom-badge">
+                <span></span>
+                System Online
+            </div>
+        </div>
     </div>
 
-    <!-- Fixed copyright (desktop only) -->
-    <div class="left-bottom">
-      <span class="no-copyright">No Copyright</span>
-    </div>
-  </div>
-
-  <!-- ═══ RIGHT PANEL ═══ -->
-  <div class="right-panel">
-    <div class="right-track" id="rightTrack">
-
-      <!-- SCREEN 1: Sign In form -->
-      <div class="right-screen" id="screenSignIn" style="display:flex;">
-        <div style="margin-top: 40px;" class="desktop-only-margin"><!-- spacer desktop --></div>
-        <h1>Sign in</h1>
-
-        <div id="LoginForm" class="role-form">
-          <input class="input-field" type="text" name="studentId" placeholder="Student ID" />
-          <input class="input-field" type="password" name="studentPassword" placeholder="Password" />
-          <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
-          <button class="btn-signin" onclick="handleSignIn()">Sign in</button>
-        </div>
-
-        
-        <p class="signup-text">Don't have an <strong>account</strong>?</p>
-        <button class="btn-signup" onclick="goToSignUp()">Sign up</button>
-      </div>
-
-      <!-- SCREEN 2: Sign Up form -->
-      <div class="right-screen" id="screenSignUp" style="display:none;">
-        <div class="signup-screen-inner">
-          <h1>Create Account</h1>
-          <p class="form-subtitle">Fill requirements below.</p>
-
-          <!-- PERSONAL INFORMATION -->
-          <div class="form-section">
-            <div class="section-title">Personal Information</div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">First name</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Middle name</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Last name</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" placeholder="Enter here" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Student ID</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Course</label>
-                <select id="courseSelect" class="form-input" style="appearance: none; background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 10px center; background-size: 20px; padding-right: 40px;">
-                  <option value="">Select a course</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Year Level</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Section</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
-              </div>
-            </div>
-          </div>
-
-          <!-- SECURITY -->
-          <div class="form-section">
-            <div class="section-title">Security</div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Confirm password</label>
-                <input type="password" class="form-input" placeholder="Enter here" />
-              </div>
-            </div>
-          </div>
-
-          <button class="submit-btn" onclick="handleSignUp()">Submit</button>
-
-          <p class="back-to-login">
-            Already have an account? <a onclick="goToSignIn()">Back to Sign in</a>
-          </p>
-        </div>
-      </div>
-
-      <!-- SCREEN 3: Forgot Password form -->
-      <div class="right-screen" id="screenForgot" style="display:none;">
-        <div class="signup-screen-inner">
-          <h1>Forgot Password</h1>
-          <p class="form-subtitle">Don't worry! It happens. Please enter the email associated with your account.</p>
-
-          <div class="form-section">
-            <div class="form-group">
-              <label class="form-label">Student ID</label>
-              <input type="text" id="forgotStudentId" class="form-input" placeholder="Enter your Student ID" />
-            </div>
-          </div>
-
-          <button class="submit-btn" onclick="handleForgotPassword()">Send Verification Code</button>
-
-          <p class="back-to-login">
-            Remember your password? <a onclick="goToSignIn()">Back to Sign in</a>
-          </p>
-        </div>
-      </div>
-
-      <!-- SCREEN 4: Code Verification form -->
-      <div class="right-screen" id="screenCodeVerification" style="display:none;">
-        <div class="signup-screen-inner">
-          <h1>Verify Code</h1>
-          <p class="form-subtitle">Enter the 6-digit verification code sent to your email.</p>
-
-          <div class="form-section">
-            <div class="form-group">
-              <label class="form-label">Verification Code</label>
-              <input type="text" id="verificationCode" class="form-input" placeholder="Enter 6-digit code" maxlength="6" />
-            </div>
-          </div>
-
-          <button class="submit-btn" onclick="handleVerifyCode()">Verify Code</button>
-
-          <p class="back-to-login">
-            <a onclick="goToForgot()">Back to Forgot Password</a>
-          </p>
-        </div>
-      </div>
-
-      <!-- SCREEN 5: Reset Password form (after code verification) -->
-      <div class="right-screen" id="screenResetPassword" style="display:none;">
-        <div class="signup-screen-inner">
-          <h1>Reset Password</h1>
-          <p class="form-subtitle">Enter your new password to complete the reset.</p>
-
-          <div class="form-section">
-            <div class="form-group">
-              <label class="form-label">New Password</label>
-              <input type="password" id="newPassword" class="form-input" placeholder="Enter new password" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">Confirm New Password</label>
-              <input type="password" id="confirmNewPassword" class="form-input" placeholder="Confirm new password" />
-            </div>
-          </div>
-
-          <button class="submit-btn" onclick="handleResetPassword()">Reset Password</button>
-
-          <p class="back-to-login">
-            <a onclick="goToForgot()">Back to Forgot Password</a>
-          </p>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-<script>
-  const leftTrack  = document.getElementById('leftTrack');
-  const rightTrack = document.getElementById('rightTrack');
-
-  const screens = {
-    signIn: document.getElementById('screenSignIn'),
-    signUp: document.getElementById('screenSignUp'),
-    forgot: document.getElementById('screenForgot'),
-    codeVerification: document.getElementById('screenCodeVerification'),
-    resetPassword: document.getElementById('screenResetPassword'),
-  };
-
-  const mobileLeftScreens = [
-    document.getElementById('mobileLeftScreen0'),
-    document.getElementById('mobileLeftScreen1'),
-    document.getElementById('mobileLeftScreen2'),
-  ];
-
-  let currentScreen = 0;
-  const isMobile = () => window.innerWidth <= 768;
-
-  function showScreen(index) {
-    currentScreen = index;
-
-    if (isMobile()) {
-      // On mobile: toggle display of right screens + scroll to top
-      Object.values(screens).forEach(s => s.style.display = 'none');
-      mobileLeftScreens.forEach(s => s.style.display = 'none');
-
-      mobileLeftScreens[index].style.display = 'flex';
-
-      if (index === 0) screens.signIn.style.display = 'flex';
-      if (index === 1) screens.signUp.style.display = 'flex';
-      if (index === 2) screens.forgot.style.display = 'flex';
-
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      // On desktop: use translateY slide animation
-      // All screens always display:flex, panels slide
-      Object.values(screens).forEach(s => s.style.display = 'flex');
-      mobileLeftScreens.forEach(s => s.style.display = 'flex');
-
-      const offset = index * -100;
-      leftTrack.style.transform  = `translateY(${offset}vh)`;
-      rightTrack.style.transform = `translateY(${offset}vh)`;
-    }
-  }
-
-  function goToSignUp()         { showScreen(1); }
-  function goToSignIn()         { showScreen(0); }
-  function goToForgotPassword() { showScreen(2); }
-
-  // Re-evaluate layout on resize
-  window.addEventListener('resize', () => {
-    showScreen(currentScreen);
-  });
-
-  // Initial render
-  showScreen(0);
-
-  function setRole(btn) {
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    
-    const signupSection = document.querySelector('.signup-text');
-    const signupButton = document.querySelector('.btn-signup');
-    
-    document.getElementById('LoginForm').style.display = 'none';
-    
-    // Get ALL left headlines (one per screen) - update screen 0 headline
-    const headline = mobileLeftScreens[0].querySelector('.left-headline');
-    const description = mobileLeftScreens[0].querySelector('.left-desc');
-    
-    // Fade out current elements
-    const currentForm = document.querySelector('.role-form:not([style*="display: none"])');
-    if (currentForm) {
-      currentForm.style.opacity = '0';
-    }
-    signupSection.style.opacity = '0';
-    signupButton.style.opacity = '0';
-    headline.style.opacity = '0';
-    description.style.opacity = '0';
-    
-    setTimeout(() => {
-      // Show appropriate form and update content
-      if (btn.textContent === 'Student') {
-        document.getElementById('studentLoginForm').style.display = 'block';
-        headline.innerHTML = 'Track your<br>Organizational<br>Fees!';
-        description.textContent = 'A transparent and real-time system for tracking and managing organizational fees.';
-      } else if (btn.textContent === 'Treasurer') {
-        document.getElementById('treasurerLoginForm').style.display = 'block';
-        headline.innerHTML = 'Manage the<br>School\'s<br>Organizational<br>Fees!';
-        description.textContent = 'Efficiently manage and monitor all organizational fee collections and transactions.';
-      } else if (btn.textContent === 'Admin') {
-        document.getElementById('adminLoginForm').style.display = 'block';
-        headline.innerHTML = 'Oversee the Fee<br>Management<br>System!';
-        description.textContent = 'Complete administrative control over the organizational fee tracking and report system.';
-      }
-      
-      // Fade in new form and elements
-      setTimeout(() => {
-        const newForm = document.querySelector('.role-form:not([style*="display: none"])');
-        if (newForm) {
-          newForm.style.transition = 'opacity 0.5s ease-in-out';
-          newForm.style.opacity = '1';
+    <script>
+        // Real-time clock
+        function updateClock() {
+            const now = new Date();
+            let h = now.getHours();
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12 || 12;
+            document.getElementById('clock').textContent = `${h}:${m}:${s} ${ampm}`;
         }
-        headline.style.transition = 'opacity 0.5s ease-in-out';
-        headline.style.opacity = '1';
-        description.style.transition = 'opacity 0.5s ease-in-out';
-        description.style.opacity = '1';
-        
-        // Hide signup section for Admin and Treasurer roles
-        if (btn.textContent === 'Admin' || btn.textContent === 'Treasurer') {
-          signupSection.style.display = 'none';
-          signupButton.style.display = 'none';
-        } else {
-          signupSection.style.display = 'block';
-          signupSection.style.transition = 'opacity 0.5s ease-in-out';
-          signupSection.style.opacity = '1';
-          signupButton.style.display = 'block';
-          signupButton.style.transition = 'opacity 0.5s ease-in-out';
-          signupButton.style.opacity = '1';
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Search handler (wire up to your route)
+        function handleSearch() {
+            const val = document.getElementById('trackInput').value.trim();
+            if (!val) return;
+            // Update this URL to your actual tracking endpoint
+            window.location.href = `/Home/Track?query=${encodeURIComponent(val)}`;
         }
-      }, 50);
-    }, 350);
-  }
 
-  function handleSignIn(role) {
-    // Get the appropriate form data based on role
-    let studentId, password;
-    
-    if (role === 'student') {
-      studentId = document.querySelector('input[name="studentId"]').value;
-      password = document.querySelector('input[name="studentPassword"]').value;
-    } else if (role === 'treasurer') {
-      email = document.querySelector('input[name="treasurerEmail"]').value;
-      password = document.querySelector('input[name="treasurerPassword"]').value;
-    } else if (role === 'admin') {
-      email = document.querySelector('input[name="adminEmail"]').value;
-      password = document.querySelector('input[name="adminPassword"]').value;
-    }
-    
-    // Basic validation
-    if (!studentId || !password) {
-      alert(`Please enter your ${role.charAt(0).toUpperCase() + role.slice(1)} ID and password`);
-      return;
-    }
-    
-    // Show loading state
-    const signinButton = event.target;
-    const originalText = signinButton.textContent;
-    signinButton.textContent = 'Signing in...';
-    signinButton.disabled = true;
-    
-    // Call backend authentication
-    fetch('/Home/Login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        studentId: studentId,
-        password: password,
-        role: role
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        console.log(`${role} login successful:`, data);
-        // Store user data in localStorage for dashboard use
-        localStorage.setItem('currentUser', JSON.stringify(data.user));
-        // Redirect to dashboard
-        window.location.href = data.redirectUrl || '/Home/dashboard1';
-      } else {
-        alert(`Login failed: ${data.message}`);
-        signinButton.textContent = originalText;
-        signinButton.disabled = false;
-      }
-    })
-    .catch(error => {
-      console.error('Login error:', error);
-      alert('An error occurred during login. Please try again.');
-      signinButton.textContent = originalText;
-      signinButton.disabled = false;
-    });
-  }
-
-  function handleSignUp() {
-    // Get form data using label-based selectors
-    const getUsername = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Username');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getEmail = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Email');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getPassword = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Password');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getConfirmPassword = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Confirm password');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getFirstname = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'First name');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getMiddleName = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Middle name');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getLastname = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Last name');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getCourse = () => {
-      const courseSelect = document.getElementById('courseSelect');
-      return courseSelect ? courseSelect.value : '';
-    };
-    
-    const getSection = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Section');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getYearLevel = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Year Level');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    const getStudentId = () => {
-      const label = Array.from(document.querySelectorAll('label')).find(l => l.textContent === 'Student Id');
-      return label ? label.nextElementSibling?.value || '' : '';
-    };
-    
-    // Get form values
-    const firstname = getFirstname();
-    const lastname = getLastname();
-    const middleName = getMiddleName();
-    const email = getEmail();
-    const password = getPassword();
-    const confirmPassword = getConfirmPassword();
-    
-    // Get student-specific fields
-    const course = getCourse();
-    const section = getSection();
-    const yearLevel = getYearLevel();
-    const studentId = getStudentId();
-    
-    // Basic validation
-    if (!firstname || !lastname || !middleName || !email || !studentId || !course || !yearLevel || !section || !password || !confirmPassword) {
-      alert('Please fill in all required fields');
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-    
-    if (password.length < 6) {
-      alert('Password must be at least 6 characters long');
-      return;
-    }
-    
-    // Email validation
-    const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
-    if (!emailRegex.test(email)) {
-      alert('Please enter a valid email address');
-      return;
-    }
-    
-    // Show loading state
-    const submitButton = event.target;
-    const originalText = submitButton.textContent;
-    submitButton.textContent = 'Creating Account...';
-    submitButton.disabled = true;
-    
-    // Prepare registration data
-    const registrationData = {
-      firstname: firstname,
-      lastname: lastname,
-      middleName: middleName,
-      email: email,
-      password: password,
-      role: 0, // Student enum value (0)
-      courseCode: course,
-      yearLevel: yearLevel ? parseInt(yearLevel) : null,
-      section: section,
-      studentId: studentId
-    };
-    
-    // Call backend registration
-    fetch('/Home/Register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(registrationData)
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert(`Registration successful! ${data.message}`);
-        // Clear form
-        document.querySelectorAll('.form-input').forEach(input => input.value = '');
-        // Redirect to sign-in page
-        goToSignIn();
-      } else {
-        alert(`Registration failed: ${data.message}`);
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-      }
-    })
-    .catch(error => {
-      console.error('Registration error:', error);
-      alert('An error occurred during registration. Please try again.');
-      submitButton.textContent = originalText;
-      submitButton.disabled = false;
-    });
-  }
-
-  function handleForgotPassword() {
-    const studentId = document.getElementById('forgotStudentId').value;
-    
-    // Basic validation
-    if (!studentId) {
-      alert('Please enter your student ID');
-      return;
-    }
-    
-    // Show loading state
-    const submitButton = event.target;
-    const originalText = submitButton.textContent;
-    submitButton.textContent = 'Sending...';
-    submitButton.disabled = true;
-    
-    // Call backend forgot password
-    fetch('/Home/ForgotPassword', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        studentId: studentId
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert(data.message);
-        // Store student ID for code verification
-        window.forgotStudentId = data.studentId;
-        // Clear form and go to code verification screen
-        document.getElementById('forgotStudentId').value = '';
-        goToCodeVerification();
-      } else {
-        alert(`Failed to send reset email: ${data.message}`);
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-      }
-    })
-    .catch(error => {
-      console.error('Forgot password error:', error);
-      alert('An error occurred. Please try again.');
-      submitButton.textContent = originalText;
-      submitButton.disabled = false;
-    });
-  }
-
-  function goToCodeVerification() { 
-    // Show code verification screen
-    showScreen(2); 
-    // Hide forgot screen and show code verification screen
-    screens.forgot.style.display = 'none';
-    screens.codeVerification.style.display = 'flex';
-  }
-
-  function goToResetPassword() { 
-    // Hide code verification screen and show reset password screen
-    screens.codeVerification.style.display = 'none';
-    screens.resetPassword.style.display = 'flex';
-  }
-
-  function goToForgot() { 
-    // Show forgot screen and hide other screens
-    screens.resetPassword.style.display = 'none';
-    screens.codeVerification.style.display = 'none';
-    screens.forgot.style.display = 'flex';
-  }
-
-  function handleVerifyCode() {
-    const code = document.getElementById('verificationCode').value;
-    const studentId = window.forgotStudentId;
-    
-    // Basic validation
-    if (!code) {
-      alert('Please enter the verification code');
-      return;
-    }
-    
-    if (code.length !== 6) {
-      alert('Verification code must be 6 digits');
-      return;
-    }
-    
-    // Show loading state
-    const submitButton = event.target;
-    const originalText = submitButton.textContent;
-    submitButton.textContent = 'Verifying...';
-    submitButton.disabled = true;
-    
-    // Call backend verify code
-    fetch('/Home/VerifyResetCode', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        studentId: studentId,
-        code: code
-      })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        alert(data.message);
-        // Store verified student ID for password reset
-        window.verifiedStudentId = studentId;
-        console.log('Student ID stored for reset password:', studentId);
-        // Go to reset password screen
-        goToResetPassword();
-      } else {
-        alert(`Failed to verify code: ${data.message}`);
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-      }
-    })
-    .catch(error => {
-      console.error('Verify code error:', error);
-      alert('An error occurred. Please try again.');
-      submitButton.textContent = originalText;
-      submitButton.disabled = false;
-    });
-  }
-
-  function handleResetPassword() {
-    console.log('Reset password function called');
-    
-    const newPasswordInput = document.getElementById('newPassword');
-    const confirmPasswordInput = document.getElementById('confirmNewPassword');
-    const studentId = window.verifiedStudentId;
-    
-    console.log('DOM elements:', { 
-      newPasswordInput: !!newPasswordInput, 
-      confirmPasswordInput: !!confirmPasswordInput, 
-      studentId: studentId 
-    });
-    
-    const newPassword = newPasswordInput?.value;
-    const confirmPassword = confirmPasswordInput?.value;
-    
-    // Check if student ID and DOM elements are available
-    if (!studentId) {
-      alert('Session expired. Please start the password reset process again.');
-      goToForgot();
-      return;
-    }
-    
-    if (!newPasswordInput || !confirmPasswordInput) {
-      alert('Form elements not found. Please try again.');
-      goToForgot();
-      return;
-    }
-    
-    console.log('Reset password attempt:', { studentId, newPassword: newPassword ? '***' : 'empty' });
-    
-    // Basic validation
-    if (!newPassword) {
-      alert('Please enter a new password');
-      return;
-    }
-    
-    if (newPassword.length < 6) {
-      alert('Password must be at least 6 characters long');
-      return;
-    }
-    
-    if (newPassword !== confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-    
-    // Show loading state
-    const submitButton = event.target;
-    const originalText = submitButton.textContent;
-    submitButton.textContent = 'Resetting...';
-    submitButton.disabled = true;
-    
-    // Call backend reset password
-    console.log('Sending reset password request...');
-    fetch('/Home/ResetPassword', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        token: 'verified',
-        studentId: studentId,
-        newPassword: newPassword
-      })
-    })
-    .then(response => {
-      console.log('Reset password response:', response);
-      return response.json();
-    })
-    .then(data => {
-      console.log('Reset password data:', data);
-      if (data.success) {
-        alert(data.message);
-        // Clear form and go back to sign in
-        document.getElementById('newPassword').value = '';
-        document.getElementById('confirmNewPassword').value = '';
-        goToSignIn();
-      } else {
-        alert(`Failed to reset password: ${data.message}`);
-        submitButton.textContent = originalText;
-        submitButton.disabled = false;
-      }
-    })
-    .catch(error => {
-      console.error('Reset password error:', error);
-      alert('An error occurred. Please try again.');
-      submitButton.textContent = originalText;
-      submitButton.disabled = false;
-    });
-  }
-
-  // Function to populate course dropdown
-  async function loadCourses() {
-    console.log('Loading courses...');
-    try {
-      const response = await fetch('/Home/GetCourses');
-      console.log('Response received:', response);
-      const data = await response.json();
-      console.log('Data received:', data);
-      
-      if (data.success) {
-        const courseSelect = document.getElementById('courseSelect');
-        courseSelect.innerHTML = '<option value="">Select a course</option>';
-        
-        console.log(`Found ${data.courses.length} courses`);
-        data.courses.forEach(course => {
-          const option = document.createElement('option');
-          option.value = course.courseCode;
-          option.textContent = course.courseCode;
-          courseSelect.appendChild(option);
-          console.log(`Added course: ${course.courseCode}`);
+        // Allow Enter key to search
+        document.getElementById('trackInput').addEventListener('keydown', e => {
+            if (e.key === 'Enter') handleSearch();
         });
-      } else {
-        console.error('Failed to load courses:', data.message);
-      }
-    } catch (error) {
-      console.error('Error loading courses:', error);
-    }
-  }
-
-  // Load courses when page loads
-  document.addEventListener('DOMContentLoaded', function() {
-    loadCourses();
-  });
-</script>
+    </script>
 </body>
 </html>

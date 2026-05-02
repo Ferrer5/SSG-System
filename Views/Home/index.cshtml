@@ -169,6 +169,41 @@ body.login-open #heroOverlay {
 }
 .nav-links a.nav-login::after { display:none; }
 
+/* Burger Menu - Hidden on desktop */
+.burger-menu {
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:5px;
+  width:44px;
+  height:44px;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  padding:8px;
+  border-radius:8px;
+  transition:background 0.2s ease;
+}
+.burger-menu:hover { background:rgba(255,255,255,0.1); }
+.burger-menu span {
+  display:block;
+  width:24px;
+  height:2.5px;
+  background:rgba(255,255,255,0.9);
+  border-radius:2px;
+  transition:all 0.3s ease;
+}
+.burger-menu.active span:nth-child(1) {
+  transform:rotate(45deg) translate(5px, 5px);
+}
+.burger-menu.active span:nth-child(2) {
+  opacity:0;
+}
+.burger-menu.active span:nth-child(3) {
+  transform:rotate(-45deg) translate(5px, -5px);
+}
+
 .clock {
   font-size:13px; font-weight:600; letter-spacing:0.06em;
   color:rgba(255,255,255,0.75);
@@ -537,7 +572,39 @@ body.login-open .lp-right { transform: translateX(0); }
 }
 
 @@media (max-width: 640px) {
-  .nav-links a:not(.nav-login) { display:none; }
+  .burger-menu { display:flex; }
+  .nav-links {
+    position:fixed;
+    top:70px;
+    right:20px;
+    flex-direction:column;
+    gap:0;
+    background:rgba(10,25,14,0.98);
+    backdrop-filter:blur(20px);
+    padding:12px 8px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.1);
+    min-width:180px;
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-10px) scale(0.95);
+    transition:all 0.25s ease;
+    z-index:1000;
+    box-shadow:0 20px 40px rgba(0,0,0,0.4);
+  }
+  .nav-links.active {
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0) scale(1);
+  }
+  .nav-links a {
+    display:block;
+    padding:12px 20px;
+    font-size:14px;
+    border-radius:8px;
+    white-space:nowrap;
+  }
+  .nav-links a:hover { background:rgba(255,255,255,0.08); }
   .main-title { font-size:34px; }
 }
 
@@ -566,11 +633,17 @@ body.login-open .lp-right { transform: translateX(0); }
       </div>
     </div>
 
-    <div class="nav-links">
-      <a href="#" onclick="showLandingPage(); setActiveNav(this)">Home</a>
-      <a href="https://www.facebook.com/groups/308772583908264" target="_blank" onclick="setActiveNav(this)">About</a>
-      <a href="https://www.facebook.com/profile.php?id=61580269426838" target="_blank" onclick="setActiveNav(this)">Contacts</a>
-      <a onclick="openLogin(); setActiveNav(this)">Login</a>
+    <button class="burger-menu" onclick="toggleMobileNav()" aria-label="Toggle navigation">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div class="nav-links" id="mobileNav">
+      <a href="@Url.Action("Index", "Home")" onclick="setActiveNav(this); closeMobileNav()">Home</a>
+      <a href="@Url.Action("About", "Home")" onclick="setActiveNav(this); closeMobileNav()">About</a>
+      <a href="@Url.Action("Contacts", "Home")" onclick="setActiveNav(this); closeMobileNav()">Contacts</a>
+      <a onclick="openLogin(); setActiveNav(this); closeMobileNav()">Login</a>
     </div>
 
     <div id="clock" class="clock"></div>
@@ -642,8 +715,8 @@ body.login-open .lp-right { transform: translateX(0); }
         <h1 class="rp-h1">Sign in</h1>
         <p class="rp-subtitle">Welcome back : enter your credentials below.</p>
 
-        <input class="input-field" type="text" name="studentId" placeholder="School ID" />
-        <input class="input-field" type="password" name="studentPassword" placeholder="Password" />
+        <input class="input-field" type="text" name="schoolId" placeholder="School ID" />
+        <input class="input-field" type="password" name="password" placeholder="Password" />
         <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
         <button class="btn-signin" onclick="handleSignIn()">Sign in</button>
 
@@ -857,6 +930,20 @@ function goToSignUp()         { showLeftScreen(1); showRightScreen('screenSignUp
 function goToSignIn()         { showLeftScreen(0); showRightScreen('screenSignIn'); }
 function goToForgotPassword() { showLeftScreen(2); showRightScreen('screenForgot'); }
 
+/* ── MOBILE NAV ── */
+function toggleMobileNav() {
+  const burger = document.querySelector('.burger-menu');
+  const nav = document.getElementById('mobileNav');
+  burger.classList.toggle('active');
+  nav.classList.toggle('active');
+}
+function closeMobileNav() {
+  const burger = document.querySelector('.burger-menu');
+  const nav = document.getElementById('mobileNav');
+  burger.classList.remove('active');
+  nav.classList.remove('active');
+}
+
 function goToCodeVerification() {
   showLeftScreen(2);
   showRightScreen('screenCodeVerification');
@@ -866,9 +953,8 @@ function goToForgot()        { showRightScreen('screenForgot'); }
 
 /* ── AUTH HANDLERS ── */
 function handleSignIn() {
-  const schoolId = document.querySelector('input[name="studentId"]').value;
-  const password  = document.querySelector('input[name="studentPassword"]').value;
-  const role = 'Student'; // Default to Student since role selection is removed
+  const schoolId = document.querySelector('input[name="schoolId"]').value;
+  const password = document.querySelector('input[name="password"]').value;
 
   if (!schoolId || !password) { alert('Please enter your School ID and password'); return; }
 
@@ -880,13 +966,13 @@ function handleSignIn() {
   fetch('/Home/Login', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ schoolId, password, role })
+    body: JSON.stringify({ schoolId, password })
   })
   .then(r => r.json())
   .then(data => {
     if (data.success) {
       localStorage.setItem('currentUser', JSON.stringify(data.user));
-      window.location.href = data.redirectUrl || '/Home/dashboard1';
+      window.location.href = data.redirectUrl || '/Home/Dashboard';
     } else {
       alert(`Login failed: ${data.message}`);
       btn.textContent = orig; btn.disabled = false;
@@ -1085,6 +1171,17 @@ document.addEventListener('DOMContentLoaded', function() {
   if (homeLink) {
     setActiveNav(homeLink);
   }
+
+  // Close mobile nav when clicking outside
+  document.addEventListener('click', function(e) {
+    const nav = document.getElementById('mobileNav');
+    const burger = document.querySelector('.burger-menu');
+    if (nav && burger && nav.classList.contains('active')) {
+      if (!nav.contains(e.target) && !burger.contains(e.target)) {
+        closeMobileNav();
+      }
+    }
+  });
 });
 </script>
 </body>

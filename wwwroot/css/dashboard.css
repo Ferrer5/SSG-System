@@ -622,3 +622,169 @@ body {
   gap: 20px;
   min-height: calc(100vh - 220px);
 }
+
+/* ── BURGER MENU ───────────────────────────────────── */
+.burger-menu {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+  margin-right: 8px;
+}
+
+.burger-menu:hover { 
+  background: rgba(255,255,255,0.15); 
+}
+
+.burger-menu span {
+  display: block;
+  width: 24px;
+  height: 2.5px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+body.sidebar-open .burger-menu span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+body.sidebar-open .burger-menu span:nth-child(2) {
+  opacity: 0;
+}
+
+body.sidebar-open .burger-menu span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* ── MOBILE OVERLAY ────────────────────────────────── */
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 850;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+body.sidebar-open .mobile-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ── MOBILE RESPONSIVE ─────────────────────────────── */
+@media (max-width: 768px) {
+  .burger-menu { 
+    display: flex; 
+  }
+
+  .header {
+    padding: 0 16px;
+  }
+
+  .header-title {
+    font-size: 16px;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 900;
+    box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+  }
+
+  body.sidebar-open .sidebar {
+    transform: translateX(0);
+  }
+
+  .main {
+    margin-left: 0;
+    padding: 80px 16px 24px;
+    width: 100%;
+  }
+
+  .stat-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .page-section {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .left-column,
+  .right-column {
+    width: 100%;
+  }
+
+  .table-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .data-table {
+    font-size: 13px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 12px 8px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-title {
+    font-size: 14px;
+  }
+
+  .sidebar {
+    width: 260px;
+  }
+
+  .nav-item {
+    width: 236px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    font-size: 14px;
+    padding: 0 12px;
+    height: 36px;
+  }
+}

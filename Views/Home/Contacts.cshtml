@@ -1,0 +1,410 @@
+@{
+    ViewData["Title"] = "Contacts - SSG Portal";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>@ViewData["Title"]</title>
+<link rel="icon" type="image/png" href="/images/favicon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+<style>
+:root {
+  --green:      #27a744;
+  --green-dark: #218c3a;
+  --green-deep: #1a6e2e;
+  --white:      #ffffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  background: #0a280e;
+  color: var(--white);
+}
+
+#heroBg {
+  position: fixed;
+  inset: 0;
+  background: url('/images/CtuGinatilan.jpg') no-repeat center / cover;
+  filter: blur(3px);
+  transform: scale(1.08);
+  z-index: 0;
+}
+
+#heroOverlay {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(20,60,30,0.92) 0%,
+    rgba(10,40,20,0.85) 100%);
+  z-index: 1;
+}
+
+.top-accent {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  z-index: 1000;
+}
+
+/* NAVBAR */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 40px 16px;
+  backdrop-filter: blur(12px);
+  background: rgba(10,30,14,0.55);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.logo img {
+  width: 46px; height: 46px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  padding: 6px;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.05;
+}
+
+.logo-text .brand {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #ffffff 0%, #a0ffc0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.logo-text .sub {
+  font-size: 11.5px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.nav-links { display: flex; align-items: center; gap: 4px; }
+
+.nav-links a {
+  text-decoration: none;
+  color: rgba(255,255,255,0.82);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 8px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.nav-links a:hover { color: var(--white); background: rgba(255,255,255,0.08); }
+
+.nav-links a.active { color: var(--white); font-weight: 600; }
+
+/* Burger Menu */
+.burger-menu {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.burger-menu:hover { background: rgba(255,255,255,0.1); }
+
+.burger-menu span {
+  display: block;
+  width: 24px;
+  height: 2.5px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.burger-menu.active span:nth-child(1) { transform: rotate(45deg) translate(5px, 5px); }
+.burger-menu.active span:nth-child(2) { opacity: 0; }
+.burger-menu.active span:nth-child(3) { transform: rotate(-45deg) translate(5px, -5px); }
+
+/* MAIN CONTENT */
+.main-content {
+  position: relative;
+  z-index: 10;
+  padding: 120px 40px 60px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 42px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  background: linear-gradient(90deg, #ffffff 0%, #a0ffc0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.content-card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.content-card h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--green);
+}
+
+.content-card p {
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 12px;
+}
+
+.contact-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.contact-item:last-child { border-bottom: none; }
+
+.contact-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(39,167,68,0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--green);
+  flex-shrink: 0;
+}
+
+.contact-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--white);
+}
+
+.contact-info p, .contact-info a {
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+}
+
+.contact-info a:hover { color: var(--green); }
+
+.social-links {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.social-links a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  color: var(--white);
+  font-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.social-links a:hover {
+  background: var(--green);
+  transform: translateY(-2px);
+}
+
+/* Mobile Responsive */
+@@media (max-width: 640px) {
+  .burger-menu { display: flex; }
+  
+  .nav-links {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(10,25,14,0.98);
+    backdrop-filter: blur(20px);
+    padding: 12px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    min-width: 180px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px) scale(0.95);
+    transition: all 0.25s ease;
+    z-index: 1000;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+  
+  .nav-links.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+  
+  .nav-links a {
+    display: block;
+    padding: 12px 20px;
+    font-size: 14px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  
+  .nav-links a:hover { background: rgba(255,255,255,0.08); }
+  
+  .navbar { padding: 14px 20px; }
+  .main-content { padding: 100px 20px 40px; }
+  .page-title { font-size: 32px; }
+  .content-card { padding: 24px; }
+  .contact-item { gap: 12px; }
+  .contact-icon { width: 40px; height: 40px; font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-accent"></div>
+<div id="heroBg"></div>
+<div id="heroOverlay"></div>
+
+<nav class="navbar">
+  <div class="logo">
+    <img src="/images/logo.png" alt="SSG Logo">
+    <div class="logo-text">
+      <span class="brand">SSG Finance</span>
+      <span class="sub">Management System</span>
+    </div>
+  </div>
+
+  <button class="burger-menu" onclick="toggleMobileNav()" aria-label="Toggle navigation">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+  <div class="nav-links" id="mobileNav">
+    <a href="@Url.Action("Index", "Home")">Home</a>
+    <a href="@Url.Action("About", "Home")">About</a>
+    <a href="@Url.Action("Contacts", "Home")" class="active">Contacts</a>
+    <a href="@Url.Action("Login", "Home")">Login</a>
+  </div>
+</nav>
+
+<main class="main-content">
+  <h1 class="page-title">Contact Us</h1>
+  
+  <div class="content-card">
+    <h2>Get in Touch</h2>
+    
+    <div class="contact-item">
+      <div class="contact-icon">
+        <ion-icon name="logo-facebook"></ion-icon>
+      </div>
+      <div class="contact-info">
+        <h3>Facebook Group</h3>
+        <a href="https://www.facebook.com/groups/308772583908264" target="_blank">CTU Ginatilan SSG Group</a>
+      </div>
+    </div>
+    
+    <div class="contact-item">
+      <div class="contact-icon">
+        <ion-icon name="logo-facebook"></ion-icon>
+      </div>
+      <div class="contact-info">
+        <h3>Facebook Page</h3>
+        <a href="https://www.facebook.com/profile.php?id=61580269426838" target="_blank">SSG Official Page</a>
+      </div>
+    </div>
+    
+    <div class="contact-item">
+      <div class="contact-icon">
+        <ion-icon name="location-outline"></ion-icon>
+      </div>
+      <div class="contact-info">
+        <h3>Location</h3>
+        <p>Cebu Technological University - Ginatilan Campus<br>Ginatilan, Cebu, Philippines</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="content-card">
+    <h2>Follow Us</h2>
+    <p>Stay updated with the latest news and announcements from the Student Government.</p>
+    <div class="social-links">
+      <a href="https://www.facebook.com/groups/308772583908264" target="_blank" aria-label="Facebook Group">
+        <ion-icon name="logo-facebook"></ion-icon>
+      </a>
+      <a href="https://www.facebook.com/profile.php?id=61580269426838" target="_blank" aria-label="Facebook Page">
+        <ion-icon name="logo-facebook"></ion-icon>
+      </a>
+    </div>
+  </div>
+</main>
+
+<script>
+function toggleMobileNav() {
+  const burger = document.querySelector('.burger-menu');
+  const nav = document.getElementById('mobileNav');
+  burger.classList.toggle('active');
+  nav.classList.toggle('active');
+}
+
+// Close mobile nav when clicking outside
+document.addEventListener('click', function(e) {
+  const nav = document.getElementById('mobileNav');
+  const burger = document.querySelector('.burger-menu');
+  if (nav && burger && nav.classList.contains('active')) {
+    if (!nav.contains(e.target) && !burger.contains(e.target)) {
+      burger.classList.remove('active');
+      nav.classList.remove('active');
+    }
+  }
+});
+</script>
+
+</body>
+</html>

@@ -1,7 +1,10 @@
 @model MyMvcApp.Models.DashboardViewModel
 @{
     Layout = null;
-    var antiforgeryToken = Html.AntiForgeryToken();
+    var firstName = Context.Session.GetString("FirstName") ?? "Admin";
+    var lastName  = Context.Session.GetString("LastName") ?? "";
+    var schoolId  = Context.Session.GetString("SchoolId") ?? "";
+    var antiforgeryToken = ViewContext.HttpContext.RequestServices.GetService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>()?.GetAndStoreTokens(ViewContext.HttpContext).RequestToken;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -16,6 +19,11 @@
  
 <!-- HEADER  -->
 <div class="header">
+  <button class="burger-menu" onclick="toggleSidebar()" aria-label="Toggle navigation">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
   <div class="header-logo">
     <svg viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="10" stroke="#32b357" stroke-width="2"/>
@@ -24,6 +32,9 @@
   </div>
   <div class="header-title">SSG Financial Management System</div>
 </div>
+
+<!-- MOBILE OVERLAY -->
+<div class="mobile-overlay" onclick="closeSidebar()"></div>
  
 <!-- SIDEBAR -->
 <div class="sidebar">
@@ -510,7 +521,7 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'RequestVerificationToken': '@Html.Raw(antiforgeryToken)'
+          'RequestVerificationToken': '@(antiforgeryToken ?? "")'
         },
         body: JSON.stringify(requestData)
       })
@@ -535,6 +546,31 @@
       console.log('User cancelled the action');
     }
   }
+
+  // Mobile Sidebar Toggle
+  function toggleSidebar() {
+    document.body.classList.toggle('sidebar-open');
+  }
+
+  function closeSidebar() {
+    document.body.classList.remove('sidebar-open');
+  }
+
+  // Close sidebar when clicking on nav items (mobile)
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      }
+    });
+  });
+
+  // Close sidebar on window resize to desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      closeSidebar();
+    }
+  });
 </script>
 </body>
 </html>

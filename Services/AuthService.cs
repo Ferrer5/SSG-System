@@ -78,11 +78,18 @@ namespace MyMvcApp.Services
         {
             try
             {
-                // Find account by school ID and role
+                // Find account by school ID and role (Admin accounts may not have User record)
                 var account = await _context.Accounts
-                    .Include(a => a.User)
-                    .ThenInclude(u => u!.AcademicProfile)
                     .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == schoolId.ToLower() && a.Role == role);
+                
+                // Load User separately if account exists (for non-admin roles)
+                User? user = null;
+                if (account != null && role == UserRole.Student)
+                {
+                    user = await _context.Users
+                        .Include(u => u.AcademicProfile)
+                        .FirstOrDefaultAsync(u => u.AccountId == account.AccountId);
+                }
 
                 if (account == null)
                 {
@@ -122,7 +129,7 @@ namespace MyMvcApp.Services
                     Success = true, 
                     Message = "Authentication successful.",
                     Account = account,
-                    User = account.User
+                    User = account.User ?? user
                 };
             }
             catch (Exception ex)

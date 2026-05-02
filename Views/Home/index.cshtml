@@ -567,10 +567,10 @@ body.login-open .lp-right { transform: translateX(0); }
     </div>
 
     <div class="nav-links">
-      <a href="#" style="color: #27a744; font-weight: 600;" onclick="showLandingPage()">Home</a>
-      <a href="https://www.facebook.com/groups/308772583908264" target="_blank">About</a>
-      <a href="https://www.facebook.com/profile.php?id=61580269426838" target="_blank">Contacts</a>
-      <a class="nav-login" onclick="openLogin()">Login</a>
+      <a href="#" onclick="showLandingPage(); setActiveNav(this)">Home</a>
+      <a href="https://www.facebook.com/groups/308772583908264" target="_blank" onclick="setActiveNav(this)">About</a>
+      <a href="https://www.facebook.com/profile.php?id=61580269426838" target="_blank" onclick="setActiveNav(this)">Contacts</a>
+      <a onclick="openLogin(); setActiveNav(this)">Login</a>
     </div>
 
     <div id="clock" class="clock"></div>
@@ -660,44 +660,44 @@ body.login-open .lp-right { transform: translateX(0); }
             <div class="section-title">Personal Information</div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">First name</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="firstName">First name</label>
+                <input type="text" id="firstName" name="firstName" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
-                <label class="form-label">Middle name</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label">Last name</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Email</label>
-                <input type="email" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="middleName">Middle name</label>
+                <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Student ID</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="lastName">Last name</label>
+                <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
-                <label class="form-label">Course</label>
-                <select id="courseSelect" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23fff%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-input" placeholder="Enter here" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="studentId">Student ID</label>
+                <input type="text" id="studentId" name="studentId" class="form-input" placeholder="Enter here" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="course">Course</label>
+                <select id="course" name="course" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23fff%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
                   <option value="">Select a course</option>
                 </select>
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Year Level</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="yearLevel">Year Level</label>
+                <input type="text" id="yearLevel" name="yearLevel" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
-                <label class="form-label">Section</label>
-                <input type="text" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="section">Section</label>
+                <input type="text" id="section" name="section" class="form-input" placeholder="Enter here" />
               </div>
             </div>
           </div>
@@ -706,12 +706,12 @@ body.login-open .lp-right { transform: translateX(0); }
             <div class="section-title">Security</div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
-                <label class="form-label">Confirm password</label>
-                <input type="password" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="confirmPassword">Confirm password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Enter here" />
               </div>
             </div>
           </div>
@@ -810,6 +810,21 @@ function showLandingPage() {
   document.getElementById('landingPage').classList.remove('hidden');
 }
 
+function setActiveNav(clickedElement) {
+  // Get all navigation links
+  const navLinks = document.querySelectorAll('.nav-links a');
+  
+  // Reset all links to original white color
+  navLinks.forEach(link => {
+    link.style.color = '';
+    link.style.fontWeight = '';
+  });
+  
+  // Set the clicked link to green and bold
+  clickedElement.style.color = '#27a744';
+  clickedElement.style.fontWeight = '600';
+}
+
 function closeLogin() {
   document.getElementById('landingPage').classList.remove('hidden');
   document.body.classList.remove('login-open');
@@ -881,17 +896,31 @@ function handleSignIn() {
 }
 
 function handleSignUp() {
-  const get = (label) => {
-    const l = Array.from(document.querySelectorAll('label')).find(x => x.textContent.trim() === label);
-    return l ? (l.nextElementSibling?.value || '') : '';
-  };
+  // Debug: Check if elements exist
+  console.log('Debug: Checking form elements...');
+  console.log('firstName element:', document.getElementById('firstName'));
+  console.log('lastName element:', document.getElementById('lastName'));
+  console.log('email element:', document.getElementById('email'));
+  console.log('password element:', document.getElementById('password'));
+  
+  const firstName = document.getElementById('firstName')?.value || '';
+  const lastName = document.getElementById('lastName')?.value || '';
+  const middleName = document.getElementById('middleName')?.value || '';
+  const email = document.getElementById('email')?.value || '';
+  const password = document.getElementById('password')?.value || '';
+  const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+  const course = document.getElementById('course')?.value || '';
+  const section = document.getElementById('section')?.value || '';
+  const yearLevel = document.getElementById('yearLevel')?.value || '';
+  const studentId = document.getElementById('studentId')?.value || '';
 
-  const firstName = get('First name'), lastName = get('Last name'),
-        middleName = get('Middle name'), email = get('Email'),
-        password   = get('Password'),   confirmPassword = get('Confirm password'),
-        course     = document.getElementById('courseSelect')?.value || '',
-        section    = get('Section'),    yearLevel = get('Year Level'),
-        studentId  = get('Student ID');
+  // Debug: Log collected values
+  console.log('Debug: Collected values:');
+  console.log('firstName:', firstName);
+  console.log('lastName:', lastName);
+  console.log('email:', email);
+  console.log('password:', password ? '[SET]' : '[EMPTY]');
+  console.log('studentId:', studentId);
 
   // Generate School ID from Student ID for now (in real app, this would be separate)
   const schoolId = studentId || `STU-${Date.now()}`;
@@ -907,10 +936,7 @@ function handleSignUp() {
   const orig = btn.textContent;
   btn.textContent = 'Creating Account...'; btn.disabled = true;
 
-  fetch('/Home/Register', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ 
+  const payload = { 
       schoolId, 
       firstName, 
       lastName, 
@@ -922,7 +948,15 @@ function handleSignUp() {
       yearLevel: yearLevel ? parseInt(yearLevel) : null, 
       section, 
       studentId 
-    })
+    };
+    
+    console.log('Debug: Payload being sent:', payload);
+    console.log('Debug: Payload JSON:', JSON.stringify(payload));
+
+  fetch('/Home/Register', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
   })
   .then(r => r.json())
   .then(data => {
@@ -1033,7 +1067,7 @@ async function loadCourses() {
     const r = await fetch('/Home/GetCourses');
     const data = await r.json();
     if (data.success) {
-      const sel = document.getElementById('courseSelect');
+      const sel = document.getElementById('course');
       sel.innerHTML = '<option value="">Select a course</option>';
       data.courses.forEach(c => {
         const opt = document.createElement('option');
@@ -1044,7 +1078,14 @@ async function loadCourses() {
   } catch(e) { console.error('Error loading courses:', e); }
 }
 
-document.addEventListener('DOMContentLoaded', loadCourses);
+document.addEventListener('DOMContentLoaded', function() {
+  loadCourses();
+  // Set Home button as default active state
+  const homeLink = document.querySelector('.nav-links a[href="#"]');
+  if (homeLink) {
+    setActiveNav(homeLink);
+  }
+});
 </script>
 </body>
 </html>

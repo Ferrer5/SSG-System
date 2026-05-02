@@ -13,11 +13,12 @@ namespace MyMvcApp.Models
         [Column("course_code")]
         public string CourseCode { get; set; } = string.Empty;
 
-        [Required]
-        [Column("is_active")]
-        public bool IsActive { get; set; } = true;
+        [StringLength(100)]
+        [Column("course_name")]
+        public string? CourseName { get; set; }
 
         // Navigation properties
         public virtual ICollection<AcademicProfile> AcademicProfiles { get; set; } = new List<AcademicProfile>();
+        public virtual ICollection<FullAmount> FullAmounts { get; set; } = new List<FullAmount>();
     }
 }

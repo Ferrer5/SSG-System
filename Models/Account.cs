@@ -9,19 +9,18 @@ namespace MyMvcApp.Models
         public int AccountId { get; set; }
 
         [Required]
-        [StringLength(150)]
-        [Column("username")]
-        public string Username { get; set; } = string.Empty;
+        [StringLength(50)]
+        [Column("school_id")]
+        public string SchoolId { get; set; } = string.Empty;
 
         [Required]
         [StringLength(150)]
         [Column("password_hash")]
         public string PasswordHash { get; set; } = string.Empty;
 
-        [Required]
         [StringLength(150)]
         [EmailAddress]
-        public string Email { get; set; } = string.Empty;
+        public string? Email { get; set; }
 
         [Required]
         [Column("roles")]
@@ -32,8 +31,8 @@ namespace MyMvcApp.Models
         public RequestStatus RequestStatus { get; set; } = RequestStatus.Pending;
 
         [Required]
-        [Column("is_online")]
-        public bool IsOnline { get; set; } = true;
+        [Column("is_active")]
+        public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -45,14 +44,19 @@ namespace MyMvcApp.Models
         public DateTime? PasswordResetTokenExpires { get; set; }
 
         // Navigation properties
-        public Student? Student { get; set; }
+        public User? User { get; set; }
+        public ICollection<OrgFeePayment> ReceivedPayments { get; set; } = new List<OrgFeePayment>();
+        public ICollection<OtherFund> ReceivedFunds { get; set; } = new List<OtherFund>();
+        public ICollection<Expense> RecordedExpenses { get; set; } = new List<Expense>();
+        public ICollection<Receipt> IssuedReceipts { get; set; } = new List<Receipt>();
     }
 
     public enum UserRole
     {
         Student,
         Treasurer,
-        Admin
+        Admin,
+        Professor
     }
 
     public enum RequestStatus

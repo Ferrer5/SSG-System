@@ -3,20 +3,24 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyMvcApp.Models
 {
-    public class Student
+    public class User
     {
-        public int StudentId { get; set; }
+        [Key]
+        public int UserId { get; set; }
 
         [Required]
         public int AccountId { get; set; }
 
-        [StringLength(50)]
-        public string? Lastname { get; set; }
+        [StringLength(100)]
+        [Column("first_name")]
+        public string? FirstName { get; set; }
 
-        [StringLength(50)]
-        public string? Firstname { get; set; }
+        [StringLength(100)]
+        [Column("last_name")]
+        public string? LastName { get; set; }
 
-        [StringLength(10)]
+        [StringLength(100)]
+        [Column("middle_name")]
         public string? MiddleName { get; set; }
 
         // Navigation properties
@@ -24,5 +28,6 @@ namespace MyMvcApp.Models
         public Account Account { get; set; } = null!;
         
         public AcademicProfile? AcademicProfile { get; set; }
+        public ICollection<OrgFeePayment> Payments { get; set; } = new List<OrgFeePayment>();
     }
 }

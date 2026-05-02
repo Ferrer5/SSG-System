@@ -19,12 +19,12 @@ namespace MyMvcApp.Data
                 // Create default admin account
                 var adminAccount = new Account
                 {
-                    Username = "admin",
+                    SchoolId = "ADMIN-001",
                     Email = "admin@ssg.com",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                     Role = UserRole.Admin,
                     RequestStatus = RequestStatus.Approved, // Auto-approve admin account
-                    IsOnline = false,
+                    IsActive = false,
                     CreatedAt = DateTime.UtcNow
                 };
 

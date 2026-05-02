@@ -19,9 +19,9 @@ namespace MyMvcApp.Services
             {
                 // Find account by email and role
                 var account = await _context.Accounts
-                    .Include(a => a.Student)
-                    .ThenInclude(s => s!.AcademicProfile)
-                    .FirstOrDefaultAsync(a => a.Email.ToLower() == email.ToLower() && a.Role == role);
+                    .Include(a => a.User)
+                    .ThenInclude(u => u!.AcademicProfile)
+                    .FirstOrDefaultAsync(a => a.Email != null && a.Email.ToLower() == email.ToLower() && a.Role == role);
 
                 if (account == null)
                 {
@@ -52,8 +52,8 @@ namespace MyMvcApp.Services
                     };
                 }
 
-                // Update online status
-                account.IsOnline = true;
+                // Update active status
+                account.IsActive = true;
                 await _context.SaveChangesAsync();
 
                 return new AuthResult 
@@ -61,7 +61,7 @@ namespace MyMvcApp.Services
                     Success = true, 
                     Message = "Authentication successful.",
                     Account = account,
-                    Student = account.Student
+                    User = account.User
                 };
             }
             catch (Exception ex)
@@ -74,22 +74,22 @@ namespace MyMvcApp.Services
             }
         }
 
-        public async Task<AuthResult> AuthenticateByUsernameAsync(string username, string password, UserRole role)
+        public async Task<AuthResult> AuthenticateBySchoolIdAsync(string schoolId, string password, UserRole role)
         {
             try
             {
-                // Find account by username and role
+                // Find account by school ID and role
                 var account = await _context.Accounts
-                    .Include(a => a.Student)
-                    .ThenInclude(s => s!.AcademicProfile)
-                    .FirstOrDefaultAsync(a => a.Username.ToLower() == username.ToLower() && a.Role == role);
+                    .Include(a => a.User)
+                    .ThenInclude(u => u!.AcademicProfile)
+                    .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == schoolId.ToLower() && a.Role == role);
 
                 if (account == null)
                 {
                     return new AuthResult 
                     { 
                         Success = false, 
-                        Message = $"No {role} account found with this username." 
+                        Message = $"No {role} account found with this school ID." 
                     };
                 }
 
@@ -113,8 +113,8 @@ namespace MyMvcApp.Services
                     };
                 }
 
-                // Update online status
-                account.IsOnline = true;
+                // Update active status
+                account.IsActive = true;
                 await _context.SaveChangesAsync();
 
                 return new AuthResult 
@@ -122,7 +122,7 @@ namespace MyMvcApp.Services
                     Success = true, 
                     Message = "Authentication successful.",
                     Account = account,
-                    Student = account.Student
+                    User = account.User
                 };
             }
             catch (Exception ex)
@@ -139,36 +139,24 @@ namespace MyMvcApp.Services
         {
             try
             {
-                // Find student by student ID with account
-                var student = await _context.Students
-                    .Include(s => s.Account)
-                    .ThenInclude(a => a!.Student)
-                        .ThenInclude(s => s!.AcademicProfile)
-                    .FirstOrDefaultAsync(s => s.StudentId.ToString() == studentId && s.Account != null && s.Account.Role == role);
+                // Find user by student ID (only for students)
+                var user = await _context.Users
+                    .Include(u => u.Account)
+                    .Include(u => u.AcademicProfile)
+                        .ThenInclude(ap => ap!.Course)
+                    .FirstOrDefaultAsync(u => u.AcademicProfile != null && u.Account != null && u.Account.Role == UserRole.Student);
 
-                if (student == null || student.Account == null)
+                if (user == null || user.Account == null)
                 {
                     return new AuthResult 
                     { 
                         Success = false, 
-                        Message = $"No {role} account found with this student ID." 
-                    };
-                }
-
-                var account = student.Account;
-
-                // Check if account is approved
-                if (account.RequestStatus != RequestStatus.Approved)
-                {
-                    return new AuthResult 
-                    { 
-                        Success = false, 
-                        Message = $"Account is {account.RequestStatus.ToString().ToLower()}. Please contact administrator." 
+                        Message = $"No student account found with this student ID." 
                     };
                 }
 
                 // Verify password
-                if (!VerifyPassword(password, account.PasswordHash))
+                if (!VerifyPassword(password, user.Account.PasswordHash))
                 {
                     return new AuthResult 
                     { 
@@ -177,16 +165,16 @@ namespace MyMvcApp.Services
                     };
                 }
 
-                // Update online status
-                account.IsOnline = true;
+                // Update active status
+                user.Account.IsActive = true;
                 await _context.SaveChangesAsync();
 
                 return new AuthResult 
                 { 
                     Success = true, 
                     Message = "Authentication successful.",
-                    Account = account,
-                    Student = student
+                    Account = user.Account,
+                    User = user
                 };
             }
             catch (Exception ex)
@@ -211,18 +199,6 @@ namespace MyMvcApp.Services
             return BCrypt.Net.BCrypt.HashPassword(password);
         }
 
-        private static string ConvertYearLevelToString(YearLevel? yearLevel)
-        {
-            return yearLevel switch
-            {
-                YearLevel.First => "1",
-                YearLevel.Second => "2",
-                YearLevel.Third => "3",
-                YearLevel.Fourth => "4",
-                _ => "1" // default fallback
-            };
-        }
-
         public async Task<RegistrationResult> RegisterAccountAsync(RegistrationRequest request)
         {
             try
@@ -240,7 +216,7 @@ namespace MyMvcApp.Services
                     };
                 }
 
-                Console.WriteLine($"Starting registration for: {request?.Username}");
+                Console.WriteLine($"Starting registration for: {request?.SchoolId}");
 
                 // Add null check for request
                 if (request == null)
@@ -253,53 +229,64 @@ namespace MyMvcApp.Services
                     };
                 }
 
-                Console.WriteLine($"Request details: Username={request.Username}, Email={request.Email}, Role={request.Role}");
-                Console.WriteLine($"Student fields: Firstname={request.Firstname}, Lastname={request.Lastname}, CourseCode={request.CourseCode}");
+                Console.WriteLine($"Request details: SchoolId={request.SchoolId}, Email={request.Email}, Role={request.Role}");
+                Console.WriteLine($"User fields: FirstName={request.FirstName}, LastName={request.LastName}");
 
                 // Use local variable to avoid null reference warnings
                 var regRequest = request;
 
-                // Check if username already exists
-                var usernameLower = regRequest.Username?.ToLower() ?? "";
-                var existingUsername = await _context.Accounts
-                    .FirstOrDefaultAsync(a => a.Username.ToLower() == usernameLower);
+                // Check if school ID already exists
+                var schoolIdLower = regRequest.SchoolId?.ToLower() ?? "";
+                var existingSchoolId = await _context.Accounts
+                    .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == schoolIdLower);
                 
-                if (existingUsername != null)
+                if (existingSchoolId != null)
                 {
                     return new RegistrationResult 
                     { 
                         Success = false, 
-                        Message = "Username already exists." 
+                        Message = "School ID already exists." 
                     };
                 }
 
-                // Check if email already exists
-                var emailLower = regRequest.Email?.ToLower() ?? "";
-                var existingEmail = await _context.Accounts
-                    .FirstOrDefaultAsync(a => a.Email.ToLower() == emailLower);
-                
-                if (existingEmail != null)
+                // Check if email already exists (if provided)
+                if (!string.IsNullOrWhiteSpace(regRequest.Email))
+                {
+                    var emailLower = regRequest.Email?.ToLower() ?? "";
+                    var existingEmail = await _context.Accounts
+                        .FirstOrDefaultAsync(a => a.Email != null && a.Email.ToLower() == emailLower);
+                    
+                    if (existingEmail != null)
+                    {
+                        return new RegistrationResult 
+                        { 
+                            Success = false, 
+                            Message = "Email already exists." 
+                        };
+                    }
+                }
+
+                // Validate user-specific fields
+                if (string.IsNullOrWhiteSpace(regRequest.FirstName) || 
+                    string.IsNullOrWhiteSpace(regRequest.LastName))
                 {
                     return new RegistrationResult 
                     { 
                         Success = false, 
-                        Message = "Email already exists." 
+                        Message = "First name and last name are required." 
                     };
                 }
 
                 // Validate student-specific fields if role is Student
                 if (regRequest.Role == UserRole.Student)
                 {
-                    if (string.IsNullOrWhiteSpace(regRequest.Firstname) || 
-                        string.IsNullOrWhiteSpace(regRequest.Lastname) ||
-                        string.IsNullOrWhiteSpace(regRequest.CourseCode) ||
-                        !regRequest.YearLevel.HasValue ||
-                        string.IsNullOrWhiteSpace(regRequest.StudentId))
+                    if (string.IsNullOrWhiteSpace(regRequest.CourseCode) ||
+                        !regRequest.YearLevel.HasValue)
                     {
                         return new RegistrationResult 
                         { 
                             Success = false, 
-                            Message = "All student fields are required for student registration." 
+                            Message = "Course code and year level are required for student registration." 
                         };
                     }
                 }
@@ -307,34 +294,33 @@ namespace MyMvcApp.Services
                 // Create account
                 var account = new Account
                 {
-                    Username = request.Username,
+                    SchoolId = request.SchoolId,
                     Email = request.Email,
                     PasswordHash = HashPassword(request.Password),
                     Role = request.Role,
                     RequestStatus = RequestStatus.Pending, // New accounts need approval
-                    IsOnline = false,
+                    IsActive = false,
                     CreatedAt = DateTime.UtcNow
                 };
 
                 _context.Accounts.Add(account);
                 await _context.SaveChangesAsync();
 
-                // Create student record if role is Student
-                Student? student = null;
+                // Create user record
+                var user = new User
+                {
+                    AccountId = account.AccountId,
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    MiddleName = request.MiddleName
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                // Create academic profile if role is Student
                 if (request.Role == UserRole.Student)
                 {
-                    student = new Student
-                    {
-                        StudentId = int.Parse(request.StudentId ?? "0"),
-                        AccountId = account.AccountId,
-                        Firstname = request.Firstname,
-                        Lastname = request.Lastname,
-                        MiddleName = request.MiddleName
-                    };
-
-                    _context.Students.Add(student);
-                    await _context.SaveChangesAsync();
-
                     // Find course
                     Course? course = null;
                     if (!string.IsNullOrWhiteSpace(request.CourseCode))
@@ -348,7 +334,7 @@ namespace MyMvcApp.Services
                             course = new Course
                             {
                                 CourseCode = request.CourseCode,
-                                IsActive = true
+                                CourseName = request.CourseCode // Use course code as name by default
                             };
                             _context.Courses.Add(course);
                             await _context.SaveChangesAsync();
@@ -360,7 +346,7 @@ namespace MyMvcApp.Services
                         course = new Course
                         {
                             CourseCode = "DEFAULT",
-                            IsActive = true
+                            CourseName = "Default Course"
                         };
                         _context.Courses.Add(course);
                         await _context.SaveChangesAsync();
@@ -369,9 +355,9 @@ namespace MyMvcApp.Services
                     // Create academic profile
                     var academicProfile = new AcademicProfile
                     {
-                        StudentId = student.StudentId,
+                        UserId = user.UserId,
                         CourseId = course.CourseId,
-                        YearLevel = ConvertYearLevelToString(request.YearLevel),
+                        YearLevel = request.YearLevel,
                         Section = request.Section ?? "A", // Default section if null
                         AcademicStatus = AcademicStatus.Enrolled
                     };
@@ -385,7 +371,7 @@ namespace MyMvcApp.Services
                     Success = true, 
                     Message = "Account created successfully. Please wait for admin approval.",
                     Account = account,
-                    Student = student
+                    User = user
                 };
             }
             catch (Exception ex)

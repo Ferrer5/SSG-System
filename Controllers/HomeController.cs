@@ -73,9 +73,14 @@ public class HomeController : Controller
                 // For students, authenticate by student ID
                 result = await _authService.AuthenticateByStudentIdAsync(request.StudentId, request.Password, userRole);
             }
+            else if (!string.IsNullOrWhiteSpace(request.SchoolId))
+            {
+                // For all roles, authenticate by school ID
+                result = await _authService.AuthenticateBySchoolIdAsync(request.SchoolId, request.Password, userRole);
+            }
             else
             {
-                // For other roles or fallback, authenticate by email
+                // Fallback to email authentication
                 result = await _authService.AuthenticateAsync(request.Email, request.Password, userRole);
             }
 
@@ -84,8 +89,10 @@ public class HomeController : Controller
                 // Store user info in session (in production, use proper authentication)
                 HttpContext.Session.SetString("UserId", result.Account!.AccountId.ToString());
                 HttpContext.Session.SetString("UserRole", result.Account.Role.ToString());
-                HttpContext.Session.SetString("Username", result.Account.Username);
-                HttpContext.Session.SetString("Email", result.Account.Email);
+                HttpContext.Session.SetString("SchoolId", result.Account.SchoolId);
+                HttpContext.Session.SetString("Email", result.Account.Email ?? "");
+                HttpContext.Session.SetString("FirstName", result.User?.FirstName ?? "");
+                HttpContext.Session.SetString("LastName", result.User?.LastName ?? "");
 
                 return Json(new { 
                     success = true, 
@@ -93,15 +100,12 @@ public class HomeController : Controller
                     redirectUrl = Url.Action("Dashboard", "Home"),
                     user = new {
                         id = result.Account.AccountId,
-                        username = result.Account.Username,
+                        schoolId = result.Account.SchoolId,
                         email = result.Account.Email,
                         role = result.Account.Role.ToString(),
-                        student = result.Student != null ? new {
-                            id = result.Student.StudentId,
-                            firstname = result.Student.Firstname,
-                            lastname = result.Student.Lastname,
-                            middlename = result.Student.MiddleName
-                        } : null
+                        firstName = result.User?.FirstName,
+                        lastName = result.User?.LastName,
+                        middleName = result.User?.MiddleName
                     }
                 });
             }
@@ -124,8 +128,8 @@ public class HomeController : Controller
             Console.WriteLine("Register method called");
             
             // Log incoming request for debugging
-            Console.WriteLine($"Registration request received: Username={request?.Username}, Email={request?.Email}, Role={request?.Role}");
-            Console.WriteLine($"Student fields: Firstname={request?.Firstname}, Lastname={request?.Lastname}, CourseCode={request?.CourseCode}, YearLevel={request?.YearLevel}, StudentId={request?.StudentId}");
+            Console.WriteLine($"Registration request received: SchoolId={request?.SchoolId}, Email={request?.Email}, Role={request?.Role}");
+            Console.WriteLine($"User fields: FirstName={request?.FirstName}, LastName={request?.LastName}, CourseCode={request?.CourseCode}, YearLevel={request?.YearLevel}");
 
             // Validate input
             if (request == null)
@@ -133,15 +137,14 @@ public class HomeController : Controller
                 return Json(new { success = false, message = "Registration request is null." });
             }
 
-            if (string.IsNullOrWhiteSpace(request.Username) || 
-                string.IsNullOrWhiteSpace(request.Email) || 
+            if (string.IsNullOrWhiteSpace(request.SchoolId) || 
                 string.IsNullOrWhiteSpace(request.Password))
             {
-                return Json(new { success = false, message = "Username, email, and password are required." });
+                return Json(new { success = false, message = "School ID and password are required." });
             }
 
-            // Validate email format
-            if (!IsValidEmail(request.Email))
+            // Validate email format (if provided)
+            if (!string.IsNullOrWhiteSpace(request.Email) && !IsValidEmail(request.Email))
             {
                 return Json(new { success = false, message = "Invalid email format." });
             }
@@ -164,7 +167,7 @@ public class HomeController : Controller
                     message = result.Message,
                     account = new {
                         id = result.Account!.AccountId,
-                        username = result.Account.Username,
+                        schoolId = result.Account.SchoolId,
                         email = result.Account.Email,
                         role = result.Account.Role.ToString(),
                         status = result.Account.RequestStatus.ToString()
@@ -250,18 +253,19 @@ public class HomeController : Controller
                 return Json(new { success = false, message = "Student ID is required." });
             }
 
-            // Find student by student ID
-            var student = await _context.Students
-                .Include(s => s.Account)
-                .FirstOrDefaultAsync(s => s.StudentId.ToString() == request.StudentId);
+            // Find user by looking for student with academic profile
+            var user = await _context.Users
+                .Include(u => u.Account)
+                .Include(u => u.AcademicProfile)
+                .FirstOrDefaultAsync(u => u.Account != null && u.Account.Role == UserRole.Student);
             
-            if (student == null || student.Account == null)
+            if (user == null || user.Account == null)
             {
                 // Don't reveal that student ID doesn't exist
                 return Json(new { success = true, message = $"We have sent an email to the Student ID {request.StudentId}, please check your gmail and write the verification code to reset your account's password." });
             }
 
-            var account = student.Account;
+            var account = user.Account;
 
             // Generate 6-digit verification code
             var random = new Random();
@@ -274,9 +278,9 @@ public class HomeController : Controller
             await _context.SaveChangesAsync();
 
             // Send verification code email
-            var emailBody = $@"Hello {account.Username},<br><br>You requested a password reset for your account. this your verification code<br><br>{verificationCode}<br>This code will expire in 15 minutes.<br><br>If you didn't request this, please ignore this email.<br><br><br>Best regards,<br>SSG Financial Management System Team.";
+            var emailBody = $@"Hello {user.FirstName ?? account.SchoolId},<br><br>You requested a password reset for your account. this your verification code<br><br>{verificationCode}<br>This code will expire in 15 minutes.<br><br>If you didn't request this, please ignore this email.<br><br><br>Best regards,<br>SSG Financial Management System Team.";
 
-            await _emailService.SendEmailAsync(account.Email, "Password Reset Verification Code", emailBody);
+            await _emailService.SendEmailAsync(account.Email ?? "", "Password Reset Verification Code", emailBody);
 
             return Json(new { success = true, message = $"We have sent an email to the Student ID {request.StudentId}, please check your gmail and write the verification code to reset your account's password.", studentId = request.StudentId });
         }
@@ -296,17 +300,18 @@ public class HomeController : Controller
                 return Json(new { success = false, message = "Student ID and verification code are required." });
             }
 
-            // Find student by student ID
-            var student = await _context.Students
-                .Include(s => s.Account)
-                .FirstOrDefaultAsync(s => s.StudentId.ToString() == request.StudentId);
+            // Find user by looking for student with academic profile
+            var user = await _context.Users
+                .Include(u => u.Account)
+                .Include(u => u.AcademicProfile)
+                .FirstOrDefaultAsync(u => u.Account != null && u.Account.Role == UserRole.Student);
             
-            if (student == null || student.Account == null)
+            if (user == null || user.Account == null)
             {
                 return Json(new { success = false, message = "Invalid verification code." });
             }
 
-            var account = student.Account;
+            var account = user.Account;
 
             // Verify code and expiration
             if (account.PasswordResetToken != request.Code || 
@@ -356,17 +361,18 @@ public class HomeController : Controller
                 return Json(new { success = false, message = "Password must be at least 6 characters long." });
             }
 
-            // Find student by student ID
-            var student = await _context.Students
-                .Include(s => s.Account)
-                .FirstOrDefaultAsync(s => s.StudentId.ToString() == request.StudentId);
+            // Find user by looking for student with academic profile
+            var user = await _context.Users
+                .Include(u => u.Account)
+                .Include(u => u.AcademicProfile)
+                .FirstOrDefaultAsync(u => u.Account != null && u.Account.Role == UserRole.Student);
             
-            if (student == null || student.Account == null)
+            if (user == null || user.Account == null)
             {
                 return Json(new { success = false, message = "Invalid or expired reset token." });
             }
 
-            var account = student.Account;
+            var account = user.Account;
 
             // Find account by student ID (token should be 'verified' after code verification)
             if (account.PasswordResetToken != "verified" || 
@@ -395,19 +401,19 @@ public class HomeController : Controller
     {
         var pendingAccounts = await _context.Accounts
             .Where(a => a.RequestStatus == RequestStatus.Pending)
-            .Include(a => a.Student)
-                .ThenInclude(s => s!.AcademicProfile)
+            .Include(a => a.User)
+                .ThenInclude(u => u!.AcademicProfile)
                     .ThenInclude(ap => ap!.Course)
             .Select(a => new RequestedAccountViewModel
             {
                 AccountId = a.AccountId,
-                StudentId = a.Student != null ? a.Student.StudentId.ToString() : null,
-                Fullname = a.Student != null ? 
-                    $"{(a.Student.Lastname != null ? a.Student.Lastname.ToUpper() : "")}, {(a.Student.Firstname != null ? a.Student.Firstname.ToUpper() : "")}" : 
-                    a.Username.ToUpper(),
-                CourseCode = a.Student != null && a.Student.AcademicProfile != null && a.Student.AcademicProfile.Course != null ? a.Student.AcademicProfile.Course.CourseCode : null,
-                YearLevel = a.Student != null && a.Student.AcademicProfile != null && a.Student.AcademicProfile.YearLevel != null ? a.Student.AcademicProfile.YearLevel.ToString() : null,
-                Section = a.Student != null && a.Student.AcademicProfile != null ? a.Student.AcademicProfile.Section : null,
+                StudentId = a.User != null ? a.User.UserId.ToString() : null,
+                Fullname = a.User != null ? 
+                    $"{(a.User.LastName != null ? a.User.LastName.ToUpper() : "")}, {(a.User.FirstName != null ? a.User.FirstName.ToUpper() : "")}" : 
+                    a.SchoolId.ToUpper(),
+                CourseCode = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.Course != null ? a.User.AcademicProfile.Course.CourseCode : null,
+                YearLevel = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.YearLevel != null ? a.User.AcademicProfile.YearLevel.ToString() : null,
+                Section = a.User != null && a.User.AcademicProfile != null ? a.User.AcademicProfile.Section : null,
                 CreatedAt = a.CreatedAt,
                 Status = a.RequestStatus
             })
@@ -419,18 +425,18 @@ public class HomeController : Controller
 
     private async Task<List<StudentViewModel>> GetStudentsAsync()
     {
-        var students = await _context.Students
-            .Include(s => s.AcademicProfile)
+        var students = await _context.Users
+            .Include(u => u.AcademicProfile)
                 .ThenInclude(ap => ap!.Course)
-            .Include(s => s.Account)
-            .Where(s => s.Account != null && s.Account.RequestStatus == RequestStatus.Approved)
-            .Select(s => new StudentViewModel
+            .Include(u => u.Account)
+            .Where(u => u.Account != null && u.Account.RequestStatus == RequestStatus.Approved)
+            .Select(u => new StudentViewModel
             {
-                StudentId = s.StudentId,
-                FullName = s.Lastname != null && s.Firstname != null ? $"{s.Lastname.ToUpper()}, {s.Firstname.ToUpper()}" : "N/A",
-                CourseCode = s.AcademicProfile != null && s.AcademicProfile.Course != null ? s.AcademicProfile.Course.CourseCode : "N/A",
-                YearSection = s.AcademicProfile != null ? $"{s.AcademicProfile.YearLevel ?? "N/A"}-{s.AcademicProfile.Section ?? "N/A"}" : "N/A",
-                AccountId = s.AccountId
+                StudentId = u.UserId,
+                FullName = u.LastName != null && u.FirstName != null ? $"{u.LastName.ToUpper()}, {u.FirstName.ToUpper()}" : "N/A",
+                CourseCode = u.AcademicProfile != null && u.AcademicProfile.Course != null ? u.AcademicProfile.Course.CourseCode : "N/A",
+                YearSection = u.AcademicProfile != null ? $"{(u.AcademicProfile.YearLevel.HasValue ? u.AcademicProfile.YearLevel.Value.ToString() : "N/A")}-{(u.AcademicProfile.Section ?? "N/A")}" : "N/A",
+                AccountId = u.AccountId
             })
             .ToListAsync();
 
@@ -484,7 +490,6 @@ public class HomeController : Controller
         try
         {
             var courses = await _context.Courses
-                .Where(c => c.IsActive)
                 .OrderBy(c => c.CourseCode)
                 .Select(c => new { c.CourseId, c.CourseCode })
                 .ToListAsync();
@@ -507,6 +512,7 @@ public class HomeController : Controller
 public class LoginRequest
 {
     public string Email { get; set; } = string.Empty;
+    public string SchoolId { get; set; } = string.Empty;
     public string StudentId { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;

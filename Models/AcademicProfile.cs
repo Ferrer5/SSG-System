@@ -11,13 +11,13 @@ namespace MyMvcApp.Models
         public int AcademicProfileId { get; set; }
 
         [Required]
-        public int StudentId { get; set; }
+        public int UserId { get; set; }
 
         [Required]
         public int CourseId { get; set; }
 
         [Column("year_level")]
-        public string? YearLevel { get; set; }
+        public int? YearLevel { get; set; }
 
         [StringLength(50)]
         public string? Section { get; set; }
@@ -27,19 +27,11 @@ namespace MyMvcApp.Models
         public AcademicStatus AcademicStatus { get; set; } = AcademicStatus.Enrolled;
 
         // Navigation properties
-        [ForeignKey("StudentId")]
-        public Student Student { get; set; } = null!;
+        [ForeignKey("UserId")]
+        public User User { get; set; } = null!;
 
         [ForeignKey("CourseId")]
         public Course Course { get; set; } = null!;
-    }
-
-    public enum YearLevel
-    {
-        First = 1,    // Maps to database '1'
-        Second = 2,   // Maps to database '2'
-        Third = 3,     // Maps to database '3'
-        Fourth = 4     // Maps to database '4'
     }
 
     public enum AcademicStatus

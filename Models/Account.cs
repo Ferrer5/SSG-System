@@ -6,6 +6,7 @@ namespace MyMvcApp.Models
     public class Account
     {
         [Key]
+        [Column("account_id")]
         public int AccountId { get; set; }
 
         [Required]
@@ -20,6 +21,7 @@ namespace MyMvcApp.Models
 
         [StringLength(150)]
         [EmailAddress]
+        [Column("email")]
         public string? Email { get; set; }
 
         [Required]
@@ -34,6 +36,7 @@ namespace MyMvcApp.Models
         [Column("is_active")]
         public bool IsActive { get; set; } = true;
 
+        [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         [StringLength(255)]

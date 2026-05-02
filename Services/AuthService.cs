@@ -305,6 +305,7 @@ namespace MyMvcApp.Services
 
                 _context.Accounts.Add(account);
                 await _context.SaveChangesAsync();
+                Console.WriteLine($"✓ Account saved: {account.AccountId}");
 
                 // Create user record
                 var user = new User
@@ -317,6 +318,7 @@ namespace MyMvcApp.Services
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
+                Console.WriteLine($"✓ User saved: {user.UserId}");
 
                 // Create academic profile if role is Student
                 if (request.Role == UserRole.Student)
@@ -338,6 +340,7 @@ namespace MyMvcApp.Services
                             };
                             _context.Courses.Add(course);
                             await _context.SaveChangesAsync();
+                            Console.WriteLine($"✓ Course saved: {course.CourseId}");
                         }
                     }
                     else
@@ -350,6 +353,7 @@ namespace MyMvcApp.Services
                         };
                         _context.Courses.Add(course);
                         await _context.SaveChangesAsync();
+                        Console.WriteLine($"✓ Default course saved: {course.CourseId}");
                     }
 
                     // Create academic profile
@@ -364,6 +368,7 @@ namespace MyMvcApp.Services
 
                     _context.AcademicProfiles.Add(academicProfile);
                     await _context.SaveChangesAsync();
+                    Console.WriteLine($"✓ Academic profile saved: {academicProfile.UserId}");
                 }
 
                 return new RegistrationResult 
@@ -376,10 +381,13 @@ namespace MyMvcApp.Services
             }
             catch (Exception ex)
             {
+                var inner = ex.InnerException?.Message ?? "No inner exception";
+                var inner2 = ex.InnerException?.InnerException?.Message ?? "No second inner";
+                var stackTrace = ex.StackTrace ?? "No stack trace";
                 return new RegistrationResult 
                 { 
                     Success = false, 
-                    Message = $"Registration failed: {ex.Message}" 
+                    Message = $"Registration failed: {inner} | Inner2: {inner2} | Stack: {stackTrace}" 
                 };
             }
         }

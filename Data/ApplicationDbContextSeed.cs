@@ -24,7 +24,7 @@ namespace MyMvcApp.Data
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
                     Role = UserRole.Admin,
                     RequestStatus = RequestStatus.Approved, // Auto-approve admin account
-                    IsActive = false,
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
 

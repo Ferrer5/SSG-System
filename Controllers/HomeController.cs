@@ -104,12 +104,20 @@ public class HomeController : Controller
             return RedirectToAction("Dashboard", "Home");
 
         var pendingAccounts = await GetPendingAccountsAsync();
+        var allAccountRequests = await GetAllAccountRequestsAsync();
         var students = await GetStudentsAsync();
+        var admins = await GetAdminsAsync();
+        var treasurers = await GetTreasurersAsync();
+        var professors = await GetProfessorsAsync();
 
         var model = new DashboardViewModel
         {
             RequestedAccounts = pendingAccounts,
-            Students = students
+            AllAccountRequests = allAccountRequests,
+            Students = students,
+            Admins = admins,
+            Treasurers = treasurers,
+            Professors = professors
         };
 
         return View("~/Views/Dashboard/admin_dashboard.cshtml", model);
@@ -561,6 +569,32 @@ Best regards,<br>SSG Financial Management System";
             .ToListAsync();
     }
 
+    private async Task<List<RequestedAccountViewModel>> GetAllAccountRequestsAsync()
+    {
+        return await _context.Accounts
+            .Include(a => a.User)
+                .ThenInclude(u => u!.AcademicProfile)
+                    .ThenInclude(ap => ap!.Course)
+            .Select(a => new RequestedAccountViewModel
+            {
+                AccountId  = a.AccountId,
+                StudentId  = a.User != null ? a.User.UserId.ToString() : null,
+                Fullname   = a.User != null
+                    ? $"{(a.User.LastName != null ? a.User.LastName.ToUpper() : "")}, {(a.User.FirstName != null ? a.User.FirstName.ToUpper() : "")}"
+                    : a.SchoolId.ToUpper(),
+                CourseCode = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.Course != null
+                    ? a.User.AcademicProfile.Course.CourseCode : null,
+                YearLevel  = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.YearLevel != null
+                    ? a.User.AcademicProfile.YearLevel.ToString() : null,
+                Section    = a.User != null && a.User.AcademicProfile != null
+                    ? a.User.AcademicProfile.Section : null,
+                CreatedAt  = a.CreatedAt,
+                Status     = a.RequestStatus
+            })
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+    }
+
     private async Task<List<StudentViewModel>> GetStudentsAsync()
     {
         var students = await _context.Users
@@ -583,6 +617,71 @@ Best regards,<br>SSG Financial Management System";
             .ToListAsync();
 
         return students.OrderBy(s => s.FullName).ToList();
+    }
+
+    private async Task<List<AdminViewModel>> GetAdminsAsync()
+    {
+        var admins = await _context.Accounts
+            .Include(a => a.User)
+            .Where(a => a.Role == UserRole.Admin && a.RequestStatus == RequestStatus.Approved)
+            .Select(a => new AdminViewModel
+            {
+                AdminId = a.AccountId,
+                FullName = a.User != null && a.User.LastName != null && a.User.FirstName != null
+                    ? $"{a.User.LastName.ToUpper()}, {a.User.FirstName.ToUpper()}" : "N/A",
+                Email = a.Email ?? "N/A",
+                SchoolId = a.SchoolId ?? "N/A",
+                Role = a.Role.ToString()
+            })
+            .ToListAsync();
+
+        return admins.OrderBy(a => a.FullName).ToList();
+    }
+
+    private async Task<List<TreasurerViewModel>> GetTreasurersAsync()
+    {
+        var treasurers = await _context.Accounts
+            .Include(a => a.User)
+                .ThenInclude(u => u!.AcademicProfile)
+                    .ThenInclude(ap => ap!.Course)
+            .Where(a => a.Role == UserRole.Treasurer && a.RequestStatus == RequestStatus.Approved)
+            .Select(a => new TreasurerViewModel
+            {
+                TreasurerId = a.AccountId,
+                FullName = a.User != null && a.User.LastName != null && a.User.FirstName != null
+                    ? $"{a.User.LastName.ToUpper()}, {a.User.FirstName.ToUpper()}" : "N/A",
+                Email = a.Email ?? "N/A",
+                SchoolId = a.SchoolId ?? "N/A",
+                CourseCode = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.Course != null
+                    ? a.User.AcademicProfile.Course.CourseCode : "N/A",
+                YearSection = a.User != null && a.User.AcademicProfile != null
+                    ? $"{(a.User.AcademicProfile.YearLevel.HasValue ? a.User.AcademicProfile.YearLevel.Value.ToString() : "N/A")}-{(a.User.AcademicProfile.Section ?? "N/A")}"
+                    : "N/A",
+                Role = a.Role.ToString()
+            })
+            .ToListAsync();
+
+        return treasurers.OrderBy(t => t.FullName).ToList();
+    }
+
+    private async Task<List<ProfessorViewModel>> GetProfessorsAsync()
+    {
+        var professors = await _context.Accounts
+            .Include(a => a.User)
+            .Where(a => a.Role == UserRole.Professor && a.RequestStatus == RequestStatus.Approved)
+            .Select(a => new ProfessorViewModel
+            {
+                ProfessorId = a.AccountId,
+                FullName = a.User != null && a.User.LastName != null && a.User.FirstName != null
+                    ? $"{a.User.LastName.ToUpper()}, {a.User.FirstName.ToUpper()}" : "N/A",
+                Email = a.Email ?? "N/A",
+                SchoolId = a.SchoolId ?? "N/A",
+                Department = "N/A", // TODO: Add department field to User or Account model
+                Role = a.Role.ToString()
+            })
+            .ToListAsync();
+
+        return professors.OrderBy(p => p.FullName).ToList();
     }
 }
 

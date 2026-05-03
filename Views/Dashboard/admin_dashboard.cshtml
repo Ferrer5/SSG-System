@@ -461,17 +461,7 @@
         </svg>
         Dashboard
     </a>
-
-    <div class="nav-section-label">Users</div>
-    <a class="nav-item" id="nav-students" onclick="showPage('students')">
-        <svg viewBox="0 0 24 24" fill="none">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Students
-    </a>
-    <a class="nav-item" id="nav-requests" onclick="showPage('requests')">
+     <a class="nav-item" id="nav-requests" onclick="showPage('requests')">
         <svg viewBox="0 0 24 24" fill="none">
             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
             <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
@@ -483,21 +473,44 @@
         }
     </a>
 
-    <div class="nav-section-label">Finance</div>
-    <a class="nav-item" id="nav-transactions" onclick="showPage('transactions')">
+    <div class="nav-section-label">Users</div>
+    <a class="nav-item" id="nav-students" onclick="showPage('students')">
         <svg viewBox="0 0 24 24" fill="none">
-            <path d="M4 6h16M4 10h16M4 14h10M4 18h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
         </svg>
-        Transactions
-    </a>
-    <a class="nav-item" id="nav-reports" onclick="showPage('reports')">
-        <svg viewBox="0 0 24 24" fill="none">
-            <path d="M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M9 7h6M9 11h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Reports
+        Students
     </a>
 
+    <a class="nav-item" id="nav-treasurers" onclick="showPage('treasurers')">
+        <svg viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Treasurers
+    </a>
+
+    <a class="nav-item" id="nav-professors" onclick="showPage('professors')">
+        <svg viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Professors
+    </a>
+
+    <a class="nav-item" id="nav-admins" onclick="showPage('admins')">
+        <svg viewBox="0 0 24 24" fill="none">
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        Admins
+    </a>
+
+    
     <div class="nav-section-label">System</div>
     <a class="nav-item" id="nav-settings" onclick="showPage('settings')">
         <svg viewBox="0 0 24 24" fill="none">
@@ -546,7 +559,7 @@
                     Registered Accounts
                 </div>
                 <div class="stat-value">@(Model.Students?.Count ?? 0)</div>
-                <div class="stat-sub">Active students in system</div>
+                <div class="stat-sub">All Approved Acounts in the system</div>
             </div>
 
             <div class="stat-card">
@@ -577,15 +590,15 @@
                             <th>Course</th>
                             <th>Email</th>
                             <th>Date</th>
-                            <th>Action</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @if (Model.RequestedAccounts != null && Model.RequestedAccounts.Any())
+                        @if (Model.AllAccountRequests != null && Model.AllAccountRequests.Any())
                         {
-                            @foreach (var acct in Model.RequestedAccounts.Take(5))
+                            @foreach (var acct in Model.AllAccountRequests.Take(5))
                             {
-                                <tr id="row-@acct.AccountId">
+                                <tr>
                                     <td class="td-mono td-mid">@(acct.StudentId ?? "—")</td>
                                     <td><strong>@acct.Fullname</strong></td>
                                     <td class="td-mid">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
@@ -593,22 +606,28 @@
                                     <td class="td-mid">—</td>
                                     <td class="td-mono td-mid">@acct.CreatedAt.ToString("MM-d-yyyy")</td>
                                     <td>
-                                        <div class="action-btns">
-                                            <button class="btn-approve" onclick="updateStatus(@acct.AccountId, 'Approved')">Approve</button>
-                                            <button class="btn-reject"  onclick="updateStatus(@acct.AccountId, 'Rejected')">Reject</button>
-                                        </div>
+                                        @{
+                                            var statusClass = acct.Status switch
+                                            {
+                                                RequestStatus.Pending => "badge-yellow",
+                                                RequestStatus.Approved => "badge-green", 
+                                                RequestStatus.Rejected => "badge-red",
+                                                _ => "badge-gray"
+                                            };
+                                        }
+                                        <span class="badge @statusClass">@acct.Status</span>
                                     </td>
                                 </tr>
                             }
                         }
                         else
                         {
-                            <tr class="empty-row"><td colspan="7">No pending account requests.</td></tr>
+                            <tr class="empty-row"><td colspan="7">No account requests found.</td></tr>
                         }
                     </tbody>
                 </table>
             </div>
-            @if ((Model.RequestedAccounts?.Count ?? 0) > 5)
+            @if ((Model.AllAccountRequests?.Count ?? 0) > 5)
             {
                 <div class="view-all-wrap">
                     <button class="btn-outline" onclick="showPage('requests')">View All</button>
@@ -654,6 +673,153 @@
                         else
                         {
                             <tr class="empty-row"><td colspan="4">No students found.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ TREASURERS PAGE ═══ -->
+    <div class="page" id="page-treasurers">
+        <div class="page-title">Treasurers</div>
+        <div class="content-card">
+            <div class="toolbar">
+                <div class="search-input">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="11" cy="11" r="8" stroke-width="1.8"/>
+                        <path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" id="treasurer-search" placeholder="Search treasurers…" oninput="filterTreasurers()" />
+                </div>
+            </div>
+            <div class="tbl-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>School ID</th>
+                            <th>Course</th>
+                            <th>Year &amp; Section</th>
+                        </tr>
+                    </thead>
+                    <tbody id="treasurers-tbody">
+                        @if (Model.Treasurers != null && Model.Treasurers.Any())
+                        {
+                            int i = 1;
+                            @foreach (var treasurer in Model.Treasurers)
+                            {
+                                <tr>
+                                    <td class="td-mono td-mid">@(i++)</td>
+                                    <td><strong>@treasurer.FullName</strong></td>
+                                    <td class="td-mono td-mid">@treasurer.SchoolId</td>
+                                    <td><span class="badge badge-green">@treasurer.CourseCode</span></td>
+                                    <td class="td-mid">@treasurer.YearSection</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="empty-row"><td colspan="5">No treasurers found.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ PROFESSORS PAGE ═══ -->
+    <div class="page" id="page-professors">
+        <div class="page-title">Professors</div>
+        <div class="content-card">
+            <div class="toolbar">
+                <div class="search-input">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="11" cy="11" r="8" stroke-width="1.8"/>
+                        <path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" id="professor-search" placeholder="Search professors…" oninput="filterProfessors()" />
+                </div>
+            </div>
+            <div class="tbl-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>School ID</th>
+                            <th>Email</th>
+                            <th>Department</th>
+                        </tr>
+                    </thead>
+                    <tbody id="professors-tbody">
+                        @if (Model.Professors != null && Model.Professors.Any())
+                        {
+                            int i = 1;
+                            @foreach (var professor in Model.Professors)
+                            {
+                                <tr>
+                                    <td class="td-mono td-mid">@(i++)</td>
+                                    <td><strong>@professor.FullName</strong></td>
+                                    <td class="td-mono td-mid">@professor.SchoolId</td>
+                                    <td class="td-mid">@professor.Email</td>
+                                    <td class="td-mid">@professor.Department</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="empty-row"><td colspan="5">No professors found.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ ADMINS PAGE ═══ -->
+    <div class="page" id="page-admins">
+        <div class="page-title">Admins</div>
+        <div class="content-card">
+            <div class="toolbar">
+                <div class="search-input">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="11" cy="11" r="8" stroke-width="1.8"/>
+                        <path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" id="admin-search" placeholder="Search admins…" oninput="filterAdmins()" />
+                </div>
+            </div>
+            <div class="tbl-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>School ID</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admins-tbody">
+                        @if (Model.Admins != null && Model.Admins.Any())
+                        {
+                            int i = 1;
+                            @foreach (var admin in Model.Admins)
+                            {
+                                <tr>
+                                    <td class="td-mono td-mid">@(i++)</td>
+                                    <td><strong>@admin.FullName</strong></td>
+                                    <td class="td-mono td-mid">@admin.SchoolId</td>
+                                    <td class="td-mid">@admin.Email</td>
+                                    <td><span class="badge badge-green">@admin.Role</span></td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr class="empty-row"><td colspan="5">No admins found.</td></tr>
                         }
                     </tbody>
                 </table>
@@ -709,74 +875,7 @@
         </div>
     </div>
 
-    <!-- ═══ TRANSACTIONS PAGE ═══ -->
-    <div class="page" id="page-transactions">
-        <div class="page-title">Transactions</div>
-        <div class="content-card">
-            <div class="toolbar">
-                <div class="search-input">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <input type="text" placeholder="Search by name…" />
-                </div>
-                <button class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-                    New Transaction
-                </button>
-            </div>
-            <div class="tbl-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Transaction ID</th>
-                            <th>Name</th>
-                            <th>School Year</th>
-                            <th>Semester</th>
-                            <th>Amount</th>
-                            <th>Balance</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="empty-row"><td colspan="8">No transactions found.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═══ REPORTS PAGE ═══ -->
-    <div class="page" id="page-reports">
-        <div class="page-title">Reports</div>
-        <div class="content-card">
-            <div class="toolbar">
-                <div class="search-input">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <input type="text" placeholder="Search expenses…" />
-                </div>
-                <button class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-                    Add Expense
-                </button>
-            </div>
-            <div class="tbl-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Recorded By</th>
-                            <th>Description</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="empty-row"><td colspan="4">No expense records found.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
+    
     <!-- ═══ SETTINGS PAGE ═══ -->
     <div class="page" id="page-settings">
         <div class="page-title">Settings</div>
@@ -824,11 +923,13 @@
             const data = await res.json();
 
             if (data.success) {
-                // Remove both row instances (dashboard + requests page)
-                [`row-${accountId}`, `req-row-${accountId}`].forEach(id => {
-                    const row = document.getElementById(id);
-                    if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
-                });
+                // Remove row from requests page
+                const row = document.getElementById(`req-row-${accountId}`);
+                if (row) { 
+                    row.style.opacity = '0'; 
+                    row.style.transition = 'opacity .3s'; 
+                    setTimeout(() => row.remove(), 300); 
+                }
                 // Update badge count
                 const badge = document.querySelector('.nav-badge');
                 if (badge) {
@@ -854,6 +955,30 @@
     function filterStudents() {
         const q = document.getElementById('student-search').value.toLowerCase();
         document.querySelectorAll('#students-tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    // ── Admin search ────────────────────────────────────────────
+    function filterAdmins() {
+        const q = document.getElementById('admin-search').value.toLowerCase();
+        document.querySelectorAll('#admins-tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    // ── Treasurer search ────────────────────────────────────────────
+    function filterTreasurers() {
+        const q = document.getElementById('treasurer-search').value.toLowerCase();
+        document.querySelectorAll('#treasurers-tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+    }
+
+    // ── Professor search ────────────────────────────────────────────
+    function filterProfessors() {
+        const q = document.getElementById('professor-search').value.toLowerCase();
+        document.querySelectorAll('#professors-tbody tr').forEach(row => {
             row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
         });
     }

@@ -596,6 +596,82 @@ Best regards,<br>SSG Financial Management System";
         return Json(new { taken = true, usedBy = name });
     }
 
+    [HttpPost]
+    public async Task<IActionResult> ChangeRole([FromBody] ChangeRoleRequest request)
+    {
+        try
+        {
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.AccountId == request.AccountId);
+
+            if (account == null)
+                return Json(new { success = false, message = "Account not found." });
+
+            if (!Enum.TryParse<UserRole>(request.Role, out var newRole))
+                return Json(new { success = false, message = "Invalid role." });
+
+            account.Role = newRole;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Role changed to " + request.Role + " successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Failed to change role: " + ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetPendingRequests()
+    {
+        var requests = await GetPendingAccountsAsync();
+        return Json(new { success = true, requests });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetStudentsList()
+    {
+        var students = await GetStudentsAsync();
+        return Json(new { success = true, students });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetTreasurersList()
+    {
+        var treasurers = await GetTreasurersAsync();
+        return Json(new { success = true, treasurers });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetProfessorsList()
+    {
+        var professors = await GetProfessorsAsync();
+        return Json(new { success = true, professors });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAdminsList()
+    {
+        var admins = await GetAdminsAsync();
+        return Json(new { success = true, admins });
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetDashboardStats()
+    {
+        var students   = await GetStudentsAsync();
+        var treasurers = await GetTreasurersAsync();
+        var professors = await GetProfessorsAsync();
+        var admins     = await GetAdminsAsync();
+        var pending    = await GetPendingAccountsAsync();
+
+        return Json(new {
+            success       = true,
+            approvedCount = students.Count + treasurers.Count + professors.Count + admins.Count,
+            pendingCount  = pending.Count
+        });
+    }
+
     // ----------------------------------------------------------------
     // DEBUG / TEST (remove before production)
     // ----------------------------------------------------------------
@@ -715,7 +791,9 @@ Best regards,<br>SSG Financial Management System";
             .Include(u => u.AcademicProfile)
                 .ThenInclude(ap => ap!.Course)
             .Include(u => u.Account)
-            .Where(u => u.Account != null && u.Account.RequestStatus == RequestStatus.Approved)
+            .Where(u => u.Account != null 
+                     && u.Account.RequestStatus == RequestStatus.Approved
+                     && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer))
             .Select(u => new StudentViewModel
             {
                 StudentId   = u.UserId,
@@ -859,4 +937,10 @@ public class UpdateStudentRequest
     public int     CourseId   { get; set; }
     public int?    YearLevel  { get; set; }
     public string? Section    { get; set; }
+}
+
+public class ChangeRoleRequest
+{
+    public int    AccountId { get; set; }
+    public string Role      { get; set; } = string.Empty;
 }

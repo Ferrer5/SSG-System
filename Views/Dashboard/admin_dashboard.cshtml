@@ -145,6 +145,8 @@
         .dropdown-item.danger:hover{background:rgba(239,68,68,.08);color:#f87171}
         .dropdown-item.reactivate{color:#5fdd8e}
         .dropdown-item.reactivate:hover{background:rgba(39,167,68,.08);color:#4ade80}
+        .dropdown-item.has-submenu{position:relative;overflow:visible;}
+        .dropdown-menu{overflow:visible;}
     </style>
 </head>
 <body>
@@ -466,6 +468,22 @@
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                                 Edit
                             </div>
+                            <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, @s.AccountId)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Change Role
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <!-- submenu -->
+                                <div class="dropdown-menu" id="role-submenu-@s.AccountId" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                    <div class="dropdown-item" onclick="changeRole(@s.AccountId, 'Student'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        Student
+                                    </div>
+                                    <div class="dropdown-item" onclick="changeRole(@s.AccountId, 'Treasurer'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                        Treasurer
+                                    </div>
+                                </div>
+                            </div>
                             <div class="dropdown-item @(s.IsActive ? "danger" : "reactivate")" onclick="toggleActivation(@s.AccountId, this)">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                                 <span>@(s.IsActive ? "Deactivate Account" : "Reactivate Account")</span>
@@ -505,7 +523,7 @@
         </div>
       </div>
       <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Course</th><th>Year &amp; Section</th></tr></thead>
+        <table><thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Course</th><th>Year &amp; Section</th><th></th></tr></thead>
         <tbody id="treasurers-tb">
           @if (Model.Treasurers != null && Model.Treasurers.Any())
           {
@@ -518,12 +536,36 @@
                       <td class="td-mono td-m">@t.SchoolId</td>
                       <td><span class="badge bg">@t.CourseCode</span></td>
                       <td class="td-m">@t.YearSection</td>
+                      <td style="width:40px;text-align:right">
+                          <div class="dropdown-wrap">
+                              <button class="dot-btn" onclick="toggleDropdown(this)">
+                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                              </button>
+                              <div class="dropdown-menu">
+                                  <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, @t.TreasurerId)">
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                      Change Role
+                                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                      <div class="dropdown-menu" id="role-submenu-@t.TreasurerId" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                          <div class="dropdown-item" onclick="changeRole(@t.TreasurerId, 'Student'); event.stopPropagation()">
+                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                              Student
+                                          </div>
+                                          <div class="dropdown-item" onclick="changeRole(@t.TreasurerId, 'Treasurer'); event.stopPropagation()">
+                                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                              Treasurer
+                                          </div>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </td>
                   </tr>
               }
           }
           else
           {
-              <tr class="empty-row"><td colspan="5">No treasurers found.</td></tr>
+              <tr class="empty-row"><td colspan="6">No treasurers found.</td></tr>
           }
         </tbody></table>
       </div>
@@ -708,13 +750,21 @@
 <div id="toast"></div>
 
 <script>
-function showPage(name,navEl){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  var page=document.getElementById('page-'+name);
-  if(page)page.classList.add('active');
-  if(navEl)navEl.classList.add('active');
-  else{var n=document.getElementById('nav-'+name);if(n)n.classList.add('active');}
+function showPage(name, navEl) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    var page = document.getElementById('page-' + name);
+    if (page) page.classList.add('active');
+    if (navEl) navEl.classList.add('active');
+    else { var n = document.getElementById('nav-' + name); if (n) n.classList.add('active'); }
+
+    // refresh the tab data
+    if (name === 'dashboard')   refreshDashboard();
+    if (name === 'requests')    refreshRequests();
+    if (name === 'students')    refreshStudents();
+    if (name === 'treasurers')  refreshTreasurers();
+    if (name === 'professors')  refreshProfessors();
+    if (name === 'admins')      refreshAdmins();
 }
 async function updateStatus(accountId, status) {
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
@@ -1019,6 +1069,262 @@ async function toggleActivation(accountId, el) {
 
     // close the dropdown
     document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+function showRoleSubmenu(el, accountId) {
+    event.stopPropagation();
+    document.querySelectorAll('[id^="role-submenu-"]').forEach(function(s) {
+        if (s.id !== 'role-submenu-' + accountId) s.style.display = 'none';
+    });
+    var submenu = document.getElementById('role-submenu-' + accountId);
+    if (submenu) {
+        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+        submenu.classList.add('open');
+    }
+}
+
+async function changeRole(accountId, role) {
+    if (!confirm('Change this account role to ' + role + '?')) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res = await fetch('/Home/ChangeRole', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ?? ''
+            },
+            body: JSON.stringify({ accountId: accountId, role: role })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(data.message, 'ok');
+            // just close dropdown, don't remove the row
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('[id^="role-submenu-"]').forEach(s => s.style.display = 'none');
+}
+
+async function refreshDashboard() {
+    try {
+        const res  = await fetch('/Home/GetDashboardStats');
+        const data = await res.json();
+        if (!data.success) return;
+
+        document.querySelector('#page-dashboard .stat-val').textContent = data.approvedCount;
+    } catch {}
+}
+
+async function refreshRequests() {
+    try {
+        const res  = await fetch('/Home/GetPendingRequests');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.querySelector('#page-requests tbody');
+        if (!tbody) return;
+
+        if (data.requests.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No pending requests.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.requests.map(r => `
+            <tr id="req-row-${r.accountId}">
+                <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
+                <td><strong>${r.fullname}</strong></td>
+                <td class="td-m">${r.courseCode ?? '—'}</td>
+                <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
+                <td class="td-mono td-m">${r.createdAt}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-ap" onclick="updateStatus(${r.accountId}, 'Approved')">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Approve
+                        </button>
+                        <button class="btn-rj" onclick="updateStatus(${r.accountId}, 'Rejected')">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                            Reject
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
+async function refreshStudents() {
+    try {
+        const res  = await fetch('/Home/GetStudentsList');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('students-tb');
+        if (!tbody) return;
+
+        if (data.students.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No students found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.students.map((s, i) => `
+            <tr data-account="${s.accountId}" data-active="${s.isActive}">
+                <td class="td-mono td-m">${i + 1}</td>
+                <td style="color:${s.isActive ? 'inherit' : '#f87171'}">
+                    <strong>${s.fullName}</strong>
+                    ${!s.isActive ? '<span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>' : ''}
+                </td>
+                <td><span class="badge bg">${s.courseCode}</span></td>
+                <td class="td-m">${s.yearSection}</td>
+                <td style="width:40px;text-align:right">
+                    <div class="dropdown-wrap">
+                        <button class="dot-btn" onclick="toggleDropdown(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" onclick="editStudent(${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Edit
+                            </div>
+                            <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, ${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Change Role
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <div class="dropdown-menu" id="role-submenu-${s.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                    <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Student'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        Student
+                                    </div>
+                                    <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Treasurer'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                        Treasurer
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-item ${s.isActive ? 'danger' : 'reactivate'}" onclick="toggleActivation(${s.accountId}, this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <span>${s.isActive ? 'Deactivate Account' : 'Reactivate Account'}</span>
+                            </div>
+                            <div class="dropdown-item danger" onclick="deleteStudent(${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Delete Account
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
+async function refreshTreasurers() {
+    try {
+        const res  = await fetch('/Home/GetTreasurersList');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('treasurers-tb');
+        if (!tbody) return;
+
+        if (data.treasurers.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No treasurers found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.treasurers.map((t, i) => `
+            <tr>
+                <td class="td-mono td-m">${i + 1}</td>
+                <td><strong>${t.fullName}</strong></td>
+                <td class="td-mono td-m">${t.schoolId}</td>
+                <td><span class="badge bg">${t.courseCode}</span></td>
+                <td class="td-m">${t.yearSection}</td>
+                <td style="width:40px;text-align:right">
+                    <div class="dropdown-wrap">
+                        <button class="dot-btn" onclick="toggleDropdown(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, ${t.treasurerId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Change Role
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <div class="dropdown-menu" id="role-submenu-${t.treasurerId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                    <div class="dropdown-item" onclick="changeRole(${t.treasurerId}, 'Student'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        Student
+                                    </div>
+                                    <div class="dropdown-item" onclick="changeRole(${t.treasurerId}, 'Treasurer'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                        Treasurer
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
+async function refreshProfessors() {
+    try {
+        const res  = await fetch('/Home/GetProfessorsList');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('profs-tb');
+        if (!tbody) return;
+
+        if (data.professors.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No professors found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.professors.map((p, i) => `
+            <tr>
+                <td class="td-mono td-m">${i + 1}</td>
+                <td><strong>${p.fullName}</strong></td>
+                <td class="td-mono td-m">${p.schoolId}</td>
+                <td class="td-m">${p.email}</td>
+                <td class="td-m">${p.department}</td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
+async function refreshAdmins() {
+    try {
+        const res  = await fetch('/Home/GetAdminsList');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('admins-tb');
+        if (!tbody) return;
+
+        if (data.admins.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No admins found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.admins.map((a, i) => `
+            <tr>
+                <td class="td-mono td-m">${i + 1}</td>
+                <td><strong>${a.fullName}</strong></td>
+                <td class="td-mono td-m">${a.schoolId}</td>
+                <td class="td-m">${a.email}</td>
+                <td><span class="badge bg">${a.role}</span></td>
+            </tr>
+        `).join('');
+    } catch {}
 }
 </script>
 </body>

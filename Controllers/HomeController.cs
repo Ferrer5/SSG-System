@@ -689,7 +689,7 @@ Best regards,<br>SSG Financial Management System";
     private async Task<int> GetApprovedAccountsCountAsync()
     {
         return await _context.Accounts
-            .Where(a => a.RequestStatus == RequestStatus.Approved)
+            .Where(a => a.RequestStatus == RequestStatus.Approved && a.Role != UserRole.Admin)
             .CountAsync();
     }
 }

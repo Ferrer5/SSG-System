@@ -5,7 +5,7 @@ namespace MyMvcApp.Models
     public class RequestedAccountViewModel
     {
         public int AccountId { get; set; }
-        public string? StudentId { get; set; }
+        public string? SchoolId { get; set; }
         public string Fullname { get; set; } = string.Empty;
         public string? CourseCode { get; set; }
         public string? YearLevel { get; set; }

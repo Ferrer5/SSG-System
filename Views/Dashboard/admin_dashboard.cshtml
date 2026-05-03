@@ -87,7 +87,7 @@
         .stat-trend{font-size:11px;font-weight:500;color:var(--green)}
         .stat-trend.warn{color:#fbbf24}
 
-        .content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;overflow:hidden;margin-bottom:16px;backdrop-filter:blur(8px);position:relative;width:100%}
+        .content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;overflow:visible;margin-bottom:16px;backdrop-filter:blur(8px);position:relative;width:100%;isolation:isolate}
         .content-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent);z-index:1}
         .cc-hdr{display:flex;align-items:center;justify-content:space-between;padding:15px 20px 13px;border-bottom:1px solid rgba(255,255,255,.05)}
         .cc-title{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
@@ -99,7 +99,7 @@
         .search-box input::placeholder{color:var(--text-d)}
         .search-box svg{width:14px;height:14px;color:var(--text-d);flex-shrink:0}
 
-        .tbl-wrap{overflow-x:auto}
+        .tbl-wrap{overflow-x:visible}
         table{width:100%;border-collapse:collapse;font-size:12.5px}
         thead th{padding:10px 15px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
         tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
@@ -133,6 +133,18 @@
         #toast.fail{background:#450a0a;border:1px solid rgba(239,68,68,.3)}
 
         .top-accent{height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);position:absolute;top:0;left:0;right:0}
+        .stat-icon[onclick]:hover{background:rgba(39,167,68,.28);transform:scale(1.1);transition:all .15s}
+        .dropdown-wrap{position:relative;display:inline-block}
+        .dot-btn{background:transparent;border:none;color:var(--text-m);cursor:pointer;padding:4px 6px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .dot-btn:hover{background:var(--glass);color:var(--text)}
+        .dropdown-menu{display:none;position:absolute;right:0;top:32px;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:10px;min-width:180px;z-index:100;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+        .dropdown-menu.open{display:block}
+        .dropdown-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:7px;font-size:12.5px;font-weight:500;color:var(--text-m);cursor:pointer;transition:all .15s;white-space:nowrap}
+        .dropdown-item:hover{background:var(--glass);color:var(--text)}
+        .dropdown-item.danger{color:var(--red-badge-t)}
+        .dropdown-item.danger:hover{background:rgba(239,68,68,.08);color:#f87171}
+        .dropdown-item.reactivate{color:#5fdd8e}
+        .dropdown-item.reactivate:hover{background:rgba(39,167,68,.08);color:#4ade80}
     </style>
 </head>
 <body>
@@ -239,16 +251,18 @@
             <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg>
           </div>
         </div>
-        <div class="stat-trend warn">Awaiting review</div>
+        <div class="stat-trend @((Model.RequestedAccounts?.Count ?? 0) == 0 ? "" : "warn")">
+    @((Model.RequestedAccounts?.Count ?? 0) == 0 ? "No pending requests" : "Awaiting review")
+</div>
       </div>
       <div class="stat-col">
         <div class="stat-card stat-card-half">
           <div class="stat-lbl">Students</div>
           <div class="stat-row">
             <div class="stat-val">@(Model.Students?.Count ?? 0)</div>
-            <div class="stat-icon g">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
+            <div class="stat-icon g" onclick="showPage('students',document.getElementById('nav-students'))" style="cursor:pointer" title="View Students">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           </div>
           <div class="stat-trend">Approved</div>
         </div>
@@ -256,7 +270,7 @@
           <div class="stat-lbl">Treasurers</div>
           <div class="stat-row">
             <div class="stat-val">@(Model.Treasurers?.Count ?? 0)</div>
-            <div class="stat-icon g">
+            <div class="stat-icon g" onclick="showPage('treasurers',document.getElementById('nav-treasurers'))" style="cursor:pointer" title="View Treasurers">
               <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#27a744" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg>
             </div>
           </div>
@@ -268,7 +282,7 @@
           <div class="stat-lbl">Professors</div>
           <div class="stat-row">
             <div class="stat-val">@(Model.Professors?.Count ?? 0)</div>
-            <div class="stat-icon g">
+            <div class="stat-icon g" onclick="showPage('professors',document.getElementById('nav-professors'))" style="cursor:pointer" title="View Professors">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 14l9-5-9-5-9 5 9 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
           </div>
@@ -278,7 +292,7 @@
           <div class="stat-lbl">Admins</div>
           <div class="stat-row">
             <div class="stat-val">@(Model.Admins?.Count ?? 0)</div>
-            <div class="stat-icon g">
+            <div class="stat-icon g" onclick="showPage('admins',document.getElementById('nav-admins'))" style="cursor:pointer" title="View Admins">
               <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </div>
           </div>
@@ -295,18 +309,20 @@
       <div class="tbl-wrap">
         <table>
           <thead>
-            <tr><th>Student ID</th><th>Name</th><th>Year &amp; Section</th><th>Course</th><th>Date</th><th>Status</th></tr>
+            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Status</th></tr>
           </thead>
-          <tbody>
+          <tbody id="recent-tbody">
             @if (Model.AllAccountRequests != null && Model.AllAccountRequests.Any())
             {
-                @foreach (var acct in Model.AllAccountRequests.Take(5))
+                int idx = 0;
+                @foreach (var acct in Model.AllAccountRequests)
                 {
-                    <tr>
-                        <td class="td-mono td-m">@(acct.StudentId ?? "—")</td>
+                    var hidden = idx >= 5 ? "display:none" : "";
+                    <tr class="recent-row" style="@hidden">
+                        <td class="td-mono td-m">@(acct.SchoolId ?? "—")</td>
                         <td><strong>@acct.Fullname</strong></td>
-                        <td class="td-m">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
                         <td class="td-m">@(acct.CourseCode ?? "—")</td>
+                        <td class="td-m">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
                         <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
                         <td>
                             @{
@@ -321,6 +337,7 @@
                             <span class="badge @statusClass">@acct.Status</span>
                         </td>
                     </tr>
+                    idx++;
                 }
             }
             else
@@ -333,7 +350,12 @@
       @if ((Model.AllAccountRequests?.Count ?? 0) > 5)
       {
           <div class="view-all-wrap">
-              <button class="btn-outline" onclick="showPage('requests',document.getElementById('nav-requests'))">View All Requests</button>
+              <button class="btn-outline" id="view-all-btn" 
+                      data-total="@Model.AllAccountRequests!.Count"
+                      data-expanded="false"
+                      onclick="toggleRecentRows()">
+                  View All (@Model.AllAccountRequests!.Count)
+              </button>
           </div>
       }
     </div>
@@ -351,7 +373,7 @@
       <div class="tbl-wrap">
         <table>
           <thead>
-            <tr><th>Student ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Actions</th></tr>
           </thead>
           <tbody>
             @if (Model.RequestedAccounts != null && Model.RequestedAccounts.Any())
@@ -359,12 +381,11 @@
                 @foreach (var acct in Model.RequestedAccounts)
                 {
                     <tr id="req-row-@acct.AccountId">
-                        <td class="td-mono td-m">@(acct.StudentId ?? "—")</td>
+                        <td class="td-mono td-m">@(acct.SchoolId ?? "—")</td>
                         <td><strong>@acct.Fullname</strong></td>
                         <td class="td-m">@(acct.CourseCode ?? "—")</td>
                         <td class="td-m">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
                         <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
-                        <td><span class="badge by">Pending</span></td>
                         <td>
                             <div class="action-btns">
                                 <button class="btn-ap" onclick="updateStatus(@acct.AccountId, 'Approved')">
@@ -382,7 +403,7 @@
             }
             else
             {
-                <tr class="empty-row"><td colspan="7">No pending requests.</td></tr>
+                <tr class="empty-row"><td colspan="6">No pending requests.</td></tr>
             }
           </tbody>
         </table>
@@ -406,24 +427,45 @@
         </div>
       </div>
       <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>Name</th><th>Course</th><th>Year &amp; Section</th></tr></thead>
+        <table><thead><tr><th>#</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th></th></tr></thead>
         <tbody id="students-tb">
           @if (Model.Students != null && Model.Students.Any())
           {
               int i = 1;
               @foreach (var s in Model.Students)
               {
-                  <tr>
+                  <tr data-account="@s.AccountId" data-active="@s.IsActive.ToString().ToLower()">
                       <td class="td-mono td-m">@(i++)</td>
                       <td><strong>@s.FullName</strong></td>
                       <td><span class="badge bg">@s.CourseCode</span></td>
                       <td class="td-m">@s.YearSection</td>
+                  <td style="width:40px;text-align:right">
+                    <div class="dropdown-wrap">
+                        <button class="dot-btn" onclick="toggleDropdown(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" onclick="editStudent(@s.AccountId)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Edit
+                            </div>
+                            <div class="dropdown-item @(s.IsActive ? "danger" : "reactivate")" onclick="toggleActivation(@s.AccountId, this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <span>@(s.IsActive ? "Deactivate Account" : "Reactivate Account")</span>
+                            </div>
+                            <div class="dropdown-item danger" onclick="deleteStudent(@s.AccountId)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Delete Account
+                            </div>
+                        </div>
+                    </div>
+                </td>
                   </tr>
               }
           }
           else
           {
-              <tr class="empty-row"><td colspan="4">No students found.</td></tr>
+              <tr class="empty-row"><td colspan="5">No students found.</td></tr>
           }
         </tbody></table>
       </div>
@@ -485,6 +527,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
           <input type="text" placeholder="Search professors…" oninput="filterTable(this,'profs-tb')" />
         </div>
+        <button class="btn-ap" onclick="showAddProfessorModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          Add Professor
+        </button>
       </div>
       <div class="tbl-wrap">
         <table><thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Email</th><th>Department</th></tr></thead>
@@ -612,6 +658,124 @@ function showToast(msg,type){
   var t=document.getElementById('toast');
   t.textContent=msg;t.className='show '+type;
   clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);
+}
+function showAddProfessorModal(){
+  showToast('Add Professor feature coming soon!', 'ok');
+}
+function toggleRecentRows() {
+    var rows = document.querySelectorAll('.recent-row');
+    var btn = document.getElementById('view-all-btn');
+    var isExpanded = btn.getAttribute('data-expanded') === 'true';
+    
+    rows.forEach(function(row, i) {
+        if (i >= 5) {
+            row.style.display = isExpanded ? 'none' : '';
+        }
+    });
+    
+    btn.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
+    var total = btn.getAttribute('data-total');
+    btn.textContent = isExpanded ? 'View All (' + total + ')' : 'Show Less';
+}
+function toggleDropdown(btn) {
+    // close all other open dropdowns first
+    document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
+        if (m !== btn.nextElementSibling) m.classList.remove('open');
+    });
+    btn.nextElementSibling.classList.toggle('open');
+}
+
+// close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.dropdown-wrap')) {
+        document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
+            m.classList.remove('open');
+        });
+    }
+});
+
+function editStudent(accountId) {
+    showToast('Edit feature coming soon!', 'ok');
+}
+async function deleteStudent(accountId) {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this account? This cannot be undone.')) return;
+    
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    
+    try {
+        const res = await fetch('/Home/DeleteAccount', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ?? ''
+            },
+            body: JSON.stringify({ accountId: accountId })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+            const row = document.querySelector(`[data-account="${accountId}"]`);
+            if (row) {
+                row.style.opacity = '0';
+                row.style.transition = 'opacity .3s';
+                setTimeout(() => row.remove(), 300);
+            }
+            showToast(data.message, 'ok');
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+}
+
+async function toggleActivation(accountId, el) {
+    const row = document.querySelector(`[data-account="${accountId}"]`);
+    const isActive = row.getAttribute('data-active') === 'true';
+    const action = isActive ? 'deactivate' : 'reactivate';
+
+    if (!confirm(`Are you sure you want to ${action} this account?`)) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res = await fetch('/Home/ToggleAccountActivation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ?? ''
+            },
+            body: JSON.stringify({ accountId: accountId })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            // update data-active on the row
+            row.setAttribute('data-active', data.isActive.toString());
+
+            // update the button text
+            const span = el.querySelector('span');
+            if (span) span.textContent = data.isActive ? 'Deactivate Account' : 'Reactivate Account';
+
+            // swap the color class
+            el.classList.remove('danger', 'reactivate');
+            el.classList.add(data.isActive ? 'danger' : 'reactivate');
+
+            // optionally dim the row if deactivated
+            row.style.opacity = data.isActive ? '1' : '0.45';
+
+            showToast(data.message, 'ok');
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+
+    // close the dropdown
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
 }
 </script>
 </body>

@@ -109,7 +109,6 @@ public class HomeController : Controller
         var admins = await GetAdminsAsync();
         var treasurers = await GetTreasurersAsync();
         var professors = await GetProfessorsAsync();
-        var approvedAccountsCount = await GetApprovedAccountsCountAsync();
 
         var model = new DashboardViewModel
         {
@@ -119,7 +118,7 @@ public class HomeController : Controller
             Admins = admins,
             Treasurers = treasurers,
             Professors = professors,
-            ApprovedAccountsCount = approvedAccountsCount
+            ApprovedAccountsCount = students.Count + treasurers.Count + professors.Count + admins.Count
         };
 
         return View("~/Views/Dashboard/admin_dashboard.cshtml", model);
@@ -434,32 +433,66 @@ Best regards,<br>SSG Financial Management System";
         try
         {
             // Guard: only Admin can approve/reject accounts
-            var role = HttpContext.Session.GetString("UserRole");
-            if (role != "Admin")
-                return Json(new { success = false, message = "Unauthorized." });
-
-            if (request.AccountId <= 0)
-                return Json(new { success = false, message = "Invalid account ID." });
-
             var account = await _context.Accounts.FindAsync(request.AccountId);
             if (account == null)
                 return Json(new { success = false, message = "Account not found." });
 
-            if (!Enum.TryParse<RequestStatus>(request.Status, true, out var newStatus))
-                return Json(new { success = false, message = "Invalid status." });
-
-            account.RequestStatus = newStatus;
+            account.RequestStatus = request.Status;
             await _context.SaveChangesAsync();
 
-            return Json(new
-            {
-                success = true,
-                message = $"Account has been {newStatus.ToString().ToLower()} successfully."
-            });
+            return Json(new { success = true, message = $"Account {request.Status} successfully." });
         }
         catch (Exception ex)
         {
             return Json(new { success = false, message = $"Failed to update account status: {ex.Message}" });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ToggleAccountActivation([FromBody] DeactivateRequest request)
+    {
+        try
+        {
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.AccountId == request.AccountId);
+
+            if (account == null)
+                return Json(new { success = false, message = "Account not found." });
+
+            account.IsActive = !account.IsActive;
+            await _context.SaveChangesAsync();
+
+            return Json(new { 
+                success = true, 
+                isActive = account.IsActive,
+                message = account.IsActive ? "Account reactivated." : "Account deactivated."
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Failed to toggle account activation: {ex.Message}" });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteAccount([FromBody] DeactivateRequest request)
+    {
+        try
+        {
+            var account = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.AccountId == request.AccountId);
+
+            if (account == null)
+                return Json(new { success = false, message = "Account not found." });
+
+            _context.Accounts.Remove(account);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Account deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Cannot delete — account may have related records." });
         }
     }
 
@@ -547,14 +580,14 @@ Best regards,<br>SSG Financial Management System";
     private async Task<List<RequestedAccountViewModel>> GetPendingAccountsAsync()
     {
         return await _context.Accounts
-            .Where(a => a.RequestStatus == RequestStatus.Pending)
+            .Where(a => a.RequestStatus == RequestStatus.Pending && a.Role == UserRole.Student)
             .Include(a => a.User)
                 .ThenInclude(u => u!.AcademicProfile)
                     .ThenInclude(ap => ap!.Course)
             .Select(a => new RequestedAccountViewModel
             {
                 AccountId  = a.AccountId,
-                StudentId  = a.User != null ? a.User.UserId.ToString() : null,
+                SchoolId   = a.SchoolId,
                 Fullname   = a.User != null
                     ? $"{(a.User.LastName != null ? a.User.LastName.ToUpper() : "")}, {(a.User.FirstName != null ? a.User.FirstName.ToUpper() : "")}"
                     : a.SchoolId.ToUpper(),
@@ -574,13 +607,14 @@ Best regards,<br>SSG Financial Management System";
     private async Task<List<RequestedAccountViewModel>> GetAllAccountRequestsAsync()
     {
         return await _context.Accounts
+            .Where(a => a.Role == UserRole.Student)
             .Include(a => a.User)
                 .ThenInclude(u => u!.AcademicProfile)
                     .ThenInclude(ap => ap!.Course)
             .Select(a => new RequestedAccountViewModel
             {
                 AccountId  = a.AccountId,
-                StudentId  = a.User != null ? a.User.UserId.ToString() : null,
+                SchoolId   = a.SchoolId,
                 Fullname   = a.User != null
                     ? $"{(a.User.LastName != null ? a.User.LastName.ToUpper() : "")}, {(a.User.FirstName != null ? a.User.FirstName.ToUpper() : "")}"
                     : a.SchoolId.ToUpper(),
@@ -614,7 +648,8 @@ Best regards,<br>SSG Financial Management System";
                 YearSection = u.AcademicProfile != null
                     ? $"{(u.AcademicProfile.YearLevel.HasValue ? u.AcademicProfile.YearLevel.Value.ToString() : "N/A")}-{(u.AcademicProfile.Section ?? "N/A")}"
                     : "N/A",
-                AccountId   = u.AccountId
+                AccountId   = u.AccountId,
+                IsActive    = u.Account != null ? u.Account.IsActive : false
             })
             .ToListAsync();
 
@@ -686,13 +721,7 @@ Best regards,<br>SSG Financial Management System";
         return professors.OrderBy(p => p.FullName).ToList();
     }
 
-    private async Task<int> GetApprovedAccountsCountAsync()
-    {
-        return await _context.Accounts
-            .Where(a => a.RequestStatus == RequestStatus.Approved && a.Role != UserRole.Admin)
-            .CountAsync();
     }
-}
 
 // ----------------------------------------------------------------
 // REQUEST / RESPONSE MODELS
@@ -718,6 +747,11 @@ public class VerifyCodeRequest
     public string Code      { get; set; } = string.Empty;
 }
 
+public class DeactivateRequest
+{
+    public int AccountId { get; set; }
+}
+
 public class ResetPasswordRequest
 {
     public string Token       { get; set; } = string.Empty;
@@ -733,6 +767,6 @@ public class ResetPasswordViewModel
 
 public class UpdateAccountStatusRequest
 {
-    public int    AccountId { get; set; }
-    public string Status    { get; set; } = string.Empty;
+    public int           AccountId { get; set; }
+    public RequestStatus Status    { get; set; }
 }

@@ -15,6 +15,8 @@ namespace MyMvcApp.Models
         public List<TreasurerViewModel> Treasurers { get; set; } = new();
         
         public List<ProfessorViewModel> Professors { get; set; } = new();
+        
+        public int ApprovedAccountsCount { get; set; }
     }
 
     public class AdminViewModel

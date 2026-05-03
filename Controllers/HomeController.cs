@@ -109,6 +109,7 @@ public class HomeController : Controller
         var admins = await GetAdminsAsync();
         var treasurers = await GetTreasurersAsync();
         var professors = await GetProfessorsAsync();
+        var approvedAccountsCount = await GetApprovedAccountsCountAsync();
 
         var model = new DashboardViewModel
         {
@@ -117,7 +118,8 @@ public class HomeController : Controller
             Students = students,
             Admins = admins,
             Treasurers = treasurers,
-            Professors = professors
+            Professors = professors,
+            ApprovedAccountsCount = approvedAccountsCount
         };
 
         return View("~/Views/Dashboard/admin_dashboard.cshtml", model);
@@ -682,6 +684,13 @@ Best regards,<br>SSG Financial Management System";
             .ToListAsync();
 
         return professors.OrderBy(p => p.FullName).ToList();
+    }
+
+    private async Task<int> GetApprovedAccountsCountAsync()
+    {
+        return await _context.Accounts
+            .Where(a => a.RequestStatus == RequestStatus.Approved)
+            .CountAsync();
     }
 }
 

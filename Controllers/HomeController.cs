@@ -100,7 +100,7 @@ public class HomeController : Controller
         if (string.IsNullOrEmpty(role))
             return RedirectToAction("Login", "Home");
 
-        if (role != "Admin")
+        if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
             return RedirectToAction("Dashboard", "Home");
 
         var pendingAccounts = await GetPendingAccountsAsync();
@@ -470,7 +470,7 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Failed to toggle account activation: {ex.Message}" });
+            return Json(new { success = false, message = $"Failed: {ex.Message}" });
         }
     }
 
@@ -492,13 +492,72 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = "Cannot delete — account may have related records." });
+            return Json(new { success = false, message = $"Cannot delete — account may have related records: {ex.Message}" });
         }
     }
 
-    // ----------------------------------------------------------------
-    // COURSES
-    // ----------------------------------------------------------------
+    [HttpGet]
+    public async Task<IActionResult> GetStudent(int accountId)
+    {
+        var user = await _context.Users
+            .Include(u => u.Account)
+            .Include(u => u.AcademicProfile)
+                .ThenInclude(ap => ap!.Course)
+            .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+        if (user == null)
+            return Json(new { success = false, message = "Student not found." });
+
+        return Json(new {
+            success    = true,
+            firstName  = user.FirstName,
+            lastName   = user.LastName,
+            middleName = user.MiddleName,
+            email      = user.Account?.Email,
+            courseId   = user.AcademicProfile?.CourseId,
+            yearLevel  = user.AcademicProfile?.YearLevel,
+            section    = user.AcademicProfile?.Section
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateStudent([FromBody] UpdateStudentRequest request)
+    {
+        try
+        {
+            var user = await _context.Users
+                .Include(u => u.Account)
+                .Include(u => u.AcademicProfile)
+                .FirstOrDefaultAsync(u => u.AccountId == request.AccountId);
+
+            if (user == null)
+                return Json(new { success = false, message = "Student not found." });
+
+            // update name
+            user.FirstName  = request.FirstName;
+            user.LastName   = request.LastName;
+            user.MiddleName = request.MiddleName;
+
+            // update email on the account
+            if (user.Account != null)
+                user.Account.Email = request.Email;
+
+            // update academic profile
+            if (user.AcademicProfile != null)
+            {
+                user.AcademicProfile.CourseId   = request.CourseId;
+                user.AcademicProfile.YearLevel  = request.YearLevel;
+                user.AcademicProfile.Section    = request.Section;
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Student updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Update failed: {ex.Message}" });
+        }
+    }
 
     [HttpGet]
     public async Task<IActionResult> GetCourses()
@@ -516,6 +575,25 @@ Best regards,<br>SSG Financial Management System";
         {
             return Json(new { success = false, message = $"Failed to get courses: {ex.Message}" });
         }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> CheckEmail(string email, int excludeAccountId)
+    {
+        var account = await _context.Accounts
+            .Include(a => a.User)
+            .FirstOrDefaultAsync(a => a.Email != null 
+                                   && a.Email.ToLower() == email.ToLower() 
+                                   && a.AccountId != excludeAccountId);
+
+        if (account == null)
+            return Json(new { taken = false });
+
+        var name = account.User != null
+            ? $"{account.User.FirstName} {account.User.LastName}"
+            : account.SchoolId;
+
+        return Json(new { taken = true, usedBy = name });
     }
 
     // ----------------------------------------------------------------
@@ -769,4 +847,16 @@ public class UpdateAccountStatusRequest
 {
     public int           AccountId { get; set; }
     public RequestStatus Status    { get; set; }
+}
+
+public class UpdateStudentRequest
+{
+    public int     AccountId  { get; set; }
+    public string? FirstName  { get; set; }
+    public string? LastName   { get; set; }
+    public string? MiddleName { get; set; }
+    public string? Email      { get; set; }
+    public int     CourseId   { get; set; }
+    public int?    YearLevel  { get; set; }
+    public string? Section    { get; set; }
 }

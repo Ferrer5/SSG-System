@@ -436,7 +436,24 @@
               {
                   <tr data-account="@s.AccountId" data-active="@s.IsActive.ToString().ToLower()">
                       <td class="td-mono td-m">@(i++)</td>
-                      <td><strong>@s.FullName</strong></td>
+                      <td style="color: @(s.IsActive ? "inherit" : "#f87171")">
+    <strong>@s.FullName</strong>
+    @if (!s.IsActive) {
+        <span style="
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(239,68,68,.15);
+            color: #f87171;
+            border: 1px solid rgba(239,68,68,.25);
+            border-radius: 5px;
+            padding: 1px 7px;
+            margin-left: 8px;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            vertical-align: middle;
+        ">Deactivated</span>
+    }
+</td>
                       <td><span class="badge bg">@s.CourseCode</span></td>
                       <td class="td-m">@s.YearSection</td>
                   <td style="width:40px;text-align:right">
@@ -614,6 +631,80 @@
 </div>
 
 @Html.AntiForgeryToken()
+
+<!-- EDIT STUDENT MODAL -->
+<div id="editModal" style="display:none;position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;">
+  <!-- backdrop -->
+  <div onclick="closeEditModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
+  <!-- modal box -->
+  <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#fff">Edit Student</div>
+        <div style="font-size:11.5px;color:var(--text-m);margin-top:2px">Changes will be saved to the database</div>
+      </div>
+      <button onclick="closeEditModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+
+    <input type="hidden" id="edit-accountId" />
+
+    <!-- Name fields -->
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Personal Information</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">First Name</label>
+        <input id="edit-firstName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last Name</label>
+        <input id="edit-lastName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Middle Name</label>
+      <input id="edit-middleName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Email</label>
+      <input type="email" placeholder="e.g. student@email.com"
+             id="edit-email"
+             oninput="checkEmailAvailability(this.value)"
+             style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s" />
+      <div id="email-feedback" style="font-size:11px;margin-top:5px;min-height:16px"></div>
+    </div>
+
+    <!-- Academic fields -->
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Academic Information</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Course</label>
+      <select id="edit-courseId" style="width:100%;background:#0a1f10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px">
+        <option value="">Loading courses…</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px">
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Year Level</label>
+        <select id="edit-yearLevel" style="width:100%;background:#0a1f10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px">
+          <option value="1">1st Year</option>
+          <option value="2">2nd Year</option>
+          <option value="3">3rd Year</option>
+          <option value="4">4th Year</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Section</label>
+        <input id="edit-section" type="text" placeholder="e.g. A" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeEditModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveStudent()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save Changes</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -694,34 +785,172 @@ document.addEventListener('click', function(e) {
     }
 });
 
-function editStudent(accountId) {
-    showToast('Edit feature coming soon!', 'ok');
+// holds courses list so we only fetch once
+let coursesCache = [];
+
+let emailCheckTimer = null;
+let emailIsTaken = false;
+
+function checkEmailAvailability(value) {
+    const feedback = document.getElementById('email-feedback');
+    const input = document.getElementById('edit-email');
+    const accountId = parseInt(document.getElementById('edit-accountId').value);
+
+    clearTimeout(emailCheckTimer);
+
+    if (!value || !value.includes('@@')) {
+        feedback.textContent = '';
+        input.style.borderColor = 'rgba(255,255,255,0.12)';
+        return;
+    }
+
+    emailCheckTimer = setTimeout(async () => {
+        try {
+            const res = await fetch('/Home/CheckEmail?email=' + encodeURIComponent(value) + '&excludeAccountId=' + accountId);
+            const data = await res.json();
+
+            if (data.taken) {
+                emailIsTaken = true;
+                feedback.textContent = 'This email is already used by ' + data.usedBy;
+                feedback.style.color = '#f87171';
+                input.style.borderColor = 'rgba(239,68,68,0.5)';
+            } else {
+                emailIsTaken = false;
+                feedback.textContent = 'Email is available';
+                feedback.style.color = '#5fdd8e';
+                input.style.borderColor = 'rgba(39,167,68,0.5)';
+            }
+        } catch {
+            feedback.textContent = '';
+        }
+    }, 500); // debounce — waits 500ms after user stops typing
+}
+
+async function loadCoursesIntoSelect() {
+    if (coursesCache.length > 0) return; // already loaded
+    try {
+        const res  = await fetch('/Home/GetCourses');
+        const data = await res.json();
+        if (data.success) {
+            coursesCache = data.courses;
+            const sel = document.getElementById('edit-courseId');
+            sel.innerHTML = '<option value="">Select course</option>';
+            data.courses.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value       = c.courseId;
+                opt.textContent = c.courseCode;
+                sel.appendChild(opt);
+            });
+        }
+    } catch { showToast('Failed to load courses.', 'fail'); }
+}
+
+async function editStudent(accountId) {
+    document.getElementById('editModal').style.display = 'flex';
+    document.getElementById('edit-accountId').value = accountId;
+
+    // load courses first
+    await loadCoursesIntoSelect();
+
+    // fetch current student data
+    try {
+        const res  = await fetch(`/Home/GetStudent?accountId=${accountId}`);
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('edit-firstName').value  = data.firstName  ?? '';
+            document.getElementById('edit-lastName').value   = data.lastName   ?? '';
+            document.getElementById('edit-middleName').value = data.middleName ?? '';
+            document.getElementById('edit-email').value     = data.email     ?? '';
+            document.getElementById('edit-courseId').value   = data.courseId   ?? '';
+            document.getElementById('edit-yearLevel').value  = data.yearLevel  ?? '1';
+            document.getElementById('edit-section').value    = data.section    ?? '';
+        } else {
+            showToast(data.message, 'fail');
+            closeEditModal();
+        }
+    } catch { showToast('Failed to load student.', 'fail'); closeEditModal(); }
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    emailIsTaken = false;
+    document.getElementById('email-feedback').textContent = '';
+}
+
+async function saveStudent() {
+    const accountId  = parseInt(document.getElementById('edit-accountId').value);
+    const firstName  = document.getElementById('edit-firstName').value.trim();
+    const lastName   = document.getElementById('edit-lastName').value.trim();
+    const middleName = document.getElementById('edit-middleName').value.trim();
+    const email      = document.getElementById('edit-email').value.trim();
+    const courseId   = parseInt(document.getElementById('edit-courseId').value);
+    const yearLevel  = parseInt(document.getElementById('edit-yearLevel').value);
+    const section    = document.getElementById('edit-section').value.trim();
+
+    if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
+    if (!courseId)                { showToast('Please select a course.', 'fail'); return; }
+
+    if (emailIsTaken) {
+        showToast('Please use a different email address.', 'fail');
+        return;
+    }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res  = await fetch('/Home/UpdateStudent', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ accountId, firstName, lastName, middleName, email, courseId, yearLevel, section })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // update the row in the DOM without reload
+            const row       = document.querySelector(`[data-account="${accountId}"]`);
+            const nameCell  = row?.querySelector('td:nth-child(2)');
+            const courseCell = row?.querySelector('td:nth-child(3)');
+            const yearCell  = row?.querySelector('td:nth-child(4)');
+
+            if (nameCell) {
+                const isActive = row.getAttribute('data-active') === 'true';
+                const fullName = `${lastName.toUpperCase()}, ${firstName.toUpperCase()}`;
+                nameCell.innerHTML = isActive
+                    ? `<strong>${fullName}</strong>` 
+                    : `<strong style="color:#f87171">${fullName}</strong>
+                       <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>`;
+            }
+            if (courseCell) {
+                const courseName = coursesCache.find(c => c.courseId === courseId)?.courseCode ?? '';
+                courseCell.innerHTML = `<span class="badge bg">${courseName}</span>`;
+            }
+            if (yearCell) {
+                yearCell.textContent = `${yearLevel}-${section}`;
+            }
+
+            closeEditModal();
+            showToast(data.message, 'ok');
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch { showToast('Save failed. Please try again.', 'fail'); }
 }
 async function deleteStudent(accountId) {
     if (!confirm('Are you sure you want to PERMANENTLY delete this account? This cannot be undone.')) return;
-    
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    
     try {
         const res = await fetch('/Home/DeleteAccount', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'RequestVerificationToken': token ?? ''
-            },
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
             body: JSON.stringify({ accountId: accountId })
         });
-        
         const data = await res.json();
-        
         if (data.success) {
+            // remove the row from DOM instantly
             const row = document.querySelector(`[data-account="${accountId}"]`);
-            if (row) {
-                row.style.opacity = '0';
-                row.style.transition = 'opacity .3s';
-                setTimeout(() => row.remove(), 300);
-            }
+            if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
             showToast(data.message, 'ok');
+            // NO redirect here
         } else {
             showToast(data.message, 'fail');
         }
@@ -752,19 +981,33 @@ async function toggleActivation(accountId, el) {
         const data = await res.json();
 
         if (data.success) {
-            // update data-active on the row
             row.setAttribute('data-active', data.isActive.toString());
 
-            // update the button text
+            // update button text and color
             const span = el.querySelector('span');
             if (span) span.textContent = data.isActive ? 'Deactivate Account' : 'Reactivate Account';
-
-            // swap the color class
             el.classList.remove('danger', 'reactivate');
             el.classList.add(data.isActive ? 'danger' : 'reactivate');
 
-            // optionally dim the row if deactivated
-            row.style.opacity = data.isActive ? '1' : '0.45';
+            // update the name cell — add/remove red color and badge
+            const nameCell = row.querySelector('td:nth-child(2)');
+            if (nameCell) {
+                const strong = nameCell.querySelector('strong');
+                const nameText = strong ? strong.textContent : '';
+
+                if (!data.isActive) {
+                    // deactivated → red + badge
+                    nameCell.innerHTML = `
+                        <strong style="color:#f87171">${nameText}</strong>
+                        <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>
+                    `;
+                    row.style.opacity = '0.45';
+                } else {
+                    // reactivated → back to normal
+                    nameCell.innerHTML = `<strong>${nameText}</strong>`;
+                    row.style.opacity = '1';
+                }
+            }
 
             showToast(data.message, 'ok');
         } else {

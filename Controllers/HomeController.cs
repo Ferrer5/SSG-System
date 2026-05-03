@@ -51,7 +51,8 @@ public class HomeController : Controller
         {
             return RedirectToDashboard(HttpContext.Session.GetString("UserRole"));
         }
-        return View("Login");
+        // Login UI lives on Index (overlay); there is no separate Login.cshtml view.
+        return RedirectToAction(nameof(Index), new { login = 1 });
     }
 
     public IActionResult Privacy()

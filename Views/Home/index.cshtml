@@ -109,7 +109,8 @@ body.login-open #heroOverlay {
   border-bottom: 1px solid rgba(255,255,255,0.12);
   animation: fadeDown 0.8s ease both;
   position: relative;
-  z-index: 2;
+  /* Above .main-section (also z-index 2) so fixed mobile .nav-links receives clicks */
+  z-index: 5;
 }
 
 @@keyframes fadeDown {
@@ -874,6 +875,22 @@ function openLogin() {
   showRightScreen('screenSignIn');
 }
 
+/**
+ * When opening login on first paint (e.g. redirect from About/Contacts with ?login=1),
+ * calling openLogin() in the same turn as DOMContentLoaded skips transforms because the
+ * engine never composites an intermediate frame. Wait for layout + paint first.
+ */
+function openLoginAfterReadyForTransition(done) {
+  const run = typeof done === 'function' ? done : openLogin;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const overlay = document.getElementById('loginOverlay');
+      if (overlay) void overlay.offsetWidth;
+      run();
+    });
+  });
+}
+
 function showLandingPage() {
   // Close login if open
   if (document.body.classList.contains('login-open')) {
@@ -1166,10 +1183,28 @@ async function loadCourses() {
 
 document.addEventListener('DOMContentLoaded', function() {
   loadCourses();
-  // Set Home button as default active state
-  const homeLink = document.querySelector('.nav-links a[href="#"]');
-  if (homeLink) {
-    setActiveNav(homeLink);
+
+  /* About/Contacts navbar uses /Home/Login, which redirects here with ?login=1 */
+  (function openLoginFromDeepLink() {
+    const params = new URLSearchParams(window.location.search);
+    const loginParam = params.get('login');
+    const wantsLogin =
+      (loginParam != null && /^(1|true|yes)$/i.test(String(loginParam))) ||
+      window.location.hash === '#login';
+    if (!wantsLogin) return;
+    openLoginAfterReadyForTransition(openLogin);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('login');
+    if (url.hash === '#login') url.hash = '';
+    const q = url.searchParams.toString();
+    window.history.replaceState({}, '', url.pathname + (q ? '?' + q : '') + url.hash);
+  })();
+
+  // First nav `<a>` is Home — highlight when not opening login from deep link
+  const mobileNavEl = document.getElementById('mobileNav');
+  const homeNavLink = mobileNavEl?.querySelector('a');
+  if (homeNavLink && !document.body.classList.contains('login-open')) {
+    setActiveNav(homeNavLink);
   }
 
   // Close mobile nav when clicking outside

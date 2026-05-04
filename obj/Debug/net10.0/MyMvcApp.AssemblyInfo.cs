@@ -13,11 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MyMvcApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-<<<<<<< HEAD
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a9ba57557666cb608a1260eb97385b2ab619333b")]
-=======
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8efd09e824032d024231035bfa9d9e6efbe4ac85")]
->>>>>>> ferrerbranch
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b44f29466bb857eda0d3c7c78f17fb2c5b7ddd0b")]
 [assembly: System.Reflection.AssemblyProductAttribute("MyMvcApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MyMvcApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -748,8 +748,6 @@ body.login-open .lp-right { transform: translateX(0); }
               <label class="form-label" for="studentId">School ID</label>
               <input type="text" id="studentId" name="studentId" class="form-input" placeholder="Enter here" />
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="password">Password</label>
               <input type="password" id="password" name="password" class="form-input" placeholder="Enter here" />
@@ -771,10 +769,8 @@ body.login-open .lp-right { transform: translateX(0); }
             </div>
             <div class="form-group">
               <label class="form-label" for="middleName">Middle Name</label>
-              <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" />
+              <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" maxlength="1" />
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="lastName">Last Name</label>
               <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Enter here" />
@@ -794,10 +790,15 @@ body.login-open .lp-right { transform: translateX(0); }
               </div>
               <div class="form-group">
                 <label class="form-label" for="yearLevel">Year Level</label>
-                <input type="text" id="yearLevel" name="yearLevel" class="form-input" placeholder="Enter here" />
+                <select id="yearLevel" name="yearLevel" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
+                  <option value="">Select year</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                </select>
               </div>
-            </div>
-            <div class="form-row">
+
               <div class="form-group">
                 <label class="form-label" for="section">Section</label>
                 <input type="text" id="section" name="section" class="form-input" placeholder="Enter here" />
@@ -1208,7 +1209,8 @@ async function loadCourses() {
       sel.innerHTML = '<option value="">Select a course</option>';
       data.courses.forEach(c => {
         const opt = document.createElement('option');
-        opt.value = c.courseCode; opt.textContent = c.courseCode;
+        opt.value = c.courseCode;
+        opt.textContent = c.courseName ? `${c.courseCode} - ${c.courseName}` : c.courseCode;
         sel.appendChild(opt);
       });
     }

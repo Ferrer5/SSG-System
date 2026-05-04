@@ -439,6 +439,8 @@ Best regards,<br>SSG Financial Management System";
                 return Json(new { success = false, message = "Invalid status." });
 
             account.RequestStatus = newStatus;
+            if (newStatus == RequestStatus.Approved)
+                account.IsActive = true;
             await _context.SaveChangesAsync();
 
             return Json(new
@@ -464,7 +466,7 @@ Best regards,<br>SSG Financial Management System";
         {
             var courses = await _context.Courses
                 .OrderBy(c => c.CourseCode)
-                .Select(c => new { c.CourseId, c.CourseCode })
+                .Select(c => new { c.CourseId, c.CourseCode, c.CourseName })
                 .ToListAsync();
 
             return Json(new { success = true, courses });

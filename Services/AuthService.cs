@@ -315,12 +315,16 @@ namespace MyMvcApp.Services
                 Console.WriteLine($"✓ Account saved: {account.AccountId}");
 
                 // Create user record
+                var middleName = request.MiddleName;
+                if (!string.IsNullOrWhiteSpace(middleName) && !middleName.EndsWith("."))
+                    middleName += ".";
+
                 var user = new User
                 {
                     AccountId = account.AccountId,
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    MiddleName = request.MiddleName
+                    MiddleName = middleName
                 };
 
                 _context.Users.Add(user);

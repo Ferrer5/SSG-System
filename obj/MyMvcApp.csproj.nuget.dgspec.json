@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Janrey\\ssg_systemronaldbranch\\MyMvcApp.csproj": {}
+    "C:\\Users\\Janrey\\SSG-System\\MyMvcApp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Janrey\\ssg_systemronaldbranch\\MyMvcApp.csproj": {
+    "C:\\Users\\Janrey\\SSG-System\\MyMvcApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Janrey\\ssg_systemronaldbranch\\MyMvcApp.csproj",
+        "projectUniqueName": "C:\\Users\\Janrey\\SSG-System\\MyMvcApp.csproj",
         "projectName": "MyMvcApp",
-        "projectPath": "C:\\Users\\Janrey\\ssg_systemronaldbranch\\MyMvcApp.csproj",
+        "projectPath": "C:\\Users\\Janrey\\SSG-System\\MyMvcApp.csproj",
         "packagesPath": "C:\\Users\\Janrey\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Janrey\\ssg_systemronaldbranch\\obj\\",
+        "outputPath": "C:\\Users\\Janrey\\SSG-System\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Janrey\\AppData\\Roaming\\NuGet\\NuGet.Config",

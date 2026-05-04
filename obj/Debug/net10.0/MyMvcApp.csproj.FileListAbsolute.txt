@@ -229,7 +229,6 @@ C:\Users\Janrey\SSG-System\bin\Debug\net10.0\zh-Hant\Microsoft.CodeAnalysis.Work
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\MyMvcApp.csproj.AssemblyReference.cache
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\MyMvcApp.csproj.Up2Date
 C:\Users\Janrey\SSG-System\bin\Debug\net10.0\BCrypt.Net-Next.dll
-C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\59gfvrehvp-{0}-d75fuzg9u9-d75fuzg9u9.gz
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\mz1sqfxj73-{0}-t1cqhe9u97-t1cqhe9u97.gz
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\d038ci0mvy-{0}-sejl45xvog-sejl45xvog.gz
 C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\v9nvizigdq-{0}-xvp3kq03qx-xvp3kq03qx.gz
@@ -598,3 +597,4 @@ C:\Users\Janrey\ssg_systemronaldbranch\obj\Debug\net10.0\refint\MyMvcApp.dll
 C:\Users\Janrey\ssg_systemronaldbranch\obj\Debug\net10.0\MyMvcApp.pdb
 C:\Users\Janrey\ssg_systemronaldbranch\obj\Debug\net10.0\MyMvcApp.genruntimeconfig.cache
 C:\Users\Janrey\ssg_systemronaldbranch\obj\Debug\net10.0\ref\MyMvcApp.dll
+C:\Users\Janrey\SSG-System\obj\Debug\net10.0\compressed\59gfvrehvp-{0}-9748m5u9da-9748m5u9da.gz

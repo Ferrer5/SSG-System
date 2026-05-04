@@ -306,7 +306,7 @@ namespace MyMvcApp.Services
                     PasswordHash = HashPassword(request.Password),
                     Role = request.Role,
                     RequestStatus = RequestStatus.Pending, // New accounts need approval
-                    IsActive = false,
+                    IsActive = true, // Set to true by default for approved accounts
                     CreatedAt = DateTime.UtcNow
                 };
 

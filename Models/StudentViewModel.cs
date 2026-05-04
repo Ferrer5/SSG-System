@@ -19,5 +19,9 @@ namespace MyMvcApp.Models
         public string YearSection { get; set; } = string.Empty;
         
         public int AccountId { get; set; }
+        
+        public string Role { get; set; } = string.Empty;
+        
+        public bool IsActive { get; set; }
     }
 }

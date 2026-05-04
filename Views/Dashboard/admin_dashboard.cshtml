@@ -13,859 +13,1281 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SSG Finance — Admin Panel</title>
     <link rel="icon" type="image/png" href="~/favicon.png">
-    <link rel="stylesheet" href="~/css/dashboard.css">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
-        :root {
-            --sidebar-bg:   #0a2218;
-            --sidebar-w:    200px;
-            --accent:       #2e7d52;
-            --accent-light: #34a865;
-            --main-bg:      #0d1f17;
-            --card-bg:      #ffffff;
-            --card-border:  #e5e7eb;
-            --text-dark:    #111827;
-            --text-mid:     #6b7280;
-            --text-light:   #9ca3af;
-            --green-badge:  #dcfce7;
-            --green-text:   #166534;
-            --yellow-badge: #fef9c3;
-            --yellow-text:  #854d0e;
-            --red-text:     #dc2626;
-            --red-bg:       #fee2e2;
+        *{box-sizing:border-box;margin:0;padding:0}
+        :root{
+          --bg:#071a0c;
+          --bg2:#0c2413;
+          --sidebar:#081509;
+          --green:#27a744;
+          --green-d:#1a7a4a;
+          --green-glow:rgba(39,167,68,.18);
+          --green-glow2:rgba(39,167,68,.08);
+          --glass:rgba(255,255,255,.045);
+          --glass-b:rgba(255,255,255,.09);
+          --text:#e8f5ec;
+          --text-m:rgba(232,245,236,.6);
+          --text-d:rgba(232,245,236,.35);
+          --card:#0f2918;
+          --card-b:rgba(255,255,255,.07);
+          --green-badge:rgba(39,167,68,.18);
+          --green-badge-t:#5fdd8e;
+          --yellow-badge:rgba(251,191,36,.14);
+          --yellow-badge-t:#fbbf24;
+          --red-badge:rgba(239,68,68,.14);
+          --red-badge-t:#f87171;
         }
+        body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-height:100vh;color:var(--text);font-size:14px;width:100%;overflow:hidden}
+        .sidebar{width:210px;background:var(--sidebar);border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;flex-shrink:0}
+        .sb-brand{display:flex;align-items:center;gap:10px;padding:20px 16px 18px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .sb-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(39,167,68,.3)}
+        .sb-logo svg{width:18px;height:18px}
+        .sb-brand-name{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
+        .sb-brand-sub{font-size:10px;color:rgba(39,167,68,.85);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+        .sb-label{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-d);padding:16px 16px 5px}
+        .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-m);cursor:pointer;transition:all .15s;text-decoration:none;position:relative}
+        .nav-item:hover{background:var(--glass);color:var(--text)}
+        .nav-item.active{background:var(--green-glow);color:#5fdd8e;border:1px solid rgba(74,222,128,.12)}
+        .nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.85}
+        .nav-badge{margin-left:auto;background:#dc2626;color:#fff;font-size:9px;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+        .sb-spacer{flex:1}
+        .sb-user{padding:10px 8px 10px;border-top:1px solid rgba(255,255,255,.05)}
+        .user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--glass)}
+        .user-av{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+        .user-name{font-size:12px;font-weight:600;color:#fff}
+        .user-role{font-size:10.5px;color:var(--text-d)}
+        .signout{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:3px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--text-d);cursor:pointer;transition:all .15s}
+        .signout:hover{background:rgba(239,68,68,.08);color:#f87171}
+        .signout svg{width:14px;height:14px}
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--main-bg);
-            display: flex;
-            min-height: 100vh;
-        }
+        .main{margin-left:0;flex:1;min-width:0;padding:36px 36px 60px;background:var(--bg);overflow-y:auto;overflow-x:hidden;position:relative;height:100vh}
+        .main::before{content:'';position:absolute;top:-80px;right:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(39,167,68,.06) 0%,transparent 70%);pointer-events:none;border-radius:50%}
 
-        /* ── SIDEBAR ── */
-        .sidebar {
-            width: var(--sidebar-w);
-            background: var(--sidebar-bg);
-            display: flex;
-            flex-direction: column;
-            position: fixed;
-            height: 100vh;
-            top: 0; left: 0;
-            z-index: 100;
-            padding-bottom: 16px;
-        }
+        .page{display:none}.page.active{display:block}
 
-        .sidebar-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 20px 16px 18px;
-            border-bottom: 1px solid rgba(255,255,255,.07);
-        }
+        .page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+        .page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
+        .page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
 
-        .brand-avatar {
-            width: 38px; height: 38px;
-            border-radius: 50%;
-            background: var(--accent);
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            overflow: hidden;
-        }
+        .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;width:100%}
+        .stat-col{display:flex;flex-direction:column;gap:12px}
+        .stat-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
+        .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.25),transparent)}
+        .stat-card-half{flex:1;padding:13px 16px;gap:5px}
+        .stat-card-half .stat-val{font-size:26px}
+        .stat-lbl{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d)}
+        .stat-row{display:flex;align-items:center;justify-content:space-between}
+        .stat-val{font-size:34px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.04em}
+        .stat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+        .stat-icon.g{background:rgba(39,167,68,.15)}
+        .stat-icon.y{background:rgba(251,191,36,.12)}
+        .stat-icon svg{width:15px;height:15px}
+        .stat-trend{font-size:11px;font-weight:500;color:var(--green)}
+        .stat-trend.warn{color:#fbbf24}
 
-        .brand-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;overflow:visible;margin-bottom:16px;backdrop-filter:blur(8px);position:relative;width:100%;isolation:isolate}
+        .content-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent);z-index:1}
+        .cc-hdr{display:flex;align-items:center;justify-content:space-between;padding:15px 20px 13px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .cc-title{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
 
-        .brand-avatar svg { width: 22px; height: 22px; }
+        .toolbar{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:1px solid rgba(255,255,255,.05)}
+        .search-box{display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 12px;font-size:12.5px;color:var(--text-m);background:rgba(255,255,255,.04);min-width:220px;transition:all .15s}
+        .search-box:focus-within{border-color:var(--green);background:rgba(39,167,68,.06);box-shadow:0 0 0 3px var(--green-glow2)}
+        .search-box input{border:none;outline:none;font-family:inherit;font-size:12.5px;color:var(--text);width:100%;background:transparent}
+        .search-box input::placeholder{color:var(--text-d)}
+        .search-box svg{width:14px;height:14px;color:var(--text-d);flex-shrink:0}
 
-        .brand-text { min-width: 0; }
-        .brand-name { font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .brand-role { font-size: 11px; color: rgba(255,255,255,.45); margin-top: 1px; }
+        .tbl-wrap{overflow-x:visible}
+        table{width:100%;border-collapse:collapse;font-size:12.5px}
+        thead th{padding:10px 15px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
+        tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+        tbody tr:last-child{border-bottom:none}
+        tbody tr:hover{background:rgba(39,167,68,.05)}
+        td{padding:11px 15px;color:var(--text);vertical-align:middle}
+        .td-m{color:var(--text-m)}
+        .td-mono{font-family:'DM Mono',monospace;font-size:11.5px}
 
-        .nav-section-label {
-            font-size: 10px;
-            font-weight: 600;
-            letter-spacing: .1em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,.3);
-            padding: 16px 16px 6px;
-        }
+        .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.02em}
+        .bg{background:var(--green-badge);color:var(--green-badge-t)}
+        .by{background:var(--yellow-badge);color:var(--yellow-badge-t)}
+        .br{background:var(--red-badge);color:var(--red-badge-t)}
 
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 9px 16px;
-            margin: 1px 8px;
-            border-radius: 8px;
-            font-size: 13.5px;
-            color: rgba(255,255,255,.55);
-            cursor: pointer;
-            transition: background .15s, color .15s;
-            position: relative;
-            text-decoration: none;
-        }
+        .action-btns{display:flex;align-items:center;gap:6px}
+        .btn-ap,.btn-rj{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:all .15s;font-family:inherit;white-space:nowrap}
+        .btn-ap{background:var(--green-badge);color:var(--green-badge-t);border-color:rgba(39,167,68,.25)}
+        .btn-ap:hover{background:rgba(39,167,68,.28);transform:translateY(-1px)}
+        .btn-rj{background:var(--red-badge);color:var(--red-badge-t);border-color:rgba(239,68,68,.2)}
+        .btn-rj:hover{background:rgba(239,68,68,.22);transform:translateY(-1px)}
 
-        .nav-item:hover { background: rgba(255,255,255,.07); color: rgba(255,255,255,.85); }
+        .empty-row td{text-align:center;padding:40px;color:var(--text-d);font-size:12.5px}
 
-        .nav-item.active {
-            background: var(--accent);
-            color: #fff;
-        }
+        .view-all-wrap{display:flex;justify-content:center;padding:14px 0 4px}
+        .btn-outline{padding:7px 24px;border:1px solid rgba(255,255,255,.12);border-radius:7px;font-size:12px;font-weight:600;color:var(--text-m);background:transparent;cursor:pointer;font-family:inherit;transition:all .15s}
+        .btn-outline:hover{border-color:var(--green);color:var(--green);background:var(--green-glow2)}
 
-        .nav-item svg { width: 17px; height: 17px; flex-shrink: 0; }
+        #toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:9px;font-size:12.5px;font-weight:500;background:#1f2937;color:#fff;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;z-index:999;pointer-events:none;display:flex;align-items:center;gap:7px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+        #toast.show{opacity:1;transform:translateY(0)}
+        #toast.ok{background:#052e16;border:1px solid rgba(39,167,68,.3)}
+        #toast.fail{background:#450a0a;border:1px solid rgba(239,68,68,.3)}
 
-        .nav-badge {
-            margin-left: auto;
-            background: #dc2626;
-            color: #fff;
-            font-size: 10px;
-            font-weight: 700;
-            min-width: 18px;
-            height: 18px;
-            border-radius: 9px;
-            display: flex; align-items: center; justify-content: center;
-            padding: 0 5px;
-        }
-
-        .sidebar-spacer { flex: 1; }
-
-        .sidebar-user {
-            padding: 12px 16px 6px;
-            border-top: 1px solid rgba(255,255,255,.07);
-        }
-
-        .user-card {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            background: rgba(255,255,255,.05);
-            margin-bottom: 6px;
-        }
-
-        .user-avatar {
-            width: 32px; height: 32px;
-            border-radius: 50%;
-            background: var(--accent);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 700; color: #fff;
-            flex-shrink: 0;
-        }
-
-        .user-name { font-size: 12.5px; font-weight: 500; color: #fff; }
-        .user-role { font-size: 11px; color: rgba(255,255,255,.4); }
-
-        .signout-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 10px;
-            border-radius: 8px;
-            font-size: 12.5px;
-            color: rgba(255,255,255,.4);
-            cursor: pointer;
-            transition: background .15s, color .15s;
-        }
-
-        .signout-btn:hover { background: rgba(255,255,255,.06); color: rgba(255,255,255,.7); }
-
-        .signout-btn svg { width: 15px; height: 15px; }
-
-        /* ── MAIN ── */
-        .main {
-            margin-left: var(--sidebar-w);
-            flex: 1;
-            padding: 32px 32px 48px;
-            min-height: 100vh;
-        }
-
-        .page { display: none; }
-        .page.active { display: block; }
-
-        .page-title {
-            font-size: 26px;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 24px;
-        }
-
-        /* ── STAT CARDS ── */
-        .stat-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 16px;
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 22px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .stat-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-mid);
-        }
-
-        .stat-icon {
-            width: 32px; height: 32px;
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        .stat-icon.green { background: var(--green-badge); }
-        .stat-icon.yellow { background: var(--yellow-badge); }
-        .stat-icon.red { background: var(--red-bg); }
-        .stat-icon svg { width: 18px; height: 18px; }
-
-        .stat-value {
-            font-size: 36px;
-            font-weight: 700;
-            color: var(--text-dark);
-            line-height: 1;
-        }
-
-        .stat-sub {
-            font-size: 12px;
-            color: var(--accent-light);
-            font-weight: 500;
-        }
-
-        .stat-sub.warn { color: #ca8a04; }
-        .stat-sub.danger { color: #dc2626; }
-
-        /* ── CONTENT CARD ── */
-        .content-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 22px 24px;
-            margin-bottom: 20px;
-        }
-
-        .content-card-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 16px;
-        }
-
-        /* ── TABLE ── */
-        .tbl-wrap { overflow-x: auto; }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-
-        thead th {
-            padding: 10px 14px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-            color: var(--text-light);
-            border-bottom: 1px solid var(--card-border);
-            text-align: left;
-            white-space: nowrap;
-        }
-
-        tbody tr { border-bottom: 1px solid #f3f4f6; transition: background .1s; }
-        tbody tr:last-child { border-bottom: none; }
-        tbody tr:hover { background: #f9fafb; }
-
-        td {
-            padding: 13px 14px;
-            color: var(--text-dark);
-            vertical-align: middle;
-        }
-
-        .td-mid { color: var(--text-mid); }
-        .td-mono { font-family: 'SF Mono', monospace; font-size: 12px; }
-
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-        }
-
-        .badge-green  { background: var(--green-badge);  color: var(--green-text); }
-        .badge-yellow { background: var(--yellow-badge); color: var(--yellow-text); }
-        .badge-red    { background: var(--red-bg);       color: var(--red-text); }
-
-        .action-btns { display: flex; gap: 6px; }
-
-        .btn-approve, .btn-reject {
-            padding: 5px 14px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: opacity .15s;
-            font-family: inherit;
-        }
-
-        .btn-approve { background: #fff; color: var(--green-text); border-color: #86efac; }
-        .btn-approve:hover { background: var(--green-badge); }
-        .btn-reject  { background: #fff; color: var(--red-text);   border-color: #fca5a5; }
-        .btn-reject:hover  { background: var(--red-bg); }
-
-        .empty-row td { text-align: center; padding: 36px; color: var(--text-light); font-size: 13px; }
-
-        /* ── TOOLBAR ── */
-        .toolbar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 16px;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .search-input {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 13px;
-            color: var(--text-mid);
-            background: #fff;
-            min-width: 220px;
-        }
-
-        .search-input input {
-            border: none;
-            outline: none;
-            font-family: inherit;
-            font-size: 13px;
-            color: var(--text-dark);
-            width: 100%;
-            background: transparent;
-        }
-
-        .search-input input::placeholder { color: var(--text-light); }
-        .search-input svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--text-light); }
-
-        .btn-primary {
-            display: inline-flex; align-items: center; gap: 6px;
-            padding: 9px 18px;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            font-family: inherit;
-            transition: background .15s;
-        }
-
-        .btn-primary:hover { background: var(--accent-light); }
-        .btn-primary svg { width: 16px; height: 16px; }
-
-        /* ── VIEW ALL ── */
-        .view-all-wrap { display: flex; justify-content: center; margin-top: 16px; }
-
-        .btn-outline {
-            padding: 8px 28px;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-mid);
-            background: #fff;
-            cursor: pointer;
-            font-family: inherit;
-            transition: border-color .15s, color .15s;
-        }
-
-        .btn-outline:hover { border-color: #9ca3af; color: var(--text-dark); }
-
-        /* ── CHART PLACEHOLDER ── */
-        .chart-placeholder {
-            height: 180px;
-            background: #f9fafb;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-light);
-            font-size: 13px;
-            border: 1px dashed var(--card-border);
-        }
-
-        /* ── TOAST ── */
-        #toast {
-            position: fixed;
-            bottom: 24px; right: 24px;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 13px; font-weight: 500;
-            background: #1f2937;
-            color: #fff;
-            opacity: 0; transform: translateY(8px);
-            transition: opacity .25s, transform .25s;
-            z-index: 999; pointer-events: none;
-        }
-        #toast.show   { opacity: 1; transform: translateY(0); }
-        #toast.ok     { background: #14532d; }
-        #toast.fail   { background: #7f1d1d; }
-
-        /* ── RESPONSIVE ── */
-        @@media (max-width: 768px) {
-            .sidebar { transform: translateX(-100%); transition: transform .25s; }
-            body.sidebar-open .sidebar { transform: translateX(0); }
-            .main { margin-left: 0; padding: 20px 16px; }
-        }
+        .top-accent{height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);position:absolute;top:0;left:0;right:0}
+        .stat-icon[onclick]:hover{background:rgba(39,167,68,.28);transform:scale(1.1);transition:all .15s}
+        .dropdown-wrap{position:relative;display:inline-block}
+        .dot-btn{background:transparent;border:none;color:var(--text-m);cursor:pointer;padding:4px 6px;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+        .dot-btn:hover{background:var(--glass);color:var(--text)}
+        .dropdown-menu{display:none;position:absolute;right:0;top:32px;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:10px;min-width:180px;z-index:100;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+        .dropdown-menu.open{display:block}
+        .dropdown-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:7px;font-size:12.5px;font-weight:500;color:var(--text-m);cursor:pointer;transition:all .15s;white-space:nowrap}
+        .dropdown-item:hover{background:var(--glass);color:var(--text)}
+        .dropdown-item.danger{color:var(--red-badge-t)}
+        .dropdown-item.danger:hover{background:rgba(239,68,68,.08);color:#f87171}
+        .dropdown-item.reactivate{color:#5fdd8e}
+        .dropdown-item.reactivate:hover{background:rgba(39,167,68,.08);color:#4ade80}
+        .dropdown-item.has-submenu{position:relative;overflow:visible;}
+        .dropdown-menu{overflow:visible;}
     </style>
 </head>
 <body>
 
-<!-- ── SIDEBAR ── -->
+<div class="top-accent"></div>
+<div style="display:flex;min-height:100vh;width:100%;position:relative">
+
 <aside class="sidebar">
-    <div class="sidebar-brand">
-        <div class="brand-avatar">
-            <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="1.8"/>
-                <path d="M8 12l3 3 5-5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </div>
-        <div class="brand-text">
-            <div class="brand-name">SSG Finance</div>
-            <div class="brand-role">Admin Panel</div>
-        </div>
+  <div class="sb-brand">
+    <div class="sb-logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-
-    <div class="nav-section-label">Main</div>
-    <a class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard')">
-        <svg viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
-            <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
-            <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
-            <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/>
-        </svg>
-        Dashboard
-    </a>
-
-    <div class="nav-section-label">Users</div>
-    <a class="nav-item" id="nav-students" onclick="showPage('students')">
-        <svg viewBox="0 0 24 24" fill="none">
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Students
-    </a>
-    <a class="nav-item" id="nav-requests" onclick="showPage('requests')">
-        <svg viewBox="0 0 24 24" fill="none">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/>
-        </svg>
-        Requests
-        @if ((Model.RequestedAccounts?.Count ?? 0) > 0)
-        {
-            <span class="nav-badge">@Model.RequestedAccounts!.Count</span>
-        }
-    </a>
-
-    <div class="nav-section-label">Finance</div>
-    <a class="nav-item" id="nav-transactions" onclick="showPage('transactions')">
-        <svg viewBox="0 0 24 24" fill="none">
-            <path d="M4 6h16M4 10h16M4 14h10M4 18h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Transactions
-    </a>
-    <a class="nav-item" id="nav-reports" onclick="showPage('reports')">
-        <svg viewBox="0 0 24 24" fill="none">
-            <path d="M9 17H5a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-            <path d="M9 7h6M9 11h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-        Reports
-    </a>
-
-    <div class="nav-section-label">System</div>
-    <a class="nav-item" id="nav-settings" onclick="showPage('settings')">
-        <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8"/>
-        </svg>
-        Settings
-    </a>
-
-    <div class="sidebar-spacer"></div>
-
-    <div class="sidebar-user">
-        <div class="user-card">
-            <div class="user-avatar">@initials.ToUpper()</div>
-            <div>
-                <div class="user-name">@(lastName.Length > 0 ? $"Ms. {lastName}" : firstName)</div>
-                <div class="user-role">Admin</div>
-            </div>
-        </div>
-        <div class="signout-btn" onclick="window.location.href='@Url.Action("Logout", "Home")'">
-            <svg viewBox="0 0 24 24" fill="none">
-                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Sign Out
-        </div>
+    <div>
+      <div class="sb-brand-name">SSG Finance</div>
+      <div class="sb-brand-sub">Admin Panel</div>
     </div>
+  </div>
+
+  <div class="sb-label">Main</div>
+  <a class="nav-item active" id="nav-dashboard" onclick="showPage('dashboard',this)">
+    <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+    Dashboard
+  </a>
+  <a class="nav-item" id="nav-requests" onclick="showPage('requests',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.8"/><path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Requests
+    @if ((Model.RequestedAccounts?.Count ?? 0) > 0)
+    {
+        <span class="nav-badge">@Model.RequestedAccounts!.Count</span>
+    }
+  </a>
+  <a class="nav-item" id="nav-rejected" onclick="showPage('rejected',this)">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Rejected
+  </a>
+
+  <div class="sb-label">Users</div>
+  <a class="nav-item" id="nav-students" onclick="showPage('students',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Students
+  </a>
+  <a class="nav-item" id="nav-professors" onclick="showPage('professors',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Professors
+  </a>
+
+  <div class="sb-label">System</div>
+  <a class="nav-item" id="nav-settings" onclick="showPage('settings',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8"/></svg>
+    Settings
+  </a>
+
+  <div class="sb-spacer"></div>
+  <div class="sb-user">
+    <div class="user-card">
+      <div class="user-av">@initials.ToUpper()</div>
+      <div>
+        <div class="user-name">@(lastName.Length > 0 ? $"Ms. {lastName}" : firstName)</div>
+        <div class="user-role">Administrator</div>
+      </div>
+    </div>
+    <div class="signout" onclick="window.location.href='@Url.Action("Logout", "Home")'">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sign Out
+    </div>
+  </div>
 </aside>
 
-<!-- ── MAIN ── -->
 <div class="main">
 
-    <!-- ═══ DASHBOARD PAGE ═══ -->
-    <div class="page active" id="page-dashboard">
+  <!-- DASHBOARD PAGE -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-hdr">
+      <div>
         <div class="page-title">Dashboard</div>
+        <div class="page-sub">Welcome back, @firstName</div>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block"></span>
+        System Online
+      </div>
+    </div>
 
-        <div class="stat-grid">
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon green">
-                        <svg viewBox="0 0 24 24" fill="none">
-                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round"/>
-                            <circle cx="9" cy="7" r="4" stroke="#16a34a" stroke-width="1.8"/>
-                            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#16a34a" stroke-width="1.8" stroke-linecap="round"/>
-                        </svg>
-                    </div>
-                    Registered Accounts
-                </div>
-                <div class="stat-value">@(Model.Students?.Count ?? 0)</div>
-                <div class="stat-sub">Active students in system</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-header">
-                    <div class="stat-icon yellow">
-                        <svg viewBox="0 0 24 24" fill="none">
-                            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" stroke="#ca8a04" stroke-width="1.8" stroke-linecap="round"/>
-                            <circle cx="12" cy="7" r="4" stroke="#ca8a04" stroke-width="1.8"/>
-                        </svg>
-                    </div>
-                    Requests
-                </div>
-                <div class="stat-value">@(Model.RequestedAccounts?.Count ?? 0)</div>
-                <div class="stat-sub warn">Awaiting Review</div>
-            </div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">Registered Accounts</div>
+        <div class="stat-row">
+          <div class="stat-val">@Model.ApprovedAccountsCount</div>
+          <div class="stat-icon g">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#27a744" stroke-width="1.8"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
         </div>
-
-        <!-- Recent Account Requests -->
-        <div class="content-card">
-            <div class="content-card-title">Recent Account Requests</div>
-            <div class="tbl-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Year &amp; Section</th>
-                            <th>Course</th>
-                            <th>Email</th>
-                            <th>Date</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.RequestedAccounts != null && Model.RequestedAccounts.Any())
-                        {
-                            @foreach (var acct in Model.RequestedAccounts.Take(5))
-                            {
-                                <tr id="row-@acct.AccountId">
-                                    <td class="td-mono td-mid">@(acct.StudentId ?? "—")</td>
-                                    <td><strong>@acct.Fullname</strong></td>
-                                    <td class="td-mid">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
-                                    <td class="td-mid">@(acct.CourseCode ?? "—")</td>
-                                    <td class="td-mid">—</td>
-                                    <td class="td-mono td-mid">@acct.CreatedAt.ToString("MM-d-yyyy")</td>
-                                    <td>
-                                        <div class="action-btns">
-                                            <button class="btn-approve" onclick="updateStatus(@acct.AccountId, 'Approved')">Approve</button>
-                                            <button class="btn-reject"  onclick="updateStatus(@acct.AccountId, 'Rejected')">Reject</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr class="empty-row"><td colspan="7">No pending account requests.</td></tr>
-                        }
-                    </tbody>
-                </table>
+        <div class="stat-trend">All approved accounts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Pending Requests</div>
+        <div class="stat-row">
+          <div class="stat-val">@(Model.RequestedAccounts?.Count ?? 0)</div>
+          <div class="stat-icon y">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div class="stat-trend @((Model.RequestedAccounts?.Count ?? 0) == 0 ? "" : "warn")">
+    @((Model.RequestedAccounts?.Count ?? 0) == 0 ? "No pending requests" : "Awaiting review")
+</div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-card stat-card-half">
+          <div class="stat-lbl">Students</div>
+          <div class="stat-row">
+            <div class="stat-val">@(Model.Students?.Count ?? 0)</div>
+            <div class="stat-icon g" onclick="showPage('students',document.getElementById('nav-students'))" style="cursor:pointer" title="View Students">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          </div>
+          <div class="stat-trend">Approved</div>
+        </div>
+        <div class="stat-card stat-card-half">
+          <div class="stat-lbl">Treasurers</div>
+          <div class="stat-row">
+            <div class="stat-val">@(Model.Treasurers?.Count ?? 0)</div>
+            <div class="stat-icon g" onclick="showPage('treasurers',document.getElementById('nav-treasurers'))" style="cursor:pointer" title="View Treasurers">
+              <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#27a744" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg>
             </div>
-            @if ((Model.RequestedAccounts?.Count ?? 0) > 5)
+          </div>
+          <div class="stat-trend">Approved</div>
+        </div>
+      </div>
+      <div class="stat-col">
+        <div class="stat-card stat-card-half">
+          <div class="stat-lbl">Professors</div>
+          <div class="stat-row">
+            <div class="stat-val">@(Model.Professors?.Count ?? 0)</div>
+            <div class="stat-icon g" onclick="showPage('professors',document.getElementById('nav-professors'))" style="cursor:pointer" title="View Professors">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 14l9-5-9-5-9 5 9 5z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="stat-trend">Approved</div>
+        </div>
+        <div class="stat-card stat-card-half">
+          <div class="stat-lbl">Admins</div>
+          <div class="stat-row">
+            <div class="stat-val">@(Model.Admins?.Count ?? 0)</div>
+            <div class="stat-icon g" onclick="showPage('admins',document.getElementById('nav-admins'))" style="cursor:pointer" title="View Admins">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="stat-trend">Approved</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="cc-hdr">
+        <div class="cc-title">Recent Account Requests</div>
+        <span class="badge by">@(Model.AllAccountRequests?.Count ?? 0) total</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Status</th></tr>
+          </thead>
+          <tbody id="recent-tbody">
+            @if (Model.AllAccountRequests != null && Model.AllAccountRequests.Any())
             {
-                <div class="view-all-wrap">
-                    <button class="btn-outline" onclick="showPage('requests')">View All</button>
-                </div>
+                int idx = 0;
+                @foreach (var acct in Model.AllAccountRequests)
+                {
+                    var hidden = idx >= 5 ? "display:none" : "";
+                    <tr class="recent-row" style="@hidden">
+                        <td class="td-mono td-m">@(acct.SchoolId ?? "—")</td>
+                        <td><strong>@acct.Fullname</strong></td>
+                        <td class="td-m">@(acct.CourseCode ?? "—")</td>
+                        <td class="td-m">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
+                        <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
+                        <td>
+                            @{
+                                var statusClass = acct.Status switch
+                                {
+                                    RequestStatus.Pending  => "by",
+                                    RequestStatus.Approved => "bg",
+                                    RequestStatus.Rejected => "br",
+                                    _                      => "by"
+                                };
+                            }
+                            <span class="badge @statusClass">@acct.Status</span>
+                        </td>
+                    </tr>
+                    idx++;
+                }
             }
-        </div>
+            else
+            {
+                <tr class="empty-row"><td colspan="6">No account requests found.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if ((Model.AllAccountRequests?.Count ?? 0) > 5)
+      {
+          <div class="view-all-wrap">
+              <button class="btn-outline" id="view-all-btn" 
+                      data-total="@Model.AllAccountRequests!.Count"
+                      data-expanded="false"
+                      onclick="toggleRecentRows()">
+                  View All (@Model.AllAccountRequests!.Count)
+              </button>
+          </div>
+      }
     </div>
+  </div>
 
-    <!-- ═══ STUDENTS PAGE ═══ -->
-    <div class="page" id="page-students">
-        <div class="page-title">Students</div>
-        <div class="content-card">
-            <div class="toolbar">
-                <div class="search-input">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <input type="text" id="student-search" placeholder="Search by name or course…" oninput="filterStudents()" />
-                </div>
-            </div>
-            <div class="tbl-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Course</th>
-                            <th>Year &amp; Section</th>
-                        </tr>
-                    </thead>
-                    <tbody id="students-tbody">
-                        @if (Model.Students != null && Model.Students.Any())
-                        {
-                            int i = 1;
-                            @foreach (var s in Model.Students)
-                            {
-                                <tr>
-                                    <td class="td-mono td-mid">@(i++)</td>
-                                    <td><strong>@s.FullName</strong></td>
-                                    <td><span class="badge badge-green">@s.CourseCode</span></td>
-                                    <td class="td-mid">@s.YearSection</td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr class="empty-row"><td colspan="4">No students found.</td></tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!-- ═══ REQUESTS PAGE ═══ -->
-    <div class="page" id="page-requests">
+  <!-- REQUESTS PAGE -->
+  <div class="page" id="page-requests">
+    <div class="page-hdr">
+      <div>
         <div class="page-title">Account Requests</div>
-        <div class="content-card">
-            <div class="tbl-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Course</th>
-                            <th>Year &amp; Section</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.RequestedAccounts != null && Model.RequestedAccounts.Any())
-                        {
-                            @foreach (var acct in Model.RequestedAccounts)
-                            {
-                                <tr id="req-row-@acct.AccountId">
-                                    <td class="td-mono td-mid">@(acct.StudentId ?? "—")</td>
-                                    <td><strong>@acct.Fullname</strong></td>
-                                    <td class="td-mid">@(acct.CourseCode ?? "—")</td>
-                                    <td class="td-mid">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
-                                    <td class="td-mono td-mid">@acct.CreatedAt.ToString("MM-d-yyyy")</td>
-                                    <td><span class="badge badge-yellow">Pending</span></td>
-                                    <td>
-                                        <div class="action-btns">
-                                            <button class="btn-approve" onclick="updateStatus(@acct.AccountId, 'Approved')">Approve</button>
-                                            <button class="btn-reject"  onclick="updateStatus(@acct.AccountId, 'Rejected')">Reject</button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr class="empty-row"><td colspan="7">No pending requests.</td></tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <div class="page-sub">@(Model.RequestedAccounts?.Count ?? 0) pending approval</div>
+      </div>
     </div>
-
-    <!-- ═══ TRANSACTIONS PAGE ═══ -->
-    <div class="page" id="page-transactions">
-        <div class="page-title">Transactions</div>
-        <div class="content-card">
-            <div class="toolbar">
-                <div class="search-input">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <input type="text" placeholder="Search by name…" />
-                </div>
-                <button class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-                    New Transaction
-                </button>
-            </div>
-            <div class="tbl-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Transaction ID</th>
-                            <th>Name</th>
-                            <th>School Year</th>
-                            <th>Semester</th>
-                            <th>Amount</th>
-                            <th>Balance</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="empty-row"><td colspan="8">No transactions found.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <div class="content-card">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            @if (Model.RequestedAccounts != null && Model.RequestedAccounts.Any())
+            {
+                @foreach (var acct in Model.RequestedAccounts)
+                {
+                    <tr id="req-row-@acct.AccountId">
+                        <td class="td-mono td-m">@(acct.SchoolId ?? "—")</td>
+                        <td><strong>@acct.Fullname</strong></td>
+                        <td class="td-m">@(acct.CourseCode ?? "—")</td>
+                        <td class="td-m">@(acct.YearLevel ?? "—")-@(acct.Section ?? "—")</td>
+                        <td class="td-mono td-m">@acct.CreatedAt.ToString("MM-dd-yyyy")</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-ap" onclick="updateStatus(@acct.AccountId, 'Approved')">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    Approve
+                                </button>
+                                <button class="btn-rj" onclick="updateStatus(@acct.AccountId, 'Rejected')">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                                    Reject
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr class="empty-row"><td colspan="6">No pending requests.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
 
-    <!-- ═══ REPORTS PAGE ═══ -->
-    <div class="page" id="page-reports">
-        <div class="page-title">Reports</div>
-        <div class="content-card">
-            <div class="toolbar">
-                <div class="search-input">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
-                    <input type="text" placeholder="Search expenses…" />
-                </div>
-                <button class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
-                    Add Expense
-                </button>
-            </div>
-            <div class="tbl-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Recorded By</th>
-                            <th>Description</th>
-                            <th>Amount</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr class="empty-row"><td colspan="4">No expense records found.</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <!-- REJECTED PAGE -->
+  <div class="page" id="page-rejected">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Rejected Requests</div>
+        <div class="page-sub" id="rejected-sub">0 rejected accounts</div>
+      </div>
     </div>
+    <div class="content-card">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Date</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="rejected-tbody">
+            <tr class="empty-row"><td colspan="6">No rejected requests.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <!-- ═══ SETTINGS PAGE ═══ -->
-    <div class="page" id="page-settings">
+  <!-- STUDENTS PAGE -->
+  <div class="page" id="page-students">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Students</div>
+        <div class="page-sub">@(Model.Students?.Count ?? 0) approved students</div>
+      </div>
+    </div>
+    <div class="content-card">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search by name or course…" oninput="filterTable(this,'students-tb')" />
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th></th></tr></thead>
+        <tbody id="students-tb">
+          @if (Model.Students != null && Model.Students.Any())
+          {
+              int i = 1;
+              @foreach (var s in Model.Students)
+              {
+                  <tr data-account="@s.AccountId" data-active="@s.IsActive.ToString().ToLower()">
+                      <td class="td-mono td-m">@(i++)</td>
+                      <td style="color: @(s.IsActive ? "inherit" : "#f87171")">
+    <strong>@s.FullName</strong>
+    @if (s.Role == "Treasurer") {
+        <span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Treasurer</span>
+    }
+    @if (!s.IsActive) {
+        <span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>
+    }
+</td>
+                      <td><span class="badge bg">@s.CourseCode</span></td>
+                      <td class="td-m">@s.YearSection</td>
+                  <td style="width:40px;text-align:right">
+                    <div class="dropdown-wrap">
+                        <button class="dot-btn" onclick="toggleDropdown(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" onclick="editStudent(@s.AccountId)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Edit
+                            </div>
+                            <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, @s.AccountId)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Change Role
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <!-- submenu -->
+                                <div class="dropdown-menu" id="role-submenu-@s.AccountId" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                    <div class="dropdown-item" onclick="changeRole(@s.AccountId, 'Student'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        Student
+                                    </div>
+                                    <div class="dropdown-item" onclick="changeRole(@s.AccountId, 'Treasurer'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                        Treasurer
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-item @(s.IsActive ? "danger" : "reactivate")" onclick="toggleActivation(@s.AccountId, this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <span>@(s.IsActive ? "Deactivate Account" : "Reactivate Account")</span>
+                            </div>
+                            <div class="dropdown-item danger" onclick="deleteStudent(@s.AccountId)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Delete Account
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                  </tr>
+              }
+          }
+          else
+          {
+              <tr class="empty-row"><td colspan="5">No students found.</td></tr>
+          }
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- PROFESSORS PAGE -->
+  <div class="page" id="page-professors">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Professors</div>
+        <div class="page-sub">@(Model.Professors?.Count ?? 0) approved professors</div>
+      </div>
+    </div>
+    <div class="content-card">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search professors…" oninput="filterTable(this,'profs-tb')" />
+        </div>
+        <button class="btn-ap" onclick="showAddProfessorModal()">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          Add Professor
+        </button>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Email</th></tr></thead>
+        <tbody id="profs-tb">
+          @if (Model.Professors != null && Model.Professors.Any())
+          {
+              int i = 1;
+              @foreach (var p in Model.Professors)
+              {
+                  <tr>
+                      <td class="td-mono td-m">@(i++)</td>
+                      <td>
+    <strong>@p.FullName</strong>
+    @if (p.Role == "Admin") {
+        <span style="font-size:10px;font-weight:600;background:rgba(39,167,68,.15);color:#5fdd8e;border:1px solid rgba(39,167,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Admin</span>
+    }
+</td>
+                      <td class="td-mono td-m">@p.SchoolId</td>
+                      <td class="td-m">@p.Email</td>
+                  </tr>
+              }
+          }
+          else
+          {
+              <tr class="empty-row"><td colspan="4">No professors found.</td></tr>
+          }
+        </tbody></table>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- SETTINGS PAGE -->
+  <div class="page" id="page-settings">
+    <div class="page-hdr">
+      <div>
         <div class="page-title">Settings</div>
-        <div class="content-card">
-            <div class="empty-row" style="padding:48px;text-align:center;color:#9ca3af;font-size:13px;">
-                Settings panel coming soon.
-            </div>
-        </div>
+        <div class="page-sub">System configuration</div>
+      </div>
+    </div>
+    <div class="content-card"><div class="empty-row"><td colspan="5" style="display:block;padding:56px;text-align:center;color:var(--text-d);font-size:13px">Settings panel coming soon.</td></div></div>
+  </div>
+
+</div>
+</div>
+
+@Html.AntiForgeryToken()
+
+<!-- EDIT STUDENT MODAL -->
+<div id="editModal" style="display:none;position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;">
+  <!-- backdrop -->
+  <div onclick="closeEditModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
+  <!-- modal box -->
+  <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#fff">Edit Student</div>
+        <div style="font-size:11.5px;color:var(--text-m);margin-top:2px">Changes will be saved to the database</div>
+      </div>
+      <button onclick="closeEditModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
     </div>
 
-</div><!-- /main -->
+    <input type="hidden" id="edit-accountId" />
 
-<!-- Antiforgery token -->
-@Html.AntiForgeryToken()
+    <!-- Name fields -->
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Personal Information</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">First Name</label>
+        <input id="edit-firstName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last Name</label>
+        <input id="edit-lastName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Middle Name</label>
+      <input id="edit-middleName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Email</label>
+      <input type="email" placeholder="e.g. student@email.com"
+             id="edit-email"
+             oninput="checkEmailAvailability(this.value)"
+             style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s" />
+      <div id="email-feedback" style="font-size:11px;margin-top:5px;min-height:16px"></div>
+    </div>
+
+    <!-- Academic fields -->
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Academic Information</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Course</label>
+      <select id="edit-courseId" style="width:100%;background:#0a1f10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px">
+        <option value="">Loading courses…</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px">
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Year Level</label>
+        <select id="edit-yearLevel" style="width:100%;background:#0a1f10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px">
+          <option value="1">1st Year</option>
+          <option value="2">2nd Year</option>
+          <option value="3">3rd Year</option>
+          <option value="4">4th Year</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Section</label>
+        <input id="edit-section" type="text" placeholder="e.g. A" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeEditModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveStudent()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save Changes</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
 <script>
-    // ── Page switching ────────────────────────────────────────────
-    function showPage(name) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        const page = document.getElementById('page-' + name);
-        const nav  = document.getElementById('nav-' + name);
-        if (page) page.classList.add('active');
-        if (nav)  nav.classList.add('active');
-        window.scrollTo(0, 0);
-    }
+function showPage(name, navEl) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    var page = document.getElementById('page-' + name);
+    if (page) page.classList.add('active');
+    if (navEl) navEl.classList.add('active');
+    else { var n = document.getElementById('nav-' + name); if (n) n.classList.add('active'); }
 
-    // ── Approve / Reject ──────────────────────────────────────────
-    async function updateStatus(accountId, status) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-
-        if (!confirm(`Are you sure you want to ${status.toLowerCase()} this account?`)) return;
-
-        try {
-            const res  = await fetch('/Home/UpdateAccountStatus', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': token ?? ''
-                },
-                body: JSON.stringify({ accountId, status })
-            });
-            const data = await res.json();
-
-            if (data.success) {
-                // Remove both row instances (dashboard + requests page)
-                [`row-${accountId}`, `req-row-${accountId}`].forEach(id => {
-                    const row = document.getElementById(id);
-                    if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
-                });
-                // Update badge count
-                const badge = document.querySelector('.nav-badge');
-                if (badge) {
-                    const count = parseInt(badge.textContent) - 1;
-                    if (count <= 0) badge.remove(); else badge.textContent = count;
-                }
-                // Update stat card
-                const statVal = document.querySelector('.stat-value');
-                if (statVal) {
-                    const cur = parseInt(statVal.textContent) || 0;
-                    statVal.textContent = Math.max(0, cur - 1);
-                }
-                showToast(data.message, 'ok');
-            } else {
-                showToast(data.message, 'fail');
-            }
-        } catch (err) {
-            showToast('Request failed. Please try again.', 'fail');
+    // refresh the tab data
+    if (name === 'dashboard')   refreshDashboard();
+    if (name === 'requests')    refreshRequests();
+    if (name === 'rejected')    refreshRejected();
+    if (name === 'students')    refreshStudents();
+    if (name === 'professors')  refreshProfessors();
+}
+async function updateStatus(accountId, status) {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    if (!confirm(`Are you sure you want to ${status.toLowerCase()} this account?`)) return;
+    try {
+        const res  = await fetch('/Home/UpdateAccountStatus', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body: JSON.stringify({ accountId, status })
+        });
+        const data = await res.json();
+        if (data.success) {
+            const row = document.getElementById(`req-row-${accountId}`);
+            if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
+            const badge = document.querySelector('.nav-badge');
+            if (badge) { const count = parseInt(badge.textContent) - 1; if (count <= 0) badge.remove(); else badge.textContent = count; }
+            showToast(data.message, 'ok');
+        } else {
+            showToast(data.message, 'fail');
         }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
     }
+}
 
-    // ── Student search ────────────────────────────────────────────
-    function filterStudents() {
-        const q = document.getElementById('student-search').value.toLowerCase();
-        document.querySelectorAll('#students-tbody tr').forEach(row => {
-            row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+async function deleteRejected(accountId) {
+    if (!confirm('Are you sure you want to permanently delete this account? This cannot be undone.')) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res = await fetch('/Home/DeleteAccount', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ?? ''
+            },
+            body: JSON.stringify({ accountId: accountId })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            const row = document.getElementById('rej-row-' + accountId);
+            if (row) {
+                row.style.opacity = '0';
+                row.style.transition = 'opacity 0.3s';
+                setTimeout(() => row.remove(), 300);
+            }
+            showToast(data.message, 'ok');
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+}
+
+function filterTable(input,tbodyId){
+  var q=input.value.toLowerCase();
+  document.querySelectorAll('#'+tbodyId+' tr').forEach(function(row){
+    row.style.display=row.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+function showToast(msg,type){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.className='show '+type;
+  clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);
+}
+function showAddProfessorModal(){
+  showToast('Add Professor feature coming soon!', 'ok');
+}
+function toggleRecentRows() {
+    var rows = document.querySelectorAll('.recent-row');
+    var btn = document.getElementById('view-all-btn');
+    var isExpanded = btn.getAttribute('data-expanded') === 'true';
+    
+    rows.forEach(function(row, i) {
+        if (i >= 5) {
+            row.style.display = isExpanded ? 'none' : '';
+        }
+    });
+    
+    btn.setAttribute('data-expanded', isExpanded ? 'false' : 'true');
+    var total = btn.getAttribute('data-total');
+    btn.textContent = isExpanded ? 'View All (' + total + ')' : 'Show Less';
+}
+function toggleDropdown(btn) {
+    // close all other open dropdowns first
+    document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
+        if (m !== btn.nextElementSibling) m.classList.remove('open');
+    });
+    btn.nextElementSibling.classList.toggle('open');
+}
+
+// close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.dropdown-wrap')) {
+        document.querySelectorAll('.dropdown-menu.open').forEach(function(m) {
+            m.classList.remove('open');
         });
     }
+});
 
-    // ── Toast ─────────────────────────────────────────────────────
-    function showToast(msg, type) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.className = `show ${type}`;
-        clearTimeout(t._t);
-        t._t = setTimeout(() => t.className = '', 3500);
+// holds courses list so we only fetch once
+let coursesCache = [];
+
+let emailCheckTimer = null;
+let emailIsTaken = false;
+
+function checkEmailAvailability(value) {
+    const feedback = document.getElementById('email-feedback');
+    const input = document.getElementById('edit-email');
+    const accountId = parseInt(document.getElementById('edit-accountId').value);
+
+    clearTimeout(emailCheckTimer);
+
+    if (!value || !value.includes('@@')) {
+        feedback.textContent = '';
+        input.style.borderColor = 'rgba(255,255,255,0.12)';
+        return;
     }
+
+    emailCheckTimer = setTimeout(async () => {
+        try {
+            const res = await fetch('/Home/CheckEmail?email=' + encodeURIComponent(value) + '&excludeAccountId=' + accountId);
+            const data = await res.json();
+
+            if (data.taken) {
+                emailIsTaken = true;
+                feedback.textContent = 'This email is already used by ' + data.usedBy;
+                feedback.style.color = '#f87171';
+                input.style.borderColor = 'rgba(239,68,68,0.5)';
+            } else {
+                emailIsTaken = false;
+                feedback.textContent = 'Email is available';
+                feedback.style.color = '#5fdd8e';
+                input.style.borderColor = 'rgba(39,167,68,0.5)';
+            }
+        } catch {
+            feedback.textContent = '';
+        }
+    }, 500); // debounce — waits 500ms after user stops typing
+}
+
+async function loadCoursesIntoSelect() {
+    if (coursesCache.length > 0) return; // already loaded
+    try {
+        const res  = await fetch('/Home/GetCourses');
+        const data = await res.json();
+        if (data.success) {
+            coursesCache = data.courses;
+            const sel = document.getElementById('edit-courseId');
+            sel.innerHTML = '<option value="">Select course</option>';
+            data.courses.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value       = c.courseId;
+                opt.textContent = c.courseCode;
+                sel.appendChild(opt);
+            });
+        }
+    } catch { showToast('Failed to load courses.', 'fail'); }
+}
+
+async function editStudent(accountId) {
+    document.getElementById('editModal').style.display = 'flex';
+    document.getElementById('edit-accountId').value = accountId;
+
+    // load courses first
+    await loadCoursesIntoSelect();
+
+    // fetch current student data
+    try {
+        const res  = await fetch(`/Home/GetStudent?accountId=${accountId}`);
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('edit-firstName').value  = data.firstName  ?? '';
+            document.getElementById('edit-lastName').value   = data.lastName   ?? '';
+            document.getElementById('edit-middleName').value = data.middleName ?? '';
+            document.getElementById('edit-email').value     = data.email     ?? '';
+            document.getElementById('edit-courseId').value   = data.courseId   ?? '';
+            document.getElementById('edit-yearLevel').value  = data.yearLevel  ?? '1';
+            document.getElementById('edit-section').value    = data.section    ?? '';
+        } else {
+            showToast(data.message, 'fail');
+            closeEditModal();
+        }
+    } catch { showToast('Failed to load student.', 'fail'); closeEditModal(); }
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    emailIsTaken = false;
+    document.getElementById('email-feedback').textContent = '';
+}
+
+async function saveStudent() {
+    const accountId  = parseInt(document.getElementById('edit-accountId').value);
+    const firstName  = document.getElementById('edit-firstName').value.trim();
+    const lastName   = document.getElementById('edit-lastName').value.trim();
+    const middleName = document.getElementById('edit-middleName').value.trim();
+    const email      = document.getElementById('edit-email').value.trim();
+    const courseId   = parseInt(document.getElementById('edit-courseId').value);
+    const yearLevel  = parseInt(document.getElementById('edit-yearLevel').value);
+    const section    = document.getElementById('edit-section').value.trim();
+
+    if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
+    if (!courseId)                { showToast('Please select a course.', 'fail'); return; }
+
+    if (emailIsTaken) {
+        showToast('Please use a different email address.', 'fail');
+        return;
+    }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res  = await fetch('/Home/UpdateStudent', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ accountId, firstName, lastName, middleName, email, courseId, yearLevel, section })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            // update the row in the DOM without reload
+            const row       = document.querySelector(`[data-account="${accountId}"]`);
+            const nameCell  = row?.querySelector('td:nth-child(2)');
+            const courseCell = row?.querySelector('td:nth-child(3)');
+            const yearCell  = row?.querySelector('td:nth-child(4)');
+
+            if (nameCell) {
+                const isActive = row.getAttribute('data-active') === 'true';
+                const fullName = `${lastName.toUpperCase()}, ${firstName.toUpperCase()}`;
+                nameCell.innerHTML = isActive
+                    ? `<strong>${fullName}</strong>` 
+                    : `<strong style="color:#f87171">${fullName}</strong>
+                       <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>`;
+            }
+            if (courseCell) {
+                const courseName = coursesCache.find(c => c.courseId === courseId)?.courseCode ?? '';
+                courseCell.innerHTML = `<span class="badge bg">${courseName}</span>`;
+            }
+            if (yearCell) {
+                yearCell.textContent = `${yearLevel}-${section}`;
+            }
+
+            closeEditModal();
+            showToast(data.message, 'ok');
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch { showToast('Save failed. Please try again.', 'fail'); }
+}
+async function deleteStudent(accountId) {
+    if (!confirm('Are you sure you want to PERMANENTLY delete this account? This cannot be undone.')) return;
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    try {
+        const res = await fetch('/Home/DeleteAccount', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body: JSON.stringify({ accountId: accountId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            // remove the row from DOM instantly
+            const row = document.querySelector(`[data-account="${accountId}"]`);
+            if (row) { row.style.opacity = '0'; row.style.transition = 'opacity .3s'; setTimeout(() => row.remove(), 300); }
+            showToast(data.message, 'ok');
+            // NO redirect here
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+}
+
+async function toggleActivation(accountId, el) {
+    const row = document.querySelector(`[data-account="${accountId}"]`);
+    const isActive = row.getAttribute('data-active') === 'true';
+    const action = isActive ? 'deactivate' : 'reactivate';
+
+    if (!confirm(`Are you sure you want to ${action} this account?`)) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res = await fetch('/Home/ToggleAccountActivation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ?? ''
+            },
+            body: JSON.stringify({ accountId: accountId })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            row.setAttribute('data-active', data.isActive.toString());
+
+            // update button text and color
+            const span = el.querySelector('span');
+            if (span) span.textContent = data.isActive ? 'Deactivate Account' : 'Reactivate Account';
+            el.classList.remove('danger', 'reactivate');
+            el.classList.add(data.isActive ? 'danger' : 'reactivate');
+
+            // update the name cell — add/remove red color and badge
+            const nameCell = row.querySelector('td:nth-child(2)');
+            if (nameCell) {
+                const strong = nameCell.querySelector('strong');
+                const nameText = strong ? strong.textContent : '';
+
+                if (!data.isActive) {
+                    // deactivated → red + badge
+                    nameCell.innerHTML = `
+                        <strong style="color:#f87171">${nameText}</strong>
+                        <span class="deactivated-badge" style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>
+                    `;
+                    row.style.opacity = '0.45';
+                } else {
+                    // reactivated → back to normal
+                    nameCell.innerHTML = `<strong>${nameText}</strong>`;
+                    row.style.opacity = '1';
+                }
+            }
+
+            showToast(data.message, 'ok');
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+
+    // close the dropdown
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+}
+
+function showRoleSubmenu(el, accountId) {
+    event.stopPropagation();
+    document.querySelectorAll('[id^="role-submenu-"]').forEach(function(s) {
+        if (s.id !== 'role-submenu-' + accountId) s.style.display = 'none';
+    });
+    var submenu = document.getElementById('role-submenu-' + accountId);
+    if (submenu) {
+        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+        submenu.classList.add('open');
+    }
+}
+
+async function changeRole(accountId, role) {
+    if (!confirm('Change this account role to ' + role + '?')) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res = await fetch('/Home/ChangeRole', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ?? ''
+            },
+            body: JSON.stringify({ accountId: accountId, role: role })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showToast(data.message, 'ok');
+            // just close dropdown, don't remove the row
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('[id^="role-submenu-"]').forEach(s => s.style.display = 'none');
+}
+
+async function refreshDashboard() {
+    try {
+        const res  = await fetch('/Home/GetDashboardStats');
+        const data = await res.json();
+        if (!data.success) return;
+
+        // update stat cards
+        const statVals = document.querySelectorAll('#page-dashboard .stat-val');
+        if (statVals[0]) statVals[0].textContent = data.approvedCount;
+        if (statVals[1]) statVals[1].textContent = data.pendingCount;
+        if (statVals[2]) statVals[2].textContent = data.studentCount;
+        if (statVals[3]) statVals[3].textContent = data.treasurerCount;
+        if (statVals[4]) statVals[4].textContent = data.professorCount;
+        if (statVals[5]) statVals[5].textContent = data.adminCount;
+
+        // update pending requests subtitle
+        const pendingTrend = document.querySelector('#page-dashboard .stat-trend.warn, #page-dashboard .stat-trend');
+        if (pendingTrend) {
+            pendingTrend.textContent = data.pendingCount === 0 ? 'No pending requests' : 'Awaiting review';
+            pendingTrend.className   = 'stat-trend' + (data.pendingCount > 0 ? ' warn' : '');
+        }
+
+        // update nav badge
+        const badge = document.querySelector('#nav-requests .nav-badge');
+        if (data.pendingCount > 0) {
+            if (badge) badge.textContent = data.pendingCount;
+            else {
+                const navReq = document.getElementById('nav-requests');
+                if (navReq) {
+                    const b = document.createElement('span');
+                    b.className   = 'nav-badge';
+                    b.textContent = data.pendingCount;
+                    navReq.appendChild(b);
+                }
+            }
+        } else {
+            if (badge) badge.remove();
+        }
+
+        // refresh recent requests table
+        const tbody = document.getElementById('recent-tbody');
+        if (tbody && data.recentRequests) {
+            if (data.recentRequests.length === 0) {
+                tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No account requests found.</td></tr>';
+            } else {
+                tbody.innerHTML = data.recentRequests.slice(0, 5).map(r => `
+                    <tr class="recent-row">
+                        <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
+                        <td><strong>${r.fullname}</strong></td>
+                        <td class="td-m">${r.courseCode ?? '—'}</td>
+                        <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
+                        <td class="td-mono td-m">${r.createdAt}</td>
+                        <td><span class="badge ${r.status === 'Approved' ? 'bg' : r.status === 'Rejected' ? 'br' : 'by'}">${r.status}</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+    } catch {}
+}
+
+async function refreshRequests() {
+    try {
+        const res  = await fetch('/Home/GetPendingRequests');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.querySelector('#page-requests tbody');
+        if (!tbody) return;
+
+        if (data.requests.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No pending requests.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.requests.map(r => `
+            <tr id="req-row-${r.accountId}">
+                <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
+                <td><strong>${r.fullname}</strong></td>
+                <td class="td-m">${r.courseCode ?? '—'}</td>
+                <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
+                <td class="td-mono td-m">${r.createdAt}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-ap" onclick="updateStatus(${r.accountId}, 'Approved')">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Approve
+                        </button>
+                        <button class="btn-rj" onclick="updateStatus(${r.accountId}, 'Rejected')">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                            Reject
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
+async function refreshRejected() {
+    try {
+        const res  = await fetch('/Home/GetRejectedRequests');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('rejected-tbody');
+        const sub   = document.getElementById('rejected-sub');
+        if (!tbody) return;
+
+        if (sub) sub.textContent = data.requests.length + ' rejected accounts';
+
+        if (data.requests.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No rejected requests.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.requests.map(r => `
+            <tr id="rej-row-${r.accountId}">
+                <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
+                <td><strong>${r.fullname}</strong></td>
+                <td class="td-m">${r.courseCode ?? '—'}</td>
+                <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
+                <td class="td-mono td-m">${r.createdAt}</td>
+                <td>
+                    <div class="action-btns">
+                        <button class="btn-ap" onclick="updateStatus(${r.accountId}, 'Approved')">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Approve
+                        </button>
+                        <button class="btn-rj" onclick="deleteRejected(${r.accountId})">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            Delete
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
+async function refreshStudents() {
+    try {
+        const res  = await fetch('/Home/GetStudentsList');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('students-tb');
+        if (!tbody) return;
+
+        if (data.students.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No students found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.students.map((s, i) => `
+            <tr data-account="${s.accountId}" data-active="${s.isActive}">
+                <td class="td-mono td-m">${i + 1}</td>
+                <td style="color:${s.isActive ? 'inherit' : '#f87171'}">
+                    <strong>${s.fullName}</strong>
+                    ${s.role === 'Treasurer' ? '<span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Treasurer</span>' : ''}
+                    ${!s.isActive ? '<span style="font-size:10px;font-weight:600;background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Deactivated</span>' : ''}
+                </td>
+                <td><span class="badge bg">${s.courseCode}</span></td>
+                <td class="td-m">${s.yearSection}</td>
+                <td style="width:40px;text-align:right">
+                    <div class="dropdown-wrap">
+                        <button class="dot-btn" onclick="toggleDropdown(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" onclick="editStudent(${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Edit
+                            </div>
+                            <div class="dropdown-item has-submenu" onclick="showRoleSubmenu(this, ${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Change Role
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <div class="dropdown-menu" id="role-submenu-${s.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                    <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Student'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        Student
+                                    </div>
+                                    <div class="dropdown-item" onclick="changeRole(${s.accountId}, 'Treasurer'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                        Treasurer
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-item ${s.isActive ? 'danger' : 'reactivate'}" onclick="toggleActivation(${s.accountId}, this)">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <span>${s.isActive ? 'Deactivate Account' : 'Reactivate Account'}</span>
+                            </div>
+                            <div class="dropdown-item danger" onclick="deleteStudent(${s.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Delete Account
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
+
+async function refreshProfessors() {
+    try {
+        const res  = await fetch('/Home/GetProfessorsList');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('profs-tb');
+        if (!tbody) return;
+
+        if (data.professors.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No professors found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.professors.map((p, i) => `
+            <tr>
+                <td class="td-mono td-m">${i + 1}</td>
+                <td>
+                    <strong>${p.fullName}</strong>
+                    ${p.role === 'Admin' ? '<span style="font-size:10px;font-weight:600;background:rgba(39,167,68,.15);color:#5fdd8e;border:1px solid rgba(39,167,68,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Admin</span>' : ''}
+                </td>
+                <td class="td-mono td-m">${p.schoolId}</td>
+                <td class="td-m">${p.email}</td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
 </script>
 </body>
 </html>

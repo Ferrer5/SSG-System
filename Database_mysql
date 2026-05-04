@@ -1,0 +1,158 @@
+CREATE DATABASE IF NOT EXISTS ssg_system;
+USE ssg_system;
+
+-- 1. accounts
+CREATE TABLE accounts (
+  account_id                  INT             NOT NULL AUTO_INCREMENT,
+  school_id                   VARCHAR(50)     NOT NULL,
+  password_hash               VARCHAR(255)    NOT NULL,
+  email                       VARCHAR(150)    NULL,
+  roles                       ENUM('Student','Treasurer','Admin','Professor') NOT NULL,
+  request_status              ENUM('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
+  is_active                   BOOLEAN         NOT NULL DEFAULT TRUE,
+  created_at                  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  password_reset_token        VARCHAR(255)    NULL,
+  password_reset_token_expires DATETIME       NULL,
+
+  PRIMARY KEY (account_id),
+  UNIQUE KEY uq_accounts_school_id (school_id)
+);
+
+-- 2. users
+CREATE TABLE users (
+  user_id     INT          NOT NULL AUTO_INCREMENT,
+  account_id  INT          NOT NULL,
+  first_name  VARCHAR(100) NULL,
+  last_name   VARCHAR(100) NULL,
+  middle_name VARCHAR(100) NULL,
+
+  PRIMARY KEY (user_id),
+  UNIQUE KEY uq_users_account (account_id),
+  CONSTRAINT fk_users_account
+    FOREIGN KEY (account_id) REFERENCES accounts (account_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 3. courses
+CREATE TABLE courses (
+  course_id   INT         NOT NULL AUTO_INCREMENT,
+  course_code VARCHAR(20) NOT NULL,
+  course_name VARCHAR(100) NULL,
+
+  PRIMARY KEY (course_id),
+  UNIQUE KEY uq_course_code (course_code)
+);
+
+-- 4. academic_profile
+CREATE TABLE academic_profile (
+  academic_profile_id INT  NOT NULL AUTO_INCREMENT,
+  user_id             INT  NOT NULL,
+  course_id           INT  NOT NULL,
+  year_level          INT  NULL,
+  section             VARCHAR(50) NULL,
+  academic_status     ENUM('Enrolled','Transferred','Graduated','Dropped') NOT NULL DEFAULT 'Enrolled',
+
+  PRIMARY KEY (academic_profile_id),
+  UNIQUE KEY uq_academic_user (user_id),
+  CONSTRAINT fk_academic_user
+    FOREIGN KEY (user_id) REFERENCES users (user_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_academic_course
+    FOREIGN KEY (course_id) REFERENCES courses (course_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 5. school_years
+CREATE TABLE school_years (
+  school_year_id INT NOT NULL AUTO_INCREMENT,
+  year_start     INT NOT NULL,
+  year_end       INT NOT NULL,
+
+  PRIMARY KEY (school_year_id),
+  CONSTRAINT chk_year_range CHECK (year_end = year_start + 1)
+);
+
+-- 6. full_amount
+CREATE TABLE full_amount (
+  full_amount_id INT           NOT NULL AUTO_INCREMENT,
+  school_year_id INT           NOT NULL,
+  semester       ENUM('First','Second') NOT NULL,
+  full_amount    DECIMAL(10,2) NOT NULL,
+  effective_date DATE          NOT NULL DEFAULT (CURRENT_DATE),
+
+  PRIMARY KEY (full_amount_id),
+  UNIQUE KEY uq_full_amount_sy_sem_date (school_year_id, semester, effective_date),
+  CONSTRAINT fk_full_amount_sy
+    FOREIGN KEY (school_year_id) REFERENCES school_years (school_year_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 7. org_fee_payments
+CREATE TABLE org_fee_payments (
+  payment_id     INT           NOT NULL AUTO_INCREMENT,
+  user_id        INT           NOT NULL,
+  school_year_id INT           NOT NULL,
+  semester       ENUM('First','Second') NOT NULL,
+  amount         DECIMAL(10,2) NOT NULL,
+  amount_required DECIMAL(10,2) NOT NULL,
+  payment_status ENUM('Partial','Paid') NOT NULL,
+  received_by    INT           NOT NULL,
+  payment_date   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (payment_id),
+  CONSTRAINT fk_payment_user
+    FOREIGN KEY (user_id) REFERENCES users (user_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_payment_sy
+    FOREIGN KEY (school_year_id) REFERENCES school_years (school_year_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT,
+  CONSTRAINT fk_payment_receiver
+    FOREIGN KEY (received_by) REFERENCES accounts (account_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 8. other_funds
+CREATE TABLE other_funds (
+  fund_id       INT           NOT NULL AUTO_INCREMENT,
+  source        VARCHAR(200)  NULL,
+  description   TEXT          NULL,
+  amount        DECIMAL(10,2) NOT NULL,
+  received_by   INT           NOT NULL,
+  received_date TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (fund_id),
+  CONSTRAINT fk_fund_receiver
+    FOREIGN KEY (received_by) REFERENCES accounts (account_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 9. expenses
+CREATE TABLE expenses (
+  expense_id   INT           NOT NULL AUTO_INCREMENT,
+  description  TEXT          NULL,
+  amount       DECIMAL(10,2) NOT NULL,
+  recorded_by  INT           NOT NULL,
+  expense_date TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  PRIMARY KEY (expense_id),
+  CONSTRAINT fk_expense_recorder
+    FOREIGN KEY (recorded_by) REFERENCES accounts (account_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 10. receipts
+CREATE TABLE receipts (
+  receipt_id     INT         NOT NULL AUTO_INCREMENT,
+  receipt_number VARCHAR(50) NOT NULL,
+  payment_id     INT         NULL,
+  issued_by      INT         NOT NULL,
+
+  PRIMARY KEY (receipt_id),
+  UNIQUE KEY uq_receipt_number (receipt_number),
+  CONSTRAINT fk_receipt_payment
+    FOREIGN KEY (payment_id) REFERENCES org_fee_payments (payment_id)
+    ON UPDATE CASCADE ON DELETE SET NULL,
+  CONSTRAINT fk_receipt_issuer
+    FOREIGN KEY (issued_by) REFERENCES accounts (account_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);

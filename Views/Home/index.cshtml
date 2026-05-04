@@ -86,7 +86,6 @@ body.login-open #heroOverlay {
   color: var(--white);
   transition: opacity 0.7s cubic-bezier(0.4,0,0.2,1),
               transform 0.7s cubic-bezier(0.4,0,0.2,1);
-  animation: pageIn 0.6s ease both;
 }
 
 #landingPage.hidden {
@@ -107,7 +106,6 @@ body.login-open #heroOverlay {
   justify-content: space-between;
   padding: 28px 72px 24px;
   border-bottom: 1px solid rgba(255,255,255,0.12);
-  animation: fadeDown 0.8s ease both;
   position: relative;
   /* Above .main-section (also z-index 2) so fixed mobile .nav-links receives clicks */
   z-index: 5;
@@ -138,13 +136,15 @@ body.login-open #heroOverlay {
 .nav-links { display:flex; align-items:center; gap:4px; }
 
 .nav-links a {
-  text-decoration:none;
-  color:rgba(255,255,255,0.82);
-  font-size:13.5px; font-weight:500;
-  letter-spacing:0.03em;
-  padding:7px 14px; border-radius:6px;
-  transition:all 0.25s ease;
-  position:relative; cursor:pointer;
+  text-decoration: none;
+  color: rgba(255,255,255,0.82);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: color 0.25s ease, background 0.25s ease;
 }
 
 .nav-links a::after {
@@ -156,8 +156,16 @@ body.login-open #heroOverlay {
   transition:transform 0.25s ease;
 }
 
-.nav-links a:hover { color:var(--white); background:rgba(255,255,255,0.07); }
-.nav-links a:hover::after { transform:translateX(-50%) scaleX(1); }
+.nav-links a:hover { color:var(--white); background:rgba(255,255,255,0.08); }
+.nav-links a:hover:not(.active)::after { transform:translateX(-50%) scaleX(1); }
+
+/* active state rules */
+.nav-links a.active {
+  color: var(--green);
+  font-weight: 600;
+}
+.nav-links a.active::after { transform:translateX(-50%) scaleX(1); }
+.nav-links a.active:hover { color: var(--green); }
 
 .nav-links a.nav-login {
   background:var(--green); color:#fff;
@@ -229,7 +237,7 @@ body.login-open #heroOverlay {
   text-transform:uppercase; color:var(--green);
   font-weight:600; margin-bottom:18px;
   display:flex; align-items:center; gap:10px;
-  animation:fadeUp 0.7s 0.2s ease both;
+  animation: fadeUp 0.7s 0.2s ease both;
 }
 .eyebrow::before {
   content:''; display:inline-block;
@@ -241,7 +249,7 @@ body.login-open #heroOverlay {
   font-size:clamp(38px,5vw,58px);
   font-weight:800; line-height:1.12;
   margin-bottom:14px; letter-spacing:-1px;
-  animation:fadeUp 0.7s 0.35s ease both;
+  animation: fadeUp 0.7s 0.35s ease both;
 }
 .main-title span { color:var(--green); }
 
@@ -249,7 +257,7 @@ body.login-open #heroOverlay {
   font-size:14px; color:rgba(255,255,255,0.65);
   line-height:1.7; margin-bottom:40px;
   max-width:460px; font-weight:300;
-  animation:fadeUp 0.7s 0.5s ease both;
+  animation: fadeUp 0.7s 0.5s ease both;
 }
 
 @@keyframes fadeUp {
@@ -265,8 +273,8 @@ body.login-open #heroOverlay {
   border-top:1px solid rgba(255,255,255,0.08);
   background:rgba(0,0,0,0.28);
   backdrop-filter:blur(6px);
-  animation:fadeUp 0.7s 0.9s ease both;
   transition:opacity 0.5s ease;
+  animation: fadeUp 0.7s 0.9s ease both;
 }
 
 body.login-open .bottom-bar { opacity:0; pointer-events:none; }
@@ -319,12 +327,10 @@ body.login-open .bottom-bar { opacity:0; pointer-events:none; }
   pointer-events:none; z-index:0;
 }
 
-/* RIGHT PANEL — frosted glass, slides from right */
+/* RIGHT PANEL */
 .lp-right {
   flex: 1;
-  background: rgba(255,255,255,0.07);
-  backdrop-filter: blur(28px) saturate(1.6);
-  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  background: #ffffff;
   overflow-y: auto;
   transform: translateX(100%);
   transition: transform 0.85s cubic-bezier(0.77,0,0.18,1);
@@ -390,25 +396,31 @@ body.login-open .lp-right { transform: translateX(0); }
 
 /* ── RIGHT PANEL INTERNALS ── */
 .lp-right-inner {
-  padding: 0 64px;
+  padding: 60px 64px;
   flex:1;
-  display:flex; flex-direction:column; justify-content:center;
+  display:flex; flex-direction:column; justify-content:flex-start;
   min-height:100vh;
 }
 
-/* Close button */
 .lp-close {
-  position:absolute; top:28px; right:32px;
-  width:38px; height:38px; border-radius:50%;
-  background:rgba(255,255,255,0.10);
-  border:1px solid rgba(255,255,255,0.18);
-  color:rgba(255,255,255,0.7);
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer; font-size:18px;
-  transition:background 0.2s, color 0.2s, transform 0.2s;
-  z-index:10;
+  position: fixed;        /* changed from absolute */
+  top: 28px;
+  right: 32px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.07);
+  border: 1px solid rgba(0,0,0,0.15);
+  color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  z-index: 100;           /* bumped up so it stays above scrolling content */
 }
-.lp-close:hover { background:rgba(255,255,255,0.18); color:#fff; transform:rotate(90deg); }
+.lp-close:hover { background:rgba(0,0,0,0.12); color:#000; transform:rotate(90deg); }
 
 /* ── FORM STYLES ── */
 .rp-screen { display:none; }
@@ -416,38 +428,37 @@ body.login-open .lp-right { transform: translateX(0); }
 
 .rp-h1 {
   font-size:28px; font-weight:700;
-  color:#fff; margin-bottom:8px; letter-spacing:-0.3px;
+  color:#111827; margin-bottom:8px; letter-spacing:-0.3px;
 }
 
 .rp-subtitle {
-  font-size:13px; color:rgba(255,255,255,0.55);
+  font-size:13px; color:#6b7280;
   margin-bottom:28px;
 }
 
 .input-field {
   width:100%; max-width:450px;
   padding:15px 18px;
-  border:1.5px solid rgba(255,255,255,0.18);
+  border:1.5px solid #d1d5db;
   border-radius:10px;
-  font-size:14px; color:#fff;
-  background:rgba(255,255,255,0.08);
+  font-size:14px; color:#111827;
+  background:#f9fafb;
   margin-bottom:14px; outline:none;
   transition:border-color 0.16s, background 0.16s, transform 0.16s;
   font-family:'Inter',sans-serif;
-  backdrop-filter:blur(4px);
 }
-.input-field::placeholder { color:rgba(255,255,255,0.35); font-size:13.5px; }
+.input-field::placeholder { color:#9ca3af; font-size:13.5px; }
 .input-field:focus {
   border-color:var(--green);
-  background:rgba(255,255,255,0.13);
+  background:#ffffff;
   transform:scale(1.02);
 }
 
 .forgot-link {
-  font-size:13px; color:rgba(255,255,255,0.65);
+  font-size:13px; color:#6b7280;
   text-decoration:none; display:block; margin-bottom:24px; cursor:pointer;
 }
-.forgot-link strong { color:#fff; font-weight:700; }
+.forgot-link strong { color:#111827; font-weight:700; }
 .forgot-link:hover { text-decoration:underline; }
 
 .btn-signin {
@@ -461,52 +472,52 @@ body.login-open .lp-right { transform: translateX(0); }
 }
 .btn-signin:hover { background:var(--green-dark); transform:translateY(-1px); }
 
-.signup-text { font-size:13px; color:rgba(255,255,255,0.60); margin-bottom:12px; }
-.signup-text strong { color:#fff; font-weight:700; }
+.signup-text { font-size:13px; color:#6b7280; margin-bottom:12px; }
+.signup-text strong { color:#111827; font-weight:700; }
 
 .btn-signup {
   display:block; width:100%; max-width:450px;
-  padding:14px; background:rgba(255,255,255,0.08);
-  color:#fff; border:1.5px solid rgba(255,255,255,0.30);
+  padding:14px; background:#f3f4f6;
+  color:#111827; border:1.5px solid #d1d5db;
   border-radius:10px; font-size:15px; font-weight:600;
   cursor:pointer; transition:background 0.16s, border-color 0.16s;
   font-family:'Inter',sans-serif; text-align:center; text-decoration:none;
 }
-.btn-signup:hover { background:rgba(255,255,255,0.16); border-color:rgba(255,255,255,0.5); }
+.btn-signup:hover { background:#e5e7eb; border-color:#9ca3af; }
 
 /* ── SIGN UP FORM ── */
 .form-section { margin-bottom:18px; }
 
 .section-title {
   font-size:13px; font-weight:700;
-  color:rgba(255,255,255,0.90); margin-bottom:14px;
+  color:#374151; margin-bottom:14px;
   padding-bottom:7px;
-  border-bottom:1.5px solid rgba(39,167,68,0.60);
+  border-bottom:1.5px solid rgba(39,167,68,0.50);
 }
 
 .form-group { margin-bottom:14px; }
 
 .form-label {
   display:block; font-size:12.5px;
-  color:rgba(255,255,255,0.60); margin-bottom:5px; font-weight:500;
+  color:#6b7280; margin-bottom:5px; font-weight:500;
 }
 
 .form-input {
   width:100%; padding:12px 15px;
-  border:1.5px solid rgba(255,255,255,0.18);
+  border:1.5px solid #d1d5db;
   border-radius:9px; font-size:13.5px;
-  color:#fff; background:rgba(255,255,255,0.08);
+  color:#111827; background:#f9fafb;
   outline:none;
   transition:border-color 0.16s, background 0.16s, transform 0.16s;
   font-family:'Inter',sans-serif;
 }
-.form-input::placeholder { color:rgba(255,255,255,0.30); font-size:13px; }
+.form-input::placeholder { color:#9ca3af; font-size:13px; }
 .form-input:focus {
   border-color:var(--green);
-  background:rgba(255,255,255,0.14);
+  background:#ffffff;
   transform:scale(1.02);
 }
-.form-input option { background:#1a3a22; color:#fff; }
+.form-input option { background:#ffffff; color:#111827; }
 
 .form-row { display:flex; gap:14px; }
 .form-row .form-group { flex:1; }
@@ -522,7 +533,7 @@ body.login-open .lp-right { transform: translateX(0); }
 }
 .submit-btn:hover { background:var(--green-dark); transform:translateY(-1px); }
 
-.back-to-login { font-size:13px; color:rgba(255,255,255,0.55); text-align:center; }
+.back-to-login { font-size:13px; color:#6b7280; text-align:center; }
 .back-to-login a {
   color:var(--green); text-decoration:none;
   font-weight:600; cursor:pointer;
@@ -563,7 +574,7 @@ body.login-open .lp-right { transform: translateX(0); }
   .lp-screen { position:static; height:auto; opacity:1; transform:none; }
   .lp-screen:not(.active) { display:none; }
 
-  .lp-right-inner { padding:28px 24px 40px; justify-content:flex-start; min-height:auto; }
+  .lp-right-inner { padding:40px 24px 40px; justify-content:flex-start; min-height:auto; }
   .lp-close { top:16px; right:16px; }
 
   .rp-h1 { font-size:22px; }
@@ -641,7 +652,7 @@ body.login-open .lp-right { transform: translateX(0); }
     </button>
 
     <div class="nav-links" id="mobileNav">
-      <a href="@Url.Action("Index", "Home")" onclick="setActiveNav(this); closeMobileNav()">Home</a>
+      <a href="@Url.Action("Index", "Home")" class="active" onclick="setActiveNav(this); closeMobileNav()">Home</a>
       <a href="@Url.Action("About", "Home")" onclick="setActiveNav(this); closeMobileNav()">About</a>
       <a href="@Url.Action("Contacts", "Home")" onclick="setActiveNav(this); closeMobileNav()">Contacts</a>
       <a onclick="openLogin(); setActiveNav(this); closeMobileNav()">Login</a>
@@ -688,8 +699,8 @@ body.login-open .lp-right { transform: translateX(0); }
     <div class="lp-left-track">
       <!-- Screen 0: Sign In -->
       <div class="lp-screen active" id="lpScreen0">
-        <div class="lp-headline">Track your<br>Organizational<br>Fees!</div>
-        <p class="lp-desc">A transparent and real-time system for tracking and managing organizational fees.</p>
+        <div class="lp-headline"> Welcome<br>Back!</div>
+        <p class="lp-desc">Track your organizational fees with transparency and ease.</p>
       </div>
       <!-- Screen 1: Sign Up -->
       <div class="lp-screen" id="lpScreen1">
@@ -703,7 +714,6 @@ body.login-open .lp-right { transform: translateX(0); }
       </div>
     </div>
 
-    <div class="lp-copyright">No Copyright</div>
   </div>
 
   <!-- RIGHT PANEL -->
@@ -714,86 +724,98 @@ body.login-open .lp-right { transform: translateX(0); }
       <!-- ── SCREEN: Sign In ── -->
       <div class="rp-screen active" id="screenSignIn">
         <h1 class="rp-h1">Sign in</h1>
-        <p class="rp-subtitle">Welcome back : enter your credentials below.</p>
+        <p class="rp-subtitle">Enter your credentials below.</p>
 
         <input class="input-field" type="text" name="schoolId" placeholder="School ID" />
         <input class="input-field" type="password" name="password" placeholder="Password" />
         <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
         <button class="btn-signin" onclick="handleSignIn()">Sign in</button>
 
-        <p class="signup-text">Don't have an account? <a href="#" onclick="goToSignUp()" style="color: #ffffff; text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign up</a></p>
+        <p class="signup-text">Don't have an account? <a href="#" onclick="goToSignUp()" style="color: #000000; text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign up</a></p>
       </div>
 
-      <!-- ── SCREEN: Sign Up ── -->
+       <!-- ── SCREEN: Sign Up ── -->
       <div class="rp-screen" id="screenSignUp">
-        <div class="signup-screen-inner" style="padding:40px 0 20px;">
-          <h1 class="rp-h1">Create Account</h1>
-          <p class="rp-subtitle">Fill requirements below.</p>
+         <div class="signup-screen-inner" style="padding:40px 0 20px;">
+        <h1 class="rp-h1">Create Account</h1>
+        <p class="rp-subtitle">Fill requirements below.</p>
 
-          <div class="form-section">
-            <div class="section-title">Personal Information</div>
+        <!-- 1. SECURITY -->
+        <div class="form-section">
+          <div class="section-title">Security</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="studentId">School ID</label>
+              <input type="text" id="studentId" name="studentId" class="form-input" placeholder="Enter here" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="password">Password</label>
+              <input type="password" id="password" name="password" class="form-input" placeholder="Enter here" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="confirmPassword">Confirm Password</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Enter here" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. NAME -->
+        <div class="form-section">
+          <div class="section-title">Name</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="firstName">First Name</label>
+              <input type="text" id="firstName" name="firstName" class="form-input" placeholder="Enter here" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="middleName">Middle Name</label>
+              <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="lastName">Last Name</label>
+              <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Enter here" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. SCHOOL INFORMATION -->
+        <div class="form-section">
+          <div class="section-title">School Information</div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label" for="firstName">First name</label>
-                <input type="text" id="firstName" name="firstName" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="course">Course</label>
+                <select id="course" name="course" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
+                  <option value="">Select a course</option>
+                </select>
               </div>
               <div class="form-group">
-                <label class="form-label" for="middleName">Middle name</label>
-                <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="yearLevel">Year Level</label>
+                <input type="text" id="yearLevel" name="yearLevel" class="form-input" placeholder="Enter here" />
               </div>
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label" for="lastName">Last name</label>
-                <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Enter here" />
+                <label class="form-label" for="section">Section</label>
+                <input type="text" id="section" name="section" class="form-input" placeholder="Enter here" />
               </div>
               <div class="form-group">
                 <label class="form-label" for="email">Email</label>
                 <input type="email" id="email" name="email" class="form-input" placeholder="Enter here" />
               </div>
             </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="studentId">Student ID</label>
-                <input type="text" id="studentId" name="studentId" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="course">Course</label>
-                <select id="course" name="course" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23fff%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
-                  <option value="">Select a course</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="yearLevel">Year Level</label>
-                <input type="text" id="yearLevel" name="yearLevel" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="section">Section</label>
-                <input type="text" id="section" name="section" class="form-input" placeholder="Enter here" />
-              </div>
-            </div>
           </div>
-
-          <div class="form-section">
-            <div class="section-title">Security</div>
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="password">Password</label>
-                <input type="password" id="password" name="password" class="form-input" placeholder="Enter here" />
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="confirmPassword">Confirm password</label>
-                <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Enter here" />
-              </div>
-            </div>
-          </div>
-
-          <button class="submit-btn" onclick="handleSignUp()">Submit</button>
-          <p class="back-to-login">Already have an account? <a onclick="goToSignIn()" style="color: #ffffff; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign in</a></p>
         </div>
+
+        <button class="submit-btn" onclick="handleSignUp()">Submit</button>
+        <p class="back-to-login">Already have an account? <a onclick="goToSignIn()" style="color: #000000; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign in</a></p>
       </div>
+
+
+
 
       <!-- ── SCREEN: Forgot Password ── -->
       <div class="rp-screen" id="screenForgot">
@@ -806,7 +828,7 @@ body.login-open .lp-right { transform: translateX(0); }
           </div>
           <div style="position: relative; max-width:450px;">
             <button class="submit-btn" style="width: 100%;" onclick="handleForgotPassword()">Send Verification Code</button>
-            <p class="back-to-login" style="position: absolute; bottom: -25px; left: 0; margin: 0;">Remember your password? <a onclick="goToSignIn()" style="color: #ffffff; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign in</a></p>
+            <p class="back-to-login" style="position: absolute; bottom: -25px; left: 0; margin: 0;">Remember your password? <a onclick="goToSignIn()" style="color: #000000; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign in</a></p>
           </div>
         </div>
       </div>
@@ -864,6 +886,23 @@ function updateClock() {
 setInterval(updateClock, 1000);
 updateClock();
 
+/* ── AUTO-CAPITALIZE NAME FIELDS ── */
+function capitalizeWords(input) {
+  input.value = input.value.replace(/\b\w/g, char => char.toUpperCase());
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const nameFields = ['firstName', 'middleName', 'lastName'];
+  nameFields.forEach(id => {
+    const field = document.getElementById(id);
+    if (field) {
+      field.addEventListener('input', function() {
+        capitalizeWords(this);
+      });
+    }
+  });
+});
+
 /* ── LOGIN OPEN / CLOSE ── */
 function openLogin() {
   document.body.classList.add('login-open');
@@ -901,23 +940,18 @@ function showLandingPage() {
 }
 
 function setActiveNav(clickedElement) {
-  // Get all navigation links
-  const navLinks = document.querySelectorAll('.nav-links a');
-  
-  // Reset all links to original white color
-  navLinks.forEach(link => {
-    link.style.color = '';
-    link.style.fontWeight = '';
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.classList.remove('active');
   });
-  
-  // Set the clicked link to green and bold
-  clickedElement.style.color = '#27a744';
-  clickedElement.style.fontWeight = '600';
+  clickedElement.classList.add('active');
 }
 
 function closeLogin() {
   document.getElementById('landingPage').classList.remove('hidden');
   document.body.classList.remove('login-open');
+  // Reset active nav highlight back to Home
+  const homeLink = document.querySelector('#mobileNav a:first-child');
+  if (homeLink) setActiveNav(homeLink);
 }
 
 /* Close on Escape key */

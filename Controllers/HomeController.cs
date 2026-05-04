@@ -110,6 +110,8 @@ public class HomeController : Controller
         var treasurers = await GetTreasurersAsync();
         var professors = await GetProfessorsAsync();
 
+        var studentOnlyCount = students.Count(s => s.Role == "Student");
+
         var model = new DashboardViewModel
         {
             RequestedAccounts = pendingAccounts,
@@ -118,7 +120,7 @@ public class HomeController : Controller
             Admins = admins,
             Treasurers = treasurers,
             Professors = professors,
-            ApprovedAccountsCount = students.Count + treasurers.Count + professors.Count + admins.Count
+            ApprovedAccountsCount = studentOnlyCount + treasurers.Count + professors.Count + admins.Count
         };
 
         return View("~/Views/Dashboard/admin_dashboard.cshtml", model);
@@ -480,19 +482,31 @@ Best regards,<br>SSG Financial Management System";
         try
         {
             var account = await _context.Accounts
+                .Include(a => a.User)
+                    .ThenInclude(u => u!.AcademicProfile)
                 .FirstOrDefaultAsync(a => a.AccountId == request.AccountId);
 
             if (account == null)
                 return Json(new { success = false, message = "Account not found." });
 
+            // 1. delete academic profile first
+            if (account.User?.AcademicProfile != null)
+                _context.AcademicProfiles.Remove(account.User.AcademicProfile);
+
+            // 2. delete user
+            if (account.User != null)
+                _context.Users.Remove(account.User);
+
+            // 3. delete account
             _context.Accounts.Remove(account);
+
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, message = "Account deleted successfully." });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Cannot delete — account may have related records: {ex.Message}" });
+            return Json(new { success = false, message = "Delete failed: " + ex.Message });
         }
     }
 
@@ -629,6 +643,43 @@ Best regards,<br>SSG Financial Management System";
     }
 
     [HttpGet]
+    public async Task<IActionResult> GetRejectedRequests()
+    {
+        try
+        {
+            var rejected = await _context.Accounts
+                .Where(a => a.RequestStatus == RequestStatus.Rejected && a.Role == UserRole.Student)
+                .Include(a => a.User)
+                    .ThenInclude(u => u!.AcademicProfile)
+                        .ThenInclude(ap => ap!.Course)
+                .Select(a => new RequestedAccountViewModel
+                {
+                    AccountId  = a.AccountId,
+                    SchoolId   = a.SchoolId,
+                    Fullname   = a.User != null
+                        ? $"{(a.User.LastName != null ? a.User.LastName.ToUpper() : "")}, {(a.User.FirstName != null ? a.User.FirstName.ToUpper() : "")}"
+                        : a.SchoolId.ToUpper(),
+                    CourseCode = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.Course != null
+                        ? a.User.AcademicProfile.Course.CourseCode : null,
+                    YearLevel  = a.User != null && a.User.AcademicProfile != null && a.User.AcademicProfile.YearLevel != null
+                        ? a.User.AcademicProfile.YearLevel.ToString() : null,
+                    Section    = a.User != null && a.User.AcademicProfile != null
+                        ? a.User.AcademicProfile.Section : null,
+                    CreatedAt  = a.CreatedAt,
+                    Status     = a.RequestStatus
+                })
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            return Json(new { success = true, requests = rejected });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
     public async Task<IActionResult> GetStudentsList()
     {
         var students = await GetStudentsAsync();
@@ -659,16 +710,24 @@ Best regards,<br>SSG Financial Management System";
     [HttpGet]
     public async Task<IActionResult> GetDashboardStats()
     {
-        var students   = await GetStudentsAsync();
-        var treasurers = await GetTreasurersAsync();
-        var professors = await GetProfessorsAsync();
-        var admins     = await GetAdminsAsync();
-        var pending    = await GetPendingAccountsAsync();
+        var allStudents    = await GetStudentsAsync(); // includes both Student + Treasurer roles
+        var professors     = await GetProfessorsAsync();
+        var admins         = await GetAdminsAsync();
+        var pending        = await GetPendingAccountsAsync();
+        var allRequests    = await GetAllAccountRequestsAsync();
+
+        var studentCount   = allStudents.Count(s => s.Role == "Student");
+        var treasurerCount = allStudents.Count(s => s.Role == "Treasurer");
 
         return Json(new {
-            success       = true,
-            approvedCount = students.Count + treasurers.Count + professors.Count + admins.Count,
-            pendingCount  = pending.Count
+            success        = true,
+            approvedCount  = studentCount + treasurerCount + professors.Count + admins.Count,
+            pendingCount   = pending.Count,
+            studentCount   = studentCount + treasurerCount, // students card shows both
+            treasurerCount = treasurerCount,
+            professorCount = professors.Count,
+            adminCount     = admins.Count,
+            recentRequests = allRequests
         });
     }
 
@@ -805,6 +864,7 @@ Best regards,<br>SSG Financial Management System";
                     ? $"{(u.AcademicProfile.YearLevel.HasValue ? u.AcademicProfile.YearLevel.Value.ToString() : "N/A")}-{(u.AcademicProfile.Section ?? "N/A")}"
                     : "N/A",
                 AccountId   = u.AccountId,
+                Role        = u.Account != null ? u.Account.Role.ToString() : "Student",
                 IsActive    = u.Account != null ? u.Account.IsActive : false
             })
             .ToListAsync();
@@ -861,7 +921,8 @@ Best regards,<br>SSG Financial Management System";
     {
         var professors = await _context.Accounts
             .Include(a => a.User)
-            .Where(a => a.Role == UserRole.Professor && a.RequestStatus == RequestStatus.Approved)
+            .Where(a => (a.Role == UserRole.Professor || a.Role == UserRole.Admin) 
+                 && a.RequestStatus == RequestStatus.Approved)
             .Select(a => new ProfessorViewModel
             {
                 ProfessorId = a.AccountId,
@@ -869,7 +930,6 @@ Best regards,<br>SSG Financial Management System";
                     ? $"{a.User.LastName.ToUpper()}, {a.User.FirstName.ToUpper()}" : "N/A",
                 Email = a.Email ?? "N/A",
                 SchoolId = a.SchoolId ?? "N/A",
-                Department = "N/A", // TODO: Add department field to User or Account model
                 Role = a.Role.ToString()
             })
             .ToListAsync();

@@ -112,11 +112,19 @@ namespace MyMvcApp.Data
                 entity.HasKey(e => e.FullAmountId);
                 entity.Property(e => e.FullAmountId).HasColumnName("full_amount_id");
                 entity.Property(e => e.SchoolYearId).IsRequired().HasColumnName("school_year_id");
-                entity.Property(e => e.Semester).IsRequired().HasConversion<string>().HasColumnName("semester");
+                entity.Property(e => e.Semester)
+                    .IsRequired()
+                    .HasColumnName("semester")
+                    .HasColumnType("varchar(10)")
+                    .HasConversion(
+                        v => v == Semester.First ? "1st" : "2nd",
+                        v => (v == "1st" || v == "First") ? Semester.First : Semester.Second
+                    );
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("full_amount");
-                entity.Property(e => e.EffectiveDate).IsRequired().HasDefaultValueSql("(CURRENT_DATE)").HasColumnName("effective_date");
 
-                entity.HasIndex(e => new { e.SchoolYearId, e.Semester, e.EffectiveDate }).IsUnique().HasDatabaseName("uq_full_amount_sy_sem_date");
+                entity.HasIndex(e => new { e.SchoolYearId, e.Semester })
+                    .IsUnique()
+                    .HasDatabaseName("uq_full_amount_sy_sem");
 
                 entity.HasOne(e => e.SchoolYear)
                     .WithMany(sy => sy.FullAmounts)
@@ -131,10 +139,24 @@ namespace MyMvcApp.Data
                 entity.Property(e => e.PaymentId).HasColumnName("payment_id");
                 entity.Property(e => e.UserId).IsRequired().HasColumnName("user_id");
                 entity.Property(e => e.SchoolYearId).IsRequired().HasColumnName("school_year_id");
-                entity.Property(e => e.Semester).IsRequired().HasConversion<string>().HasColumnName("semester");
+                entity.Property(e => e.Semester)
+                    .IsRequired()
+                    .HasColumnName("semester")
+                    .HasColumnType("varchar(10)")
+                    .HasConversion(
+                        v => v == Semester.First ? "1st" : "2nd",
+                        v => (v == "1st" || v == "First") ? Semester.First : Semester.Second
+                    );
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("amount");
                 entity.Property(e => e.AmountRequired).IsRequired().HasPrecision(10, 2).HasColumnName("amount_required");
-                entity.Property(e => e.PaymentStatus).IsRequired().HasConversion<string>().HasColumnName("payment_status");
+                entity.Property(e => e.PaymentStatus)
+                    .IsRequired()
+                    .HasColumnName("payment_status")
+                    .HasColumnType("varchar(10)")
+                    .HasConversion(
+                        v => v.ToString(),
+                        v => (PaymentStatus)Enum.Parse(typeof(PaymentStatus), v)
+                    );
                 entity.Property(e => e.ReceivedBy).IsRequired().HasColumnName("received_by");
                 entity.Property(e => e.PaymentDate).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("payment_date");
 

@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyMvcApp.Models
 {
+    [Table("receipts")]
     public class Receipt
     {
         [Key]

@@ -764,17 +764,15 @@ body.login-open .lp-right { transform: translateX(0); }
         <!-- 2. NAME -->
         <div class="form-section">
           <div class="section-title">Name</div>
-          <div class="form-row">
+          <div class="form-row" style="display:grid;grid-template-columns:1fr 60px 1fr;gap:10px;">
             <div class="form-group">
               <label class="form-label" for="firstName">First Name</label>
               <input type="text" id="firstName" name="firstName" class="form-input" placeholder="Enter here" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="middleName">Middle Name</label>
-              <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" />
+              <label class="form-label" for="middleName">Middle I.</label>
+              <input type="text" id="middleName" name="middleName" class="form-input" maxlength="3" placeholder="M.I." oninput="autoMiddlePeriod(this)" style="text-align:center;padding:12px 8px;" />
             </div>
-          </div>
-          <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="lastName">Last Name</label>
               <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Enter here" />
@@ -1252,6 +1250,154 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+/* ── PROFESSOR MODAL FUNCTIONS ── */
+function showAddProfessorModal() {
+    document.getElementById('addProfessorModal').style.display = 'flex';
+    // clear fields
+    document.getElementById('prof-firstName').value  = '';
+    document.getElementById('prof-lastName').value   = '';
+    document.getElementById('prof-middleName').value = '';
+    document.getElementById('prof-schoolId').value   = '';
+    document.getElementById('prof-email').value      = '';
+    document.getElementById('prof-password').value   = '';
+}
+
+function closeAddProfessorModal() {
+    document.getElementById('addProfessorModal').style.display = 'none';
+}
+
+async function saveProfessor() {
+    const firstName  = document.getElementById('prof-firstName').value.trim();
+    const lastName   = document.getElementById('prof-lastName').value.trim();
+    const middleName = document.getElementById('prof-middleName').value.trim();
+    const schoolId   = document.getElementById('prof-schoolId').value.trim();
+    const email      = document.getElementById('prof-email').value.trim();
+    const password   = document.getElementById('prof-password').value.trim();
+
+    if (!firstName || !lastName)  { showToast('First and last name are required.', 'fail'); return; }
+    if (!schoolId)                { showToast('School ID is required.', 'fail'); return; }
+    if (!password || password.length < 6) { showToast('Password must be at least 6 characters.', 'fail'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res  = await fetch('/Home/AddProfessor', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ firstName, lastName, middleName, schoolId, email, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            closeAddProfessorModal();
+            showToast(data.message, 'ok');
+            refreshProfessors();
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+}
+
+function showToast(message, type) {
+    // Simple toast implementation - can be enhanced
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 1000;
+        padding: 12px 20px; border-radius: 8px; color: white;
+        font-size: 14px; font-weight: 500; max-width: 300px;
+        background: ${type === 'ok' ? 'var(--green)' : '#dc3545'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+function refreshProfessors() {
+    // Placeholder for refreshing professor list
+    console.log('Professor list refreshed');
+}
+
+// Add toast animations to CSS
+const style = document.createElement('style');
+style.textContent = `
+    @@keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    @@keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+
+function autoMiddlePeriod(input) {
+    var val = input.value.replace(/\./g, '').toUpperCase(); // remove existing periods, uppercase
+    if (val.length > 0) {
+        input.value = val + '.';
+    } else {
+        input.value = '';
+    }
+}
 </script>
+
+<!-- ADD PROFESSOR MODAL -->
+<div id="addProfessorModal" style="display:none;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;">
+    <div onclick="closeAddProfessorModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
+    <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+            <div>
+                <div style="font-size:16px;font-weight:700;color:#fff">Add Professor</div>
+                <div style="font-size:11.5px;color:var(--text-m);margin-top:2px">New professor will be saved to the database</div>
+            </div>
+            <button onclick="closeAddProfessorModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Personal Information</div>
+        <div style="display:grid;grid-template-columns:1fr 60px 1fr;gap:10px;margin-bottom:10px">
+            <div>
+                <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">First Name</label>
+                <input id="prof-firstName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+            </div>
+            <div>
+                <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">M.I.</label>
+                <input id="prof-middleName" type="text" maxlength="3" placeholder="M.I." oninput="autoMiddlePeriod(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 8px;color:#fff;font-size:13px;font-family:inherit;outline:none;text-align:center" />
+            </div>
+            <div>
+                <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last Name</label>
+                <input id="prof-lastName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+            </div>
+        </div>
+
+        <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px;margin-top:16px">Account Information</div>
+        <div style="margin-bottom:10px">
+            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">School ID</label>
+            <input id="prof-schoolId" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+        </div>
+        <div style="margin-bottom:10px">
+            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Email</label>
+            <input id="prof-email" type="email" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+        </div>
+        <div style="margin-bottom:24px">
+            <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Password</label>
+            <input id="prof-password" type="password" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end">
+            <button onclick="closeAddProfessorModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+            <button onclick="saveProfessor()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Add Professor</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

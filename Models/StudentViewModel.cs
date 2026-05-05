@@ -23,5 +23,12 @@ namespace MyMvcApp.Models
         public string Role { get; set; } = string.Empty;
         
         public bool IsActive { get; set; }
+        
+        [Required]
+        [StringLength(50)]
+        public string SchoolId { get; set; } = string.Empty;
+        
+        [StringLength(50)]
+        public string AcademicStatus { get; set; } = string.Empty;
     }
 }

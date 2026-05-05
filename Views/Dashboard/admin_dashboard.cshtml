@@ -147,6 +147,13 @@
         .dropdown-item.reactivate:hover{background:rgba(39,167,68,.08);color:#4ade80}
         .dropdown-item.has-submenu{position:relative;overflow:visible;}
         .dropdown-menu{overflow:visible;}
+        .settings-tab{display:flex;align-items:center;gap:7px;padding:9px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-m);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:-1px}
+        .settings-tab:hover{color:var(--text)}
+        .settings-tab.active{color:#5fdd8e;border-bottom-color:#27a744}
+        .settings-panel{display:none}.settings-panel.active{display:block}
+        .settings-label{font-size:11px;color:var(--text-m);display:block;margin-bottom:4px}
+        .settings-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+        .settings-input:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--green-glow2)}
     </style>
 </head>
 <body>
@@ -157,7 +164,7 @@
 <aside class="sidebar">
   <div class="sb-brand">
     <div class="sb-logo">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <img src="~/logo.png" alt="SSG Finance Logo" style="width:100%;height:100%;object-fit:cover;border-radius:10px;" />
     </div>
     <div>
       <div class="sb-brand-name">SSG Finance</div>
@@ -447,7 +454,7 @@
         </div>
       </div>
       <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th></th></tr></thead>
+        <table><thead><tr><th>#</th><th>School ID</th><th>Name</th><th>Course</th><th>Year &amp; Section</th><th>Status</th><th></th></tr></thead>
         <tbody id="students-tb">
           @if (Model.Students != null && Model.Students.Any())
           {
@@ -456,6 +463,7 @@
               {
                   <tr data-account="@s.AccountId" data-active="@s.IsActive.ToString().ToLower()">
                       <td class="td-mono td-m">@(i++)</td>
+                      <td class="td-mono td-m">@s.SchoolId</td>
                       <td style="color: @(s.IsActive ? "inherit" : "#f87171")">
     <strong>@s.FullName</strong>
     @if (s.Role == "Treasurer") {
@@ -467,6 +475,19 @@
 </td>
                       <td><span class="badge bg">@s.CourseCode</span></td>
                       <td class="td-m">@s.YearSection</td>
+                      <td>
+    @{
+        var statusClass = s.AcademicStatus switch
+        {
+            "Enrolled"    => "bg",
+            "Transferred" => "by",
+            "Graduated"   => "by",
+            "Dropped"     => "br",
+            _             => "by"
+        };
+    }
+    <span class="badge @statusClass">@s.AcademicStatus</span>
+</td>
                   <td style="width:40px;text-align:right">
                     <div class="dropdown-wrap">
                         <button class="dot-btn" onclick="toggleDropdown(this)">
@@ -509,7 +530,7 @@
           }
           else
           {
-              <tr class="empty-row"><td colspan="5">No students found.</td></tr>
+              <tr class="empty-row"><td colspan="7">No students found.</td></tr>
           }
         </tbody></table>
       </div>
@@ -537,7 +558,7 @@
         </button>
       </div>
       <div class="tbl-wrap">
-        <table><thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Email</th></tr></thead>
+        <table><thead><tr><th>#</th><th>Name</th><th>School ID</th><th>Email</th><th></th></tr></thead>
         <tbody id="profs-tb">
           @if (Model.Professors != null && Model.Professors.Any())
           {
@@ -554,12 +575,45 @@
 </td>
                       <td class="td-mono td-m">@p.SchoolId</td>
                       <td class="td-m">@p.Email</td>
+                  <td style="width:40px;text-align:right">
+    <div class="dropdown-wrap">
+        <button class="dot-btn" onclick="toggleDropdown(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
+        <div class="dropdown-menu">
+            <div class="dropdown-item" onclick="editProfessor(@p.AccountId)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Edit
+            </div>
+            <div class="dropdown-item has-submenu" onclick="showProfRoleSubmenu(this, @p.AccountId)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Change Role
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                <!-- submenu -->
+                <div class="dropdown-menu" id="prof-role-submenu-@p.AccountId" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                    <div class="dropdown-item" onclick="changeProfRole(@p.AccountId, 'Professor'); event.stopPropagation()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 14l9-5-9-5-9 5 9 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Professor
+                    </div>
+                    <div class="dropdown-item" onclick="changeProfRole(@p.AccountId, 'Admin'); event.stopPropagation()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Admin
+                    </div>
+                </div>
+            </div>
+            <div class="dropdown-item danger" onclick="deleteProfessor(@p.AccountId)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Delete Account
+            </div>
+        </div>
+    </div>
+</td>
                   </tr>
               }
           }
           else
           {
-              <tr class="empty-row"><td colspan="4">No professors found.</td></tr>
+              <tr class="empty-row"><td colspan="5">No professors found.</td></tr>
           }
         </tbody></table>
       </div>
@@ -575,7 +629,159 @@
         <div class="page-sub">System configuration</div>
       </div>
     </div>
-    <div class="content-card"><div class="empty-row"><td colspan="5" style="display:block;padding:56px;text-align:center;color:var(--text-d);font-size:13px">Settings panel coming soon.</td></div></div>
+
+    <!-- Settings Tabs -->
+    <div style="display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.06)">
+      <button class="settings-tab active" onclick="switchSettingsTab('sy',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        School Year & Semester
+      </button>
+      <button class="settings-tab" onclick="switchSettingsTab('courses',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Manage Courses
+      </button>
+      <button class="settings-tab" onclick="switchSettingsTab('fees',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M12 6v2m0 8v2M9 9.5A3 3 0 0112 8a3 3 0 010 6 3 3 0 00-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Set Fee Amount
+      </button>
+    </div>
+
+    <!-- SCHOOL YEAR & SEMESTER -->
+    <div class="settings-panel active" id="settings-sy">
+      <div class="content-card" style="margin-bottom:14px">
+        <div class="cc-hdr"><div class="cc-title">Add School Year</div></div>
+        <div style="padding:20px 24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+              <label class="settings-label">Year Start</label>
+              <input id="sy-yearStart" type="number" class="settings-input" placeholder="e.g. 2025" />
+            </div>
+            <div>
+              <label class="settings-label">Year End</label>
+              <input id="sy-yearEnd" type="number" class="settings-input" placeholder="e.g. 2026" />
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn-ap" onclick="addSchoolYear()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              Add School Year
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="cc-hdr"><div class="cc-title">School Years</div><span class="badge by" id="sy-count-badge">0 total</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>School Year</th><th>Semesters</th><th></th></tr></thead>
+            <tbody id="sy-tbody">
+              <tr class="empty-row"><td colspan="4">No school years found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MANAGE COURSES -->
+    <div class="settings-panel" id="settings-courses">
+      <div class="content-card" style="margin-bottom:14px">
+        <div class="cc-hdr"><div class="cc-title">Add Course</div></div>
+        <div style="padding:20px 24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+              <label class="settings-label">Course Code</label>
+              <input id="course-code" type="text" class="settings-input" placeholder="e.g. BSIT" />
+            </div>
+            <div>
+              <label class="settings-label">Course Name</label>
+              <input id="course-name" type="text" class="settings-input" placeholder="e.g. BS Information Technology" />
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn-ap" onclick="addCourse()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              Add Course
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="cc-hdr"><div class="cc-title">Courses</div><span class="badge by" id="courses-count-badge">0 total</span></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Code</th><th>Course Name</th><th></th></tr></thead>
+            <tbody id="courses-tbody">
+              <tr class="empty-row"><td colspan="4">No courses found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SET FEE AMOUNT -->
+    <div class="settings-panel" id="settings-fees">
+      <div class="content-card" style="margin-bottom:14px">
+        <div class="cc-hdr"><div class="cc-title">Set Organization Fee</div></div>
+        <div style="padding:20px 24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+              <label class="settings-label">School Year</label>
+              <select id="fee-schoolYear" class="settings-input" style="appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px;background-color:#0a1f10;cursor:pointer">
+                <option value="">Select school year</option>
+              </select>
+            </div>
+            <div>
+              <label class="settings-label">Semester</label>
+              <select id="fee-semester" class="settings-input" style="appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px;background-color:#0a1f10;cursor:pointer">
+                <option value="First">1st Semester</option>
+                <option value="Second">2nd Semester</option>
+              </select>
+            </div>
+            <div>
+              <label class="settings-label">Amount (₱)</label>
+              <input id="fee-amount" type="number" step="0.01" class="settings-input" placeholder="e.g. 150.00" />
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn-ap" onclick="setFeeAmount()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              Set Fee Amount
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="content-card">
+          <div style="padding:16px 20px">
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px">1st Semester Fee</div>
+            <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em" id="fee-1st-val">₱—</div>
+            <div style="font-size:11px;color:var(--text-m);margin-top:3px" id="fee-1st-sub">No fee set</div>
+          </div>
+        </div>
+        <div class="content-card">
+          <div style="padding:16px 20px">
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px">2nd Semester Fee</div>
+            <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em" id="fee-2nd-val">₱—</div>
+            <div style="font-size:11px;color:var(--text-m);margin-top:3px" id="fee-2nd-sub">No fee set</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="cc-hdr"><div class="cc-title">Fee History</div></div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>School Year</th><th>Semester</th><th>Amount</th></tr></thead>
+            <tbody id="fees-tbody">
+              <tr class="empty-row"><td colspan="3">No fee records found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -648,10 +854,68 @@
       </div>
     </div>
 
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Academic Status</div>
+    <div style="margin-bottom:24px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Status</label>
+      <select id="edit-academicStatus" style="width:100%;background:#0a1f10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px">
+        <option value="Enrolled">Enrolled</option>
+        <option value="Transferred">Transferred</option>
+        <option value="Graduated">Graduated</option>
+        <option value="Dropped">Dropped</option>
+      </select>
+    </div>
+
     <!-- Buttons -->
     <div style="display:flex;gap:10px;justify-content:flex-end">
       <button onclick="closeEditModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
       <button onclick="saveStudent()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROFESSOR MODAL -->
+<div id="editProfessorModal" style="display:none;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;">
+  <div onclick="closeEditProfessorModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
+  <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#fff">Edit Professor</div>
+        <div style="font-size:11.5px;color:var(--text-m);margin-top:2px">Changes will be saved to the database</div>
+      </div>
+      <button onclick="closeEditProfessorModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+
+    <input type="hidden" id="edit-prof-accountId" />
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Personal Information</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">First Name</label>
+        <input id="edit-prof-firstName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last Name</label>
+        <input id="edit-prof-lastName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+      </div>
+    </div>
+    <div style="margin-bottom:18px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Middle Name</label>
+      <input id="edit-prof-middleName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+    </div>
+
+    <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Account Information</div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">School ID</label>
+      <input id="edit-prof-schoolId" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+    </div>
+    <div style="margin-bottom:24px">
+      <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Email</label>
+      <input id="edit-prof-email" type="email" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeEditProfessorModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+      <button onclick="saveEditedProfessor()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Save Changes</button>
     </div>
   </div>
 </div>
@@ -673,6 +937,7 @@ function showPage(name, navEl) {
     if (name === 'rejected')    refreshRejected();
     if (name === 'students')    refreshStudents();
     if (name === 'professors')  refreshProfessors();
+    if (name === 'settings')    refreshSchoolYears();
 }
 async function updateStatus(accountId, status) {
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
@@ -742,7 +1007,104 @@ function showToast(msg,type){
   clearTimeout(t._t);t._t=setTimeout(()=>t.className='',3000);
 }
 function showAddProfessorModal(){
-  showToast('Add Professor feature coming soon!', 'ok');
+    // Create and show the professor modal
+    const modalHtml = `
+        <div id="addProfessorModal" style="display:flex;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center;">
+            <div onclick="closeAddProfessorModal()" style="position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)"></div>
+            <div style="position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:480px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+                    <div>
+                        <div style="font-size:16px;font-weight:700;color:#fff">Add Professor</div>
+                        <div style="font-size:11.5px;color:var(--text-m);margin-top:2px">New professor will be saved to the database</div>
+                    </div>
+                    <button onclick="closeAddProfessorModal()" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+                </div>
+
+                <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px">Personal Information</div>
+                <div style="display:grid;grid-template-columns:1fr 60px 1fr;gap:10px;margin-bottom:10px">
+                    <div>
+                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">First Name</label>
+                        <input id="prof-firstName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                    </div>
+                    <div>
+                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Middle I.</label>
+                        <input id="prof-middleName" type="text" maxlength="3" placeholder="M.I." oninput="autoMiddlePeriod(this)" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 8px;color:#fff;font-size:13px;font-family:inherit;outline:none;text-align:center" />
+                    </div>
+                    <div>
+                        <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Last Name</label>
+                        <input id="prof-lastName" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                    </div>
+                </div>
+
+                <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px;margin-top:16px">Account Information</div>
+                <div style="margin-bottom:10px">
+                    <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">School ID</label>
+                    <input id="prof-schoolId" type="text" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                </div>
+                <div style="margin-bottom:10px">
+                    <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Email</label>
+                    <input id="prof-email" type="email" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                </div>
+                <div style="margin-bottom:24px">
+                    <label style="font-size:11px;color:var(--text-m);display:block;margin-bottom:4px">Password</label>
+                    <input id="prof-password" type="password" style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none" />
+                </div>
+
+                <div style="display:flex;gap:10px;justify-content:flex-end">
+                    <button onclick="closeAddProfessorModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+                    <button onclick="saveNewProfessor()" style="padding:9px 24px;background:var(--green);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Add Professor</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Remove existing modal if present
+    const existingModal = document.getElementById('addProfessorModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Add modal to body
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function closeAddProfessorModal() {
+    const modal = document.getElementById('addProfessorModal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+async function saveNewProfessor() {
+    const firstName  = document.getElementById('prof-firstName')?.value.trim();
+    const lastName   = document.getElementById('prof-lastName')?.value.trim();
+    const middleName = document.getElementById('prof-middleName')?.value.trim();
+    const schoolId   = document.getElementById('prof-schoolId')?.value.trim();
+    const email      = document.getElementById('prof-email')?.value.trim();
+    const password   = document.getElementById('prof-password')?.value.trim();
+
+    if (!firstName || !lastName)  { showToast('First and last name are required.', 'fail'); return; }
+    if (!schoolId)                { showToast('School ID is required.', 'fail'); return; }
+    if (!password || password.length < 6) { showToast('Password must be at least 6 characters.', 'fail'); return; }
+
+    try {
+        const res  = await fetch('/Home/AddProfessor', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ firstName, lastName, middleName, schoolId, email, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            closeAddProfessorModal();
+            showToast(data.message, 'ok');
+            refreshProfessors(); // just refreshes the table, no page reload
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
 }
 function toggleRecentRows() {
     var rows = document.querySelectorAll('.recent-row');
@@ -855,6 +1217,7 @@ async function editStudent(accountId) {
             document.getElementById('edit-courseId').value   = data.courseId   ?? '';
             document.getElementById('edit-yearLevel').value  = data.yearLevel  ?? '1';
             document.getElementById('edit-section').value    = data.section    ?? '';
+            document.getElementById('edit-academicStatus').value = data.academicStatus ?? 'Enrolled';
         } else {
             showToast(data.message, 'fail');
             closeEditModal();
@@ -877,6 +1240,7 @@ async function saveStudent() {
     const courseId   = parseInt(document.getElementById('edit-courseId').value);
     const yearLevel  = parseInt(document.getElementById('edit-yearLevel').value);
     const section    = document.getElementById('edit-section').value.trim();
+    const academicStatus = document.getElementById('edit-academicStatus').value;
 
     if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
     if (!courseId)                { showToast('Please select a course.', 'fail'); return; }
@@ -892,7 +1256,7 @@ async function saveStudent() {
         const res  = await fetch('/Home/UpdateStudent', {
             method:  'POST',
             headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
-            body:    JSON.stringify({ accountId, firstName, lastName, middleName, email, courseId, yearLevel, section })
+            body:    JSON.stringify({ accountId, firstName, lastName, middleName, email, courseId, yearLevel, section, academicStatus })
         });
         const data = await res.json();
 
@@ -947,6 +1311,87 @@ async function deleteStudent(accountId) {
         }
     } catch {
         showToast('Request failed. Please try again.', 'fail');
+    }
+}
+
+async function deleteProfessor(accountId) {
+    if (!confirm('Are you sure you want to permanently delete this professor? This cannot be undone.')) return;
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    try {
+        const res = await fetch('/Home/DeleteAccount', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body: JSON.stringify({ accountId: accountId })
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast(data.message, 'ok');
+            refreshProfessors();
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
+}
+
+async function editProfessor(accountId) {
+    document.getElementById('editProfessorModal').style.display = 'flex';
+    document.getElementById('edit-prof-accountId').value = accountId;
+
+    try {
+        const res  = await fetch(`/Home/GetProfessor?accountId=${accountId}`);
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('edit-prof-firstName').value  = data.firstName  ?? '';
+            document.getElementById('edit-prof-lastName').value   = data.lastName   ?? '';
+            document.getElementById('edit-prof-middleName').value = data.middleName ?? '';
+            document.getElementById('edit-prof-schoolId').value   = data.schoolId   ?? '';
+            document.getElementById('edit-prof-email').value      = data.email      ?? '';
+        } else {
+            showToast(data.message, 'fail');
+            closeEditProfessorModal();
+        }
+    } catch { 
+        showToast('Failed to load professor.', 'fail'); 
+        closeEditProfessorModal(); 
+    }
+}
+
+function closeEditProfessorModal() {
+    document.getElementById('editProfessorModal').style.display = 'none';
+}
+
+async function saveEditedProfessor() {
+    const accountId  = parseInt(document.getElementById('edit-prof-accountId').value);
+    const firstName  = document.getElementById('edit-prof-firstName').value.trim();
+    const lastName   = document.getElementById('edit-prof-lastName').value.trim();
+    const middleName = document.getElementById('edit-prof-middleName').value.trim();
+    const schoolId   = document.getElementById('edit-prof-schoolId').value.trim();
+    const email      = document.getElementById('edit-prof-email').value.trim();
+
+    if (!firstName || !lastName) { showToast('First and last name are required.', 'fail'); return; }
+    if (!schoolId)               { showToast('School ID is required.', 'fail'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+    try {
+        const res  = await fetch('/Home/UpdateProfessor', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ accountId, firstName, lastName, middleName, schoolId, email })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            closeEditProfessorModal();
+            showToast(data.message, 'ok');
+            refreshProfessors(); // refresh the table
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch { 
+        showToast('Save failed. Please try again.', 'fail'); 
     }
 }
 
@@ -1054,65 +1499,47 @@ async function changeRole(accountId, role) {
     document.querySelectorAll('[id^="role-submenu-"]').forEach(s => s.style.display = 'none');
 }
 
-async function refreshDashboard() {
+function showProfRoleSubmenu(el, accountId) {
+    event.stopPropagation();
+    // close any other open submenus
+    document.querySelectorAll('[id^="prof-role-submenu-"]').forEach(function(s) {
+        if (s.id !== 'prof-role-submenu-' + accountId) s.style.display = 'none';
+    });
+    var submenu = document.getElementById('prof-role-submenu-' + accountId);
+    if (submenu) {
+        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+        submenu.classList.add('open');
+    }
+}
+
+async function changeProfRole(accountId, role) {
+    if (!confirm('Change this professor\'s role to ' + role + '?')) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
     try {
-        const res  = await fetch('/Home/GetDashboardStats');
+        const res = await fetch('/Home/ChangeRole', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': token ?? ''
+            },
+            body: JSON.stringify({ accountId: accountId, role: role })
+        });
         const data = await res.json();
-        if (!data.success) return;
 
-        // update stat cards
-        const statVals = document.querySelectorAll('#page-dashboard .stat-val');
-        if (statVals[0]) statVals[0].textContent = data.approvedCount;
-        if (statVals[1]) statVals[1].textContent = data.pendingCount;
-        if (statVals[2]) statVals[2].textContent = data.studentCount;
-        if (statVals[3]) statVals[3].textContent = data.treasurerCount;
-        if (statVals[4]) statVals[4].textContent = data.professorCount;
-        if (statVals[5]) statVals[5].textContent = data.adminCount;
-
-        // update pending requests subtitle
-        const pendingTrend = document.querySelector('#page-dashboard .stat-trend.warn, #page-dashboard .stat-trend');
-        if (pendingTrend) {
-            pendingTrend.textContent = data.pendingCount === 0 ? 'No pending requests' : 'Awaiting review';
-            pendingTrend.className   = 'stat-trend' + (data.pendingCount > 0 ? ' warn' : '');
-        }
-
-        // update nav badge
-        const badge = document.querySelector('#nav-requests .nav-badge');
-        if (data.pendingCount > 0) {
-            if (badge) badge.textContent = data.pendingCount;
-            else {
-                const navReq = document.getElementById('nav-requests');
-                if (navReq) {
-                    const b = document.createElement('span');
-                    b.className   = 'nav-badge';
-                    b.textContent = data.pendingCount;
-                    navReq.appendChild(b);
-                }
-            }
+        if (data.success) {
+            showToast(data.message, 'ok');
+            refreshProfessors(); // refresh table to show updated Admin badge
         } else {
-            if (badge) badge.remove();
+            showToast(data.message, 'fail');
         }
+    } catch {
+        showToast('Request failed. Please try again.', 'fail');
+    }
 
-        // refresh recent requests table
-        const tbody = document.getElementById('recent-tbody');
-        if (tbody && data.recentRequests) {
-            if (data.recentRequests.length === 0) {
-                tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No account requests found.</td></tr>';
-            } else {
-                tbody.innerHTML = data.recentRequests.slice(0, 5).map(r => `
-                    <tr class="recent-row">
-                        <td class="td-mono td-m">${r.schoolId ?? '—'}</td>
-                        <td><strong>${r.fullname}</strong></td>
-                        <td class="td-m">${r.courseCode ?? '—'}</td>
-                        <td class="td-m">${r.yearLevel ?? '—'}-${r.section ?? '—'}</td>
-                        <td class="td-mono td-m">${r.createdAt}</td>
-                        <td><span class="badge ${r.status === 'Approved' ? 'bg' : r.status === 'Rejected' ? 'br' : 'by'}">${r.status}</span></td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-    } catch {}
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    document.querySelectorAll('[id^="prof-role-submenu-"]').forEach(s => s.style.display = 'none');
 }
 
 async function refreshRequests() {
@@ -1204,13 +1631,14 @@ async function refreshStudents() {
         if (!tbody) return;
 
         if (data.students.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No students found.</td></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="7">No students found.</td></tr>';
             return;
         }
 
         tbody.innerHTML = data.students.map((s, i) => `
             <tr data-account="${s.accountId}" data-active="${s.isActive}">
                 <td class="td-mono td-m">${i + 1}</td>
+                <td class="td-mono td-m">${s.schoolId}</td>
                 <td style="color:${s.isActive ? 'inherit' : '#f87171'}">
                     <strong>${s.fullName}</strong>
                     ${s.role === 'Treasurer' ? '<span style="font-size:10px;font-weight:600;background:rgba(249,115,22,.15);color:#fdba74;border:1px solid rgba(249,115,22,.25);border-radius:5px;padding:1px 7px;margin-left:8px;letter-spacing:.05em;text-transform:uppercase;vertical-align:middle;">Treasurer</span>' : ''}
@@ -1218,6 +1646,12 @@ async function refreshStudents() {
                 </td>
                 <td><span class="badge bg">${s.courseCode}</span></td>
                 <td class="td-m">${s.yearSection}</td>
+                <td>
+                    <span class="badge ${
+                        s.academicStatus === 'Enrolled'    ? 'bg' :
+                        s.academicStatus === 'Dropped'     ? 'br' : 'by'
+                    }">${s.academicStatus ?? 'N/A'}</span>
+                </td>
                 <td style="width:40px;text-align:right">
                     <div class="dropdown-wrap">
                         <button class="dot-btn" onclick="toggleDropdown(this)">
@@ -1270,7 +1704,7 @@ async function refreshProfessors() {
         if (!tbody) return;
 
         if (data.professors.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No professors found.</td></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No professors found.</td></tr>';
             return;
         }
 
@@ -1283,10 +1717,286 @@ async function refreshProfessors() {
                 </td>
                 <td class="td-mono td-m">${p.schoolId}</td>
                 <td class="td-m">${p.email}</td>
+                <td style="width:40px;text-align:right">
+                    <div class="dropdown-wrap">
+                        <button class="dot-btn" onclick="toggleDropdown(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" onclick="editProfessor(${p.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Edit
+                            </div>
+                            <div class="dropdown-item has-submenu" onclick="showProfRoleSubmenu(this, ${p.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Change Role
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" style="margin-left:auto"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                <div class="dropdown-menu" id="prof-role-submenu-${p.accountId}" style="display:none;position:absolute;left:-140px;top:0;min-width:130px">
+                                    <div class="dropdown-item" onclick="changeProfRole(${p.accountId}, 'Professor'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 14l9-5-9-5-9 5 9 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        Professor
+                                    </div>
+                                    <div class="dropdown-item" onclick="changeProfRole(${p.accountId}, 'Admin'); event.stopPropagation()">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                        Admin
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dropdown-item danger" onclick="deleteProfessor(${p.accountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Delete Account
+                            </div>
+                        </div>
+                    </div>
+                </td>
             </tr>
         `).join('');
     } catch {}
 }
+
+function autoMiddlePeriod(input) {
+    var val = input.value.replace(/\./g, '').toUpperCase(); // remove existing periods, uppercase
+    if (val.length > 0) {
+        input.value = val + '.';
+    } else {
+        input.value = '';
+    }
+}
+
+// Settings functionality
+function switchSettingsTab(name, btn) {
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('settings-' + name).classList.add('active');
+    btn.classList.add('active');
+
+    if (name === 'sy')      refreshSchoolYears();
+    if (name === 'courses') refreshCourses();
+    if (name === 'fees')    refreshFees();
+}
+
+async function addSchoolYear() {
+    const yearStart = parseInt(document.getElementById('sy-yearStart').value);
+    const yearEnd   = parseInt(document.getElementById('sy-yearEnd').value);
+
+    if (!yearStart || !yearEnd)          { showToast('Both year start and end are required.', 'fail'); return; }
+    if (yearEnd !== yearStart + 1)       { showToast('Year end must be exactly year start + 1.', 'fail'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    try {
+        const res  = await fetch('/Home/AddSchoolYear', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ yearStart, yearEnd })
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('sy-yearStart').value = '';
+            document.getElementById('sy-yearEnd').value   = '';
+            showToast(data.message, 'ok');
+            refreshSchoolYears();
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function addCourse() {
+    const courseCode = document.getElementById('course-code').value.trim().toUpperCase();
+    const courseName = document.getElementById('course-name').value.trim();
+
+    if (!courseCode) { showToast('Course code is required.', 'fail'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    try {
+        const res  = await fetch('/Home/AddCourse', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ courseCode, courseName })
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('course-code').value = '';
+            document.getElementById('course-name').value = '';
+            showToast(data.message, 'ok');
+            refreshCourses();
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function setFeeAmount() {
+    const schoolYearId = parseInt(document.getElementById('fee-schoolYear').value);
+    const semester     = document.getElementById('fee-semester').value;
+    const amount       = parseFloat(document.getElementById('fee-amount').value);
+
+    if (!schoolYearId)      { showToast('Please select a school year.', 'fail'); return; }
+    if (!semester)          { showToast('Please select a semester.', 'fail'); return; }
+    if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    try {
+        const res  = await fetch('/Home/SetFeeAmount', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ schoolYearId, semester, amount })
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('fee-amount').value = '';
+            showToast(data.message, 'ok');
+            refreshFees();
+        } else {
+            showToast(data.message, 'fail');
+        }
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function refreshSchoolYears() {
+    try {
+        const res  = await fetch('/Home/GetSchoolYears');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('sy-tbody');
+        const badge = document.getElementById('sy-count-badge');
+        if (badge) badge.textContent = data.schoolYears.length + ' total';
+
+        if (data.schoolYears.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No school years found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.schoolYears.map((sy, i) => `
+            <tr>
+                <td class="td-mono td-m">${i + 1}</td>
+                <td><strong>${sy.yearStart} – ${sy.yearEnd}</strong></td>
+                <td>
+                    ${sy.hasFirst  ? '<span class="badge bg" style="margin-right:4px">1st</span>' : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d);margin-right:4px">1st</span>'}
+                    ${sy.hasSecond ? '<span class="badge bg">2nd</span>'                           : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">2nd</span>'}
+                </td>
+                <td style="text-align:right">
+                    <button class="btn-rj" onclick="deleteSchoolYear(${sy.schoolYearId})" style="font-size:11px;padding:5px 12px">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+
+        // also refresh the school year dropdown in fee section
+        const sel = document.getElementById('fee-schoolYear');
+        if (sel) {
+            sel.innerHTML = '<option value="">Select school year</option>' +
+                data.schoolYears.map(sy => `<option value="${sy.schoolYearId}">${sy.yearStart} – ${sy.yearEnd}</option>`).join('');
+        }
+    } catch {}
+}
+
+async function refreshCourses() {
+    try {
+        const res  = await fetch('/Home/GetCourses');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('courses-tbody');
+        const badge = document.getElementById('courses-count-badge');
+        if (badge) badge.textContent = data.courses.length + ' total';
+
+        if (data.courses.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No courses found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.courses.map((c, i) => `
+            <tr>
+                <td class="td-mono td-m">${i + 1}</td>
+                <td><span class="badge bg">${c.courseCode}</span></td>
+                <td class="td-m">${c.courseName ?? '—'}</td>
+                <td style="text-align:right">
+                    <button class="btn-rj" onclick="deleteCourse(${c.courseId})" style="font-size:11px;padding:5px 12px">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    } catch {}
+}
+
+async function refreshFees() {
+    try {
+        const res  = await fetch('/Home/GetFees');
+        const data = await res.json();
+        if (!data.success) return;
+
+        const tbody = document.getElementById('fees-tbody');
+
+        // update summary cards
+        const first  = data.fees.find(f => f.semester === 'First'  && f.isLatest);
+        const second = data.fees.find(f => f.semester === 'Second' && f.isLatest);
+
+        document.getElementById('fee-1st-val').textContent = first  ? '₱' + parseFloat(first.amount).toFixed(2)  : '₱—';
+        document.getElementById('fee-1st-sub').textContent = first  ? first.schoolYear  : 'No fee set';
+        document.getElementById('fee-2nd-val').textContent = second ? '₱' + parseFloat(second.amount).toFixed(2) : '₱—';
+        document.getElementById('fee-2nd-sub').textContent = second ? second.schoolYear : 'No fee set';
+
+        if (data.fees.length === 0) {
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="3">No fee records found.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = data.fees.map(f => `
+            <tr>
+                <td><strong>${f.schoolYear}</strong></td>
+                <td><span class="badge ${f.semester === 'First' ? 'bg' : 'by'}">${f.semester === 'First' ? '1st' : '2nd'}</span></td>
+                <td class="td-mono">₱${parseFloat(f.amount).toFixed(2)}</td>
+            </tr>
+        `).join('');
+
+        // refresh school year dropdown
+        await refreshSchoolYears();
+    } catch {}
+}
+
+async function deleteSchoolYear(schoolYearId) {
+    if (!confirm('Delete this school year? This cannot be undone.')) return;
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    try {
+        const res  = await fetch('/Home/DeleteSchoolYear', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ schoolYearId })
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'ok'); refreshSchoolYears(); }
+        else showToast(data.message, 'fail');
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function deleteCourse(courseId) {
+    if (!confirm('Delete this course? Students assigned to it will lose their course.')) return;
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    try {
+        const res  = await fetch('/Home/DeleteCourse', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ courseId })
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'ok'); refreshCourses(); }
+        else showToast(data.message, 'fail');
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+// Initialize settings data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Load initial data for settings
+    refreshSchoolYears();
+    refreshCourses();
+    refreshFees();
+});
 
 </script>
 </body>

@@ -3,12 +3,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyMvcApp.Models
 {
+    [Table("full_amount")]
     public class FullAmount
     {
         [Key]
+        [Column("full_amount_id")]
         public int FullAmountId { get; set; }
 
         [Required]
+        [Column("school_year_id")]
         public int SchoolYearId { get; set; }
 
         [Required]
@@ -16,14 +19,10 @@ namespace MyMvcApp.Models
         public Semester Semester { get; set; }
 
         [Required]
-        [Column(TypeName = "decimal(10,2)")]
+        [Column("full_amount")]
         public decimal Amount { get; set; }
 
-        [Required]
-        [Column("effective_date")]
-        public DateTime EffectiveDate { get; set; } = DateTime.Now;
-
-        // Navigation properties
+        
         [ForeignKey("SchoolYearId")]
         public SchoolYear SchoolYear { get; set; } = null!;
     }

@@ -18,33 +18,4 @@ namespace MyMvcApp.Models
         
         public int ApprovedAccountsCount { get; set; }
     }
-
-    public class AdminViewModel
-    {
-        public int AdminId { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string SchoolId { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-    }
-
-    public class TreasurerViewModel
-    {
-        public int TreasurerId { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string SchoolId { get; set; } = string.Empty;
-        public string CourseCode { get; set; } = string.Empty;
-        public string YearSection { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-    }
-
-    public class ProfessorViewModel
-    {
-        public int ProfessorId { get; set; }
-        public string FullName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string SchoolId { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-    }
 }

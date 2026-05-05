@@ -78,10 +78,9 @@ CREATE TABLE full_amount (
   school_year_id INT           NOT NULL,
   semester       ENUM('First','Second') NOT NULL,
   full_amount    DECIMAL(10,2) NOT NULL,
-  effective_date DATE          NOT NULL DEFAULT (CURRENT_DATE),
 
   PRIMARY KEY (full_amount_id),
-  UNIQUE KEY uq_full_amount_sy_sem_date (school_year_id, semester, effective_date),
+  UNIQUE KEY uq_full_amount_sy_sem (school_year_id, semester),
   CONSTRAINT fk_full_amount_sy
     FOREIGN KEY (school_year_id) REFERENCES school_years (school_year_id)
     ON UPDATE CASCADE ON DELETE RESTRICT
@@ -89,15 +88,15 @@ CREATE TABLE full_amount (
 
 -- 7. org_fee_payments
 CREATE TABLE org_fee_payments (
-  payment_id     INT           NOT NULL AUTO_INCREMENT,
-  user_id        INT           NOT NULL,
-  school_year_id INT           NOT NULL,
-  semester       ENUM('First','Second') NOT NULL,
-  amount         DECIMAL(10,2) NOT NULL,
+  payment_id      INT           NOT NULL AUTO_INCREMENT,
+  user_id         INT           NOT NULL,
+  school_year_id  INT           NOT NULL,
+  semester        ENUM('First','Second') NOT NULL,
+  amount          DECIMAL(10,2) NOT NULL,
   amount_required DECIMAL(10,2) NOT NULL,
-  payment_status ENUM('Partial','Paid') NOT NULL,
-  received_by    INT           NOT NULL,
-  payment_date   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  payment_status  ENUM('Partial','Paid') NOT NULL,
+  received_by     INT           NOT NULL,
+  payment_date    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (payment_id),
   CONSTRAINT fk_payment_user

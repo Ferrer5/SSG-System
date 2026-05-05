@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MyMvcApp.Models
 {
+    [Table("courses")]
     public class Course
     {
         [Key]
@@ -19,6 +20,5 @@ namespace MyMvcApp.Models
 
         // Navigation properties
         public virtual ICollection<AcademicProfile> AcademicProfiles { get; set; } = new List<AcademicProfile>();
-        public virtual ICollection<FullAmount> FullAmounts { get; set; } = new List<FullAmount>();
     }
 }

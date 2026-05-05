@@ -120,7 +120,7 @@ public class HomeController : Controller
             Admins = admins,
             Treasurers = treasurers,
             Professors = professors,
-            ApprovedAccountsCount = studentOnlyCount + treasurers.Count + professors.Count + admins.Count
+            ApprovedAccountsCount = students.Count + professors.Count
         };
 
         return View("~/Views/Dashboard/admin_dashboard.cshtml", model);
@@ -523,14 +523,15 @@ Best regards,<br>SSG Financial Management System";
             return Json(new { success = false, message = "Student not found." });
 
         return Json(new {
-            success    = true,
-            firstName  = user.FirstName,
-            lastName   = user.LastName,
-            middleName = user.MiddleName,
-            email      = user.Account?.Email,
-            courseId   = user.AcademicProfile?.CourseId,
-            yearLevel  = user.AcademicProfile?.YearLevel,
-            section    = user.AcademicProfile?.Section
+            success        = true,
+            firstName      = user.FirstName,
+            lastName       = user.LastName,
+            middleName     = user.MiddleName,
+            email          = user.Account?.Email,
+            courseId       = user.AcademicProfile?.CourseId,
+            yearLevel      = user.AcademicProfile?.YearLevel,
+            section        = user.AcademicProfile?.Section,
+            academicStatus = user.AcademicProfile?.AcademicStatus.ToString() ?? "Enrolled"
         });
     }
 
@@ -559,13 +560,72 @@ Best regards,<br>SSG Financial Management System";
             // update academic profile
             if (user.AcademicProfile != null)
             {
-                user.AcademicProfile.CourseId   = request.CourseId;
-                user.AcademicProfile.YearLevel  = request.YearLevel;
-                user.AcademicProfile.Section    = request.Section;
+                user.AcademicProfile.CourseId  = request.CourseId;
+                user.AcademicProfile.YearLevel = request.YearLevel;
+                user.AcademicProfile.Section   = request.Section;
+
+                if (!string.IsNullOrWhiteSpace(request.AcademicStatus)
+                    && Enum.TryParse<AcademicStatus>(request.AcademicStatus, out var parsedStatus))
+                {
+                    user.AcademicProfile.AcademicStatus = parsedStatus;
+                }
             }
 
             await _context.SaveChangesAsync();
             return Json(new { success = true, message = "Student updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Update failed: {ex.Message}" });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetProfessor(int accountId)
+    {
+        var user = await _context.Users
+            .Include(u => u.Account)
+            .FirstOrDefaultAsync(u => u.AccountId == accountId);
+
+        if (user == null)
+            return Json(new { success = false, message = "Professor not found." });
+
+        return Json(new {
+            success    = true,
+            firstName  = user.FirstName,
+            lastName   = user.LastName,
+            middleName = user.MiddleName,
+            email      = user.Account?.Email,
+            schoolId   = user.Account?.SchoolId
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> UpdateProfessor([FromBody] UpdateProfessorRequest request)
+    {
+        try
+        {
+            var user = await _context.Users
+                .Include(u => u.Account)
+                .FirstOrDefaultAsync(u => u.AccountId == request.AccountId);
+
+            if (user == null)
+                return Json(new { success = false, message = "Professor not found." });
+
+            // update name
+            user.FirstName  = request.FirstName;
+            user.LastName   = request.LastName;
+            user.MiddleName = request.MiddleName;
+
+            // update account info
+            if (user.Account != null)
+            {
+                user.Account.Email = request.Email;
+                user.Account.SchoolId = request.SchoolId;
+            }
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Professor updated successfully." });
         }
         catch (Exception ex)
         {
@@ -580,7 +640,7 @@ Best regards,<br>SSG Financial Management System";
         {
             var courses = await _context.Courses
                 .OrderBy(c => c.CourseCode)
-                .Select(c => new { c.CourseId, c.CourseCode })
+                .Select(c => new { c.CourseId, c.CourseCode, c.CourseName })
                 .ToListAsync();
 
             return Json(new { success = true, courses });
@@ -721,7 +781,7 @@ Best regards,<br>SSG Financial Management System";
 
         return Json(new {
             success        = true,
-            approvedCount  = studentCount + treasurerCount + professors.Count + admins.Count,
+            approvedCount  = (studentCount + treasurerCount) + professors.Count,
             pendingCount   = pending.Count,
             studentCount   = studentCount + treasurerCount, // students card shows both
             treasurerCount = treasurerCount,
@@ -820,7 +880,7 @@ Best regards,<br>SSG Financial Management System";
     private async Task<List<RequestedAccountViewModel>> GetAllAccountRequestsAsync()
     {
         return await _context.Accounts
-            .Where(a => a.Role == UserRole.Student)
+            .Where(a => a.Role == UserRole.Student || a.Role == UserRole.Treasurer)
             .Include(a => a.User)
                 .ThenInclude(u => u!.AcademicProfile)
                     .ThenInclude(ap => ap!.Course)
@@ -855,17 +915,19 @@ Best regards,<br>SSG Financial Management System";
                      && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer))
             .Select(u => new StudentViewModel
             {
-                StudentId   = u.UserId,
-                FullName    = u.LastName != null && u.FirstName != null
+                StudentId      = u.UserId,
+                FullName       = u.LastName != null && u.FirstName != null
                     ? $"{u.LastName.ToUpper()}, {u.FirstName.ToUpper()}" : "N/A",
-                CourseCode  = u.AcademicProfile != null && u.AcademicProfile.Course != null
+                CourseCode     = u.AcademicProfile != null && u.AcademicProfile.Course != null
                     ? u.AcademicProfile.Course.CourseCode : "N/A",
-                YearSection = u.AcademicProfile != null
+                YearSection    = u.AcademicProfile != null
                     ? $"{(u.AcademicProfile.YearLevel.HasValue ? u.AcademicProfile.YearLevel.Value.ToString() : "N/A")}-{(u.AcademicProfile.Section ?? "N/A")}"
                     : "N/A",
-                AccountId   = u.AccountId,
-                Role        = u.Account != null ? u.Account.Role.ToString() : "Student",
-                IsActive    = u.Account != null ? u.Account.IsActive : false
+                AccountId      = u.AccountId,
+                Role           = u.Account != null ? u.Account.Role.ToString() : "Student",
+                IsActive       = u.Account != null ? u.Account.IsActive : false,
+                SchoolId       = u.Account != null ? u.Account.SchoolId : "N/A",
+                AcademicStatus = u.AcademicProfile != null ? u.AcademicProfile.AcademicStatus.ToString() : "Enrolled"  // add this
             })
             .ToListAsync();
 
@@ -926,6 +988,7 @@ Best regards,<br>SSG Financial Management System";
             .Select(a => new ProfessorViewModel
             {
                 ProfessorId = a.AccountId,
+                AccountId = a.AccountId,
                 FullName = a.User != null && a.User.LastName != null && a.User.FirstName != null
                     ? $"{a.User.LastName.ToUpper()}, {a.User.FirstName.ToUpper()}" : "N/A",
                 Email = a.Email ?? "N/A",
@@ -935,6 +998,281 @@ Best regards,<br>SSG Financial Management System";
             .ToListAsync();
 
         return professors.OrderBy(p => p.FullName).ToList();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddProfessor([FromBody] AddProfessorRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.FirstName) || string.IsNullOrWhiteSpace(request.LastName))
+                return Json(new { success = false, message = "First and last name are required." });
+
+            if (string.IsNullOrWhiteSpace(request.SchoolId))
+                return Json(new { success = false, message = "School ID is required." });
+
+            if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6)
+                return Json(new { success = false, message = "Password must be at least 6 characters." });
+
+            // check if school ID already exists
+            var existing = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.SchoolId.ToLower());
+
+            if (existing != null)
+                return Json(new { success = false, message = "School ID is already taken." });
+
+            // create account
+            var account = new Account
+            {
+                SchoolId      = request.SchoolId,
+                Email         = request.Email,
+                PasswordHash  = AuthService.HashPassword(request.Password),
+                Role          = UserRole.Professor,
+                RequestStatus = RequestStatus.Approved,
+                IsActive      = true,
+                CreatedAt     = DateTime.UtcNow
+            };
+
+            _context.Accounts.Add(account);
+            await _context.SaveChangesAsync();
+
+            // create user
+            var user = new User
+            {
+                AccountId  = account.AccountId,
+                FirstName  = request.FirstName,
+                LastName   = request.LastName,
+                MiddleName = request.MiddleName
+            };
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Professor added successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Failed to add professor: " + ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetSchoolYears()
+    {
+        try
+        {
+            var schoolYears = await _context.SchoolYears
+                .OrderByDescending(sy => sy.YearStart)
+                .ToListAsync();
+
+            var feeRecords = await _context.FullAmounts
+                .Select(f => new { f.SchoolYearId, f.Semester })
+                .ToListAsync();
+
+            var result = schoolYears.Select(sy => new {
+                sy.SchoolYearId,
+                sy.YearStart,
+                sy.YearEnd,
+                hasFirst  = feeRecords.Any(f => f.SchoolYearId == sy.SchoolYearId && f.Semester == Semester.First),
+                hasSecond = feeRecords.Any(f => f.SchoolYearId == sy.SchoolYearId && f.Semester == Semester.Second)
+            });
+
+            return Json(new { success = true, schoolYears = result });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddSchoolYear([FromBody] AddSchoolYearRequest request)
+    {
+        try
+        {
+            if (request.YearEnd != request.YearStart + 1)
+                return Json(new { success = false, message = "Year end must be exactly year start + 1." });
+
+            var existing = await _context.SchoolYears
+                .FirstOrDefaultAsync(sy => sy.YearStart == request.YearStart);
+
+            if (existing != null)
+                return Json(new { success = false, message = "That school year already exists." });
+
+            _context.SchoolYears.Add(new SchoolYear {
+                YearStart = request.YearStart,
+                YearEnd   = request.YearEnd
+            });
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "School year added successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteSchoolYear([FromBody] DeleteSchoolYearRequest request)
+    {
+        try
+        {
+            var sy = await _context.SchoolYears
+                .Include(s => s.FullAmounts)
+                .FirstOrDefaultAsync(s => s.SchoolYearId == request.SchoolYearId);
+
+            if (sy == null)
+                return Json(new { success = false, message = "School year not found." });
+
+            if (sy.FullAmounts.Any())
+                _context.FullAmounts.RemoveRange(sy.FullAmounts);
+
+            _context.SchoolYears.Remove(sy);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "School year deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddCourse([FromBody] AddCourseRequest request)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(request.CourseCode))
+                return Json(new { success = false, message = "Course code is required." });
+
+            var existing = await _context.Courses
+                .FirstOrDefaultAsync(c => c.CourseCode.ToLower() == request.CourseCode.ToLower());
+
+            if (existing != null)
+                return Json(new { success = false, message = "That course code already exists." });
+
+            _context.Courses.Add(new Course {
+                CourseCode = request.CourseCode.ToUpper(),
+                CourseName = request.CourseName
+            });
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Course added successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteCourse([FromBody] DeleteCourseRequest request)
+    {
+        try
+        {
+            var course = await _context.Courses
+                .FirstOrDefaultAsync(c => c.CourseId == request.CourseId);
+
+            if (course == null)
+                return Json(new { success = false, message = "Course not found." });
+
+            var inUse = await _context.AcademicProfiles
+                .AnyAsync(ap => ap.CourseId == request.CourseId);
+
+            if (inUse)
+                return Json(new { success = false, message = "Cannot delete — students are currently assigned to this course." });
+
+            _context.Courses.Remove(course);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Course deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetFees()
+    {
+        try
+        {
+            var fees = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .OrderByDescending(f => f.SchoolYear.YearStart)
+                .ThenBy(f => f.Semester)
+                .ToListAsync();
+
+            var latestFirst  = fees.FirstOrDefault(f => f.Semester == Semester.First);
+            var latestSecond = fees.FirstOrDefault(f => f.Semester == Semester.Second);
+
+            var result = fees.Select(f => new {
+                f.FullAmountId,
+                schoolYear = $"{f.SchoolYear.YearStart} – {f.SchoolYear.YearEnd}",
+                semester   = f.Semester.ToString(),
+                amount     = f.Amount,
+                isLatest   = f.FullAmountId == latestFirst?.FullAmountId ||
+                             f.FullAmountId == latestSecond?.FullAmountId
+            });
+
+            return Json(new { success = true, fees = result });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SetFeeAmount([FromBody] SetFeeAmountRequest request)
+    {
+        try
+        {
+            if (request.Amount <= 0)
+                return Json(new { success = false, message = "Amount must be greater than zero." });
+
+            var semesterInput = (request.Semester ?? string.Empty).Trim();
+            Semester semester;
+            if (semesterInput.Equals("1st", StringComparison.OrdinalIgnoreCase) ||
+                semesterInput.Equals("First", StringComparison.OrdinalIgnoreCase))
+            {
+                semester = Semester.First;
+            }
+            else if (semesterInput.Equals("2nd", StringComparison.OrdinalIgnoreCase) ||
+                     semesterInput.Equals("Second", StringComparison.OrdinalIgnoreCase))
+            {
+                semester = Semester.Second;
+            }
+            else
+            {
+                return Json(new { success = false, message = "Invalid semester." });
+            }
+
+            var sy = await _context.SchoolYears
+                .FirstOrDefaultAsync(s => s.SchoolYearId == request.SchoolYearId);
+
+            if (sy == null)
+                return Json(new { success = false, message = "School year not found." });
+
+            var semesterText = semester == Semester.First ? "1st" : "2nd";
+
+            // Upsert directly against the table to avoid enum/provider tracking issues
+            // while still enforcing the unique (school_year_id, semester) constraint.
+            await _context.Database.ExecuteSqlInterpolatedAsync($@"
+                INSERT INTO full_amount (school_year_id, semester, full_amount)
+                VALUES ({request.SchoolYearId}, {semesterText}, {request.Amount})
+                ON DUPLICATE KEY UPDATE full_amount = VALUES(full_amount);");
+
+            return Json(new { success = true, message = "Fee amount set successfully." });
+        }
+        catch (Exception ex)
+        {
+            var detail = ex.InnerException?.Message ?? ex.Message;
+            return Json(new { success = false, message = $"Failed to set fee amount: {detail}" });
+        }
     }
 
     }
@@ -989,18 +1327,68 @@ public class UpdateAccountStatusRequest
 
 public class UpdateStudentRequest
 {
+    public int     AccountId      { get; set; }
+    public string? FirstName      { get; set; }
+    public string? LastName       { get; set; }
+    public string? MiddleName     { get; set; }
+    public string? Email          { get; set; }
+    public int     CourseId       { get; set; }
+    public int?    YearLevel      { get; set; }
+    public string? Section        { get; set; }
+    public string? AcademicStatus { get; set; }  // add this
+}
+
+public class UpdateProfessorRequest
+{
     public int     AccountId  { get; set; }
     public string? FirstName  { get; set; }
     public string? LastName   { get; set; }
     public string? MiddleName { get; set; }
     public string? Email      { get; set; }
-    public int     CourseId   { get; set; }
-    public int?    YearLevel  { get; set; }
-    public string? Section    { get; set; }
+    public string? SchoolId   { get; set; }
 }
 
 public class ChangeRoleRequest
 {
     public int    AccountId { get; set; }
     public string Role      { get; set; } = string.Empty;
+}
+
+public class AddProfessorRequest
+{
+    public string  FirstName  { get; set; } = string.Empty;
+    public string  LastName   { get; set; } = string.Empty;
+    public string? MiddleName { get; set; }
+    public string  SchoolId   { get; set; } = string.Empty;
+    public string? Email      { get; set; }
+    public string  Password   { get; set; } = string.Empty;
+}
+
+public class AddSchoolYearRequest
+{
+    public int YearStart { get; set; }
+    public int YearEnd   { get; set; }
+}
+
+public class DeleteSchoolYearRequest
+{
+    public int SchoolYearId { get; set; }
+}
+
+public class AddCourseRequest
+{
+    public string  CourseCode { get; set; } = string.Empty;
+    public string? CourseName { get; set; }
+}
+
+public class DeleteCourseRequest
+{
+    public int CourseId { get; set; }
+}
+
+public class SetFeeAmountRequest
+{
+    public int     SchoolYearId { get; set; }
+    public string  Semester     { get; set; } = string.Empty;
+    public decimal Amount       { get; set; }
 }

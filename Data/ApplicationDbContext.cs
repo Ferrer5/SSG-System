@@ -102,6 +102,11 @@ namespace MyMvcApp.Data
                 entity.Property(e => e.SchoolYearId).HasColumnName("school_year_id");
                 entity.Property(e => e.YearStart).IsRequired().HasColumnName("year_start");
                 entity.Property(e => e.YearEnd).IsRequired().HasColumnName("year_end");
+                entity.Property(e => e.YearStatus)
+                    .IsRequired()
+                    .HasConversion<string>()
+                    .HasDefaultValue(YearStatus.Current)
+                    .HasColumnName("year_status");
 
                 entity.ToTable(t => t.HasCheckConstraint("chk_year_range", "year_end = year_start + 1"));
             });
@@ -121,10 +126,11 @@ namespace MyMvcApp.Data
                         v => (v == "1st" || v == "First") ? Semester.First : Semester.Second
                     );
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("full_amount");
-
-                entity.HasIndex(e => new { e.SchoolYearId, e.Semester })
-                    .IsUnique()
-                    .HasDatabaseName("uq_full_amount_sy_sem");
+                entity.Property(e => e.SemesterStatus)
+                    .IsRequired()
+                    .HasConversion<string>()
+                    .HasDefaultValue(SemesterStatus.Current)
+                    .HasColumnName("semester_status");
 
                 entity.HasOne(e => e.SchoolYear)
                     .WithMany(sy => sy.FullAmounts)

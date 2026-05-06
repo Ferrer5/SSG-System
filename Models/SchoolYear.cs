@@ -17,8 +17,18 @@ namespace MyMvcApp.Models
         [Column("year_end")]
         public int YearEnd { get; set; }
 
+        [Required]
+        [Column("year_status")]
+        public YearStatus YearStatus { get; set; } = YearStatus.Current;
+
         // Navigation properties
         public virtual ICollection<FullAmount> FullAmounts { get; set; } = new List<FullAmount>();
         public virtual ICollection<OrgFeePayment> OrgFeePayments { get; set; } = new List<OrgFeePayment>();
+    }
+
+    public enum YearStatus
+    {
+        Current,
+        Ended
     }
 }

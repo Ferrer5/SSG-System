@@ -22,7 +22,10 @@ namespace MyMvcApp.Models
         [Column("full_amount")]
         public decimal Amount { get; set; }
 
-        
+        [Required]
+        [Column("semester_status")]
+        public SemesterStatus SemesterStatus { get; set; } = SemesterStatus.Current;
+
         [ForeignKey("SchoolYearId")]
         public SchoolYear SchoolYear { get; set; } = null!;
     }
@@ -31,5 +34,11 @@ namespace MyMvcApp.Models
     {
         First,
         Second
+    }
+
+    public enum SemesterStatus
+    {
+        Current,
+        Ended
     }
 }

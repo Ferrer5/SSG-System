@@ -211,7 +211,7 @@
     <div class="user-card">
       <div class="user-av">@initials.ToUpper()</div>
       <div>
-        <div class="user-name">@(lastName.Length > 0 ? $"Ms. {lastName}" : firstName)</div>
+        <div class="user-name">@(firstName.Length > 0 ? $"Prof. {firstName}" : "Administrator")</div>
         <div class="user-role">Administrator</div>
       </div>
     </div>
@@ -674,7 +674,7 @@
         <div class="cc-hdr"><div class="cc-title">School Years</div><span class="badge by" id="sy-count-badge">0 total</span></div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>#</th><th>School Year</th><th>Semesters</th><th></th></tr></thead>
+            <thead><tr><th>#</th><th>School Year</th><th>Semesters</th><th>Status</th><th></th></tr></thead>
             <tbody id="sy-tbody">
               <tr class="empty-row"><td colspan="4">No school years found.</td></tr>
             </tbody>
@@ -774,9 +774,9 @@
         <div class="cc-hdr"><div class="cc-title">Fee History</div></div>
         <div class="tbl-wrap">
           <table>
-            <thead><tr><th>School Year</th><th>Semester</th><th>Amount</th></tr></thead>
+            <thead><tr><th>School Year</th><th>Semester</th><th>Amount</th><th>Status</th><th></th></tr></thead>
             <tbody id="fees-tbody">
-              <tr class="empty-row"><td colspan="3">No fee records found.</td></tr>
+              <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
             </tbody>
           </table>
         </div>
@@ -1864,7 +1864,7 @@ async function refreshSchoolYears() {
         if (badge) badge.textContent = data.schoolYears.length + ' total';
 
         if (data.schoolYears.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No school years found.</td></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No school years found.</td></tr>';
             return;
         }
 
@@ -1875,6 +1875,11 @@ async function refreshSchoolYears() {
                 <td>
                     ${sy.hasFirst  ? '<span class="badge bg" style="margin-right:4px">1st</span>' : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d);margin-right:4px">1st</span>'}
                     ${sy.hasSecond ? '<span class="badge bg">2nd</span>'                           : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">2nd</span>'}
+                </td>
+                <td>
+                    ${sy.yearStatus === 'Current'
+                        ? '<span class="badge bg">Current</span>'
+                        : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
                 </td>
                 <td style="text-align:right">
                     <button class="btn-rj" onclick="deleteSchoolYear(${sy.schoolYearId})" style="font-size:11px;padding:5px 12px">
@@ -1943,7 +1948,7 @@ async function refreshFees() {
         document.getElementById('fee-2nd-sub').textContent = second ? second.schoolYear : 'No fee set';
 
         if (data.fees.length === 0) {
-            tbody.innerHTML = '<tr class="empty-row"><td colspan="3">No fee records found.</td></tr>';
+            tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No fee records found.</td></tr>';
             return;
         }
 
@@ -1952,6 +1957,17 @@ async function refreshFees() {
                 <td><strong>${f.schoolYear}</strong></td>
                 <td><span class="badge ${f.semester === 'First' ? 'bg' : 'by'}">${f.semester === 'First' ? '1st' : '2nd'}</span></td>
                 <td class="td-mono">₱${parseFloat(f.amount).toFixed(2)}</td>
+                <td>
+                    ${f.semesterStatus === 'Current'
+                        ? '<span class="badge bg">Current</span>'
+                        : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
+                </td>
+                <td style="text-align:right">
+                    <button class="btn-rj" onclick="deleteFee(${f.fullAmountId})" style="font-size:11px;padding:5px 12px">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        Delete
+                    </button>
+                </td>
             </tr>
         `).join('');
 
@@ -1986,6 +2002,21 @@ async function deleteCourse(courseId) {
         });
         const data = await res.json();
         if (data.success) { showToast(data.message, 'ok'); refreshCourses(); }
+        else showToast(data.message, 'fail');
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function deleteFee(fullAmountId) {
+    if (!confirm('Delete this fee record? This cannot be undone.')) return;
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+    try {
+        const res  = await fetch('/Home/DeleteFee', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
+            body:    JSON.stringify({ fullAmountId })
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
         else showToast(data.message, 'fail');
     } catch { showToast('Request failed.', 'fail'); }
 }

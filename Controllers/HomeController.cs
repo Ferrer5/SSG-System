@@ -990,7 +990,7 @@ Best regards,<br>SSG Financial Management System";
                 ProfessorId = a.AccountId,
                 AccountId = a.AccountId,
                 FullName = a.User != null && a.User.LastName != null && a.User.FirstName != null
-                    ? $"{a.User.LastName.ToUpper()}, {a.User.FirstName.ToUpper()}" : "N/A",
+                    ? $"{a.User.LastName.ToUpper()}, {a.User.FirstName.ToUpper()}{(string.IsNullOrWhiteSpace(a.User.MiddleName) ? "" : " " + a.User.MiddleName.ToUpper())}" : "N/A",
                 Email = a.Email ?? "N/A",
                 SchoolId = a.SchoolId ?? "N/A",
                 Role = a.Role.ToString()
@@ -1073,6 +1073,7 @@ Best regards,<br>SSG Financial Management System";
                 sy.SchoolYearId,
                 sy.YearStart,
                 sy.YearEnd,
+                yearStatus = sy.YearStatus.ToString(),
                 hasFirst  = feeRecords.Any(f => f.SchoolYearId == sy.SchoolYearId && f.Semester == Semester.First),
                 hasSecond = feeRecords.Any(f => f.SchoolYearId == sy.SchoolYearId && f.Semester == Semester.Second)
             });
@@ -1093,15 +1094,22 @@ Best regards,<br>SSG Financial Management System";
             if (request.YearEnd != request.YearStart + 1)
                 return Json(new { success = false, message = "Year end must be exactly year start + 1." });
 
-            var existing = await _context.SchoolYears
-                .FirstOrDefaultAsync(sy => sy.YearStart == request.YearStart);
+            var duplicate = await _context.SchoolYears
+                .AnyAsync(sy => sy.YearStart == request.YearStart && sy.YearEnd == request.YearEnd);
+            if (duplicate)
+                return Json(new { success = false, message = "This school year already exists." });
 
-            if (existing != null)
-                return Json(new { success = false, message = "That school year already exists." });
+            // Mark all existing school years as Ended
+            var existing = await _context.SchoolYears.ToListAsync();
+            foreach (var sy in existing)
+                sy.YearStatus = YearStatus.Ended;
 
-            _context.SchoolYears.Add(new SchoolYear {
-                YearStart = request.YearStart,
-                YearEnd   = request.YearEnd
+            // Add new school year as Current
+            _context.SchoolYears.Add(new SchoolYear
+            {
+                YearStart  = request.YearStart,
+                YearEnd    = request.YearEnd,
+                YearStatus = YearStatus.Current
             });
 
             await _context.SaveChangesAsync();
@@ -1203,19 +1211,28 @@ Best regards,<br>SSG Financial Management System";
             var fees = await _context.FullAmounts
                 .Include(f => f.SchoolYear)
                 .OrderByDescending(f => f.SchoolYear.YearStart)
-                .ThenBy(f => f.Semester)
+                .ThenByDescending(f => f.Semester)
                 .ToListAsync();
 
-            var latestFirst  = fees.FirstOrDefault(f => f.Semester == Semester.First);
-            var latestSecond = fees.FirstOrDefault(f => f.Semester == Semester.Second);
+            var latestFirst = fees
+                .Where(f => f.Semester == Semester.First)
+                .OrderByDescending(f => f.SchoolYear.YearStart)
+                .FirstOrDefault();
+
+            var latestSecond = fees
+                .Where(f => f.Semester == Semester.Second)
+                .OrderByDescending(f => f.SchoolYear.YearStart)
+                .FirstOrDefault();
 
             var result = fees.Select(f => new {
                 f.FullAmountId,
-                schoolYear = $"{f.SchoolYear.YearStart} – {f.SchoolYear.YearEnd}",
-                semester   = f.Semester.ToString(),
-                amount     = f.Amount,
-                isLatest   = f.FullAmountId == latestFirst?.FullAmountId ||
-                             f.FullAmountId == latestSecond?.FullAmountId
+                schoolYear     = f.SchoolYear.YearStart + " – " + f.SchoolYear.YearEnd,
+                semester       = f.Semester.ToString(),
+                amount         = f.Amount,
+                semesterStatus = f.SemesterStatus.ToString(),
+                // used by the summary cards: latest record per semester (not the "Current/Ended" status)
+                isLatest       = f.FullAmountId == latestFirst?.FullAmountId ||
+                                 f.FullAmountId == latestSecond?.FullAmountId
             });
 
             return Json(new { success = true, fees = result });
@@ -1257,21 +1274,80 @@ Best regards,<br>SSG Financial Management System";
             if (sy == null)
                 return Json(new { success = false, message = "School year not found." });
 
-            var semesterText = semester == Semester.First ? "1st" : "2nd";
+            // Enforce exactly one Current semester overall.
+            var currentFees = await _context.FullAmounts
+                .Where(f => f.SemesterStatus == SemesterStatus.Current)
+                .ToListAsync();
+            foreach (var f in currentFees)
+                f.SemesterStatus = SemesterStatus.Ended;
 
-            // Upsert directly against the table to avoid enum/provider tracking issues
-            // while still enforcing the unique (school_year_id, semester) constraint.
-            await _context.Database.ExecuteSqlInterpolatedAsync($@"
-                INSERT INTO full_amount (school_year_id, semester, full_amount)
-                VALUES ({request.SchoolYearId}, {semesterText}, {request.Amount})
-                ON DUPLICATE KEY UPDATE full_amount = VALUES(full_amount);");
+            // Upsert per (SchoolYearId, Semester) so we don't violate the unique key.
+            var existing = await _context.FullAmounts.FirstOrDefaultAsync(f =>
+                f.SchoolYearId == request.SchoolYearId && f.Semester == semester);
 
+            if (existing != null)
+            {
+                existing.Amount = request.Amount;
+                existing.SemesterStatus = SemesterStatus.Current;
+            }
+            else
+            {
+                _context.FullAmounts.Add(new FullAmount
+                {
+                    SchoolYearId   = request.SchoolYearId,
+                    Semester       = semester,
+                    Amount         = request.Amount,
+                    SemesterStatus = SemesterStatus.Current
+                });
+            }
+
+            await _context.SaveChangesAsync();
             return Json(new { success = true, message = "Fee amount set successfully." });
         }
         catch (Exception ex)
         {
             var detail = ex.InnerException?.Message ?? ex.Message;
             return Json(new { success = false, message = $"Failed to set fee amount: {detail}" });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteFee([FromBody] DeleteFeeRequest request)
+    {
+        try
+        {
+            var fee = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .FirstOrDefaultAsync(f => f.FullAmountId == request.FullAmountId);
+
+            if (fee == null)
+                return Json(new { success = false, message = "Fee record not found." });
+
+            var deletedWasCurrent = fee.SemesterStatus == SemesterStatus.Current;
+
+            _context.FullAmounts.Remove(fee);
+            await _context.SaveChangesAsync();
+
+            if (deletedWasCurrent)
+            {
+                var nextCurrent = await _context.FullAmounts
+                    .Include(f => f.SchoolYear)
+                    .OrderByDescending(f => f.SchoolYear.YearStart)
+                    .ThenByDescending(f => f.Semester)
+                    .FirstOrDefaultAsync();
+
+                if (nextCurrent != null)
+                {
+                    nextCurrent.SemesterStatus = SemesterStatus.Current;
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            return Json(new { success = true, message = "Fee record deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
         }
     }
 
@@ -1391,4 +1467,9 @@ public class SetFeeAmountRequest
     public int     SchoolYearId { get; set; }
     public string  Semester     { get; set; } = string.Empty;
     public decimal Amount       { get; set; }
+}
+
+public class DeleteFeeRequest
+{
+    public int FullAmountId { get; set; }
 }

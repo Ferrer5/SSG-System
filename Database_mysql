@@ -3,16 +3,16 @@ USE ssg_system;
 
 -- 1. accounts
 CREATE TABLE accounts (
-  account_id                  INT             NOT NULL AUTO_INCREMENT,
-  school_id                   VARCHAR(50)     NOT NULL,
-  password_hash               VARCHAR(255)    NOT NULL,
-  email                       VARCHAR(150)    NULL,
-  roles                       ENUM('Student','Treasurer','Admin','Professor') NOT NULL,
-  request_status              ENUM('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
-  is_active                   BOOLEAN         NOT NULL DEFAULT TRUE,
-  created_at                  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  password_reset_token        VARCHAR(255)    NULL,
-  password_reset_token_expires DATETIME       NULL,
+  account_id                   INT             NOT NULL AUTO_INCREMENT,
+  school_id                    VARCHAR(50)     NOT NULL,
+  password_hash                VARCHAR(255)    NOT NULL,
+  email                        VARCHAR(150)    NULL,
+  roles                        ENUM('Student','Treasurer','Admin','Professor') NOT NULL,
+  request_status               ENUM('Pending','Approved','Rejected') NOT NULL DEFAULT 'Pending',
+  is_active                    BOOLEAN         NOT NULL DEFAULT TRUE,
+  created_at                   TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  password_reset_token         VARCHAR(255)    NULL,
+  password_reset_token_expires DATETIME        NULL,
 
   PRIMARY KEY (account_id),
   UNIQUE KEY uq_accounts_school_id (school_id)
@@ -35,8 +35,8 @@ CREATE TABLE users (
 
 -- 3. courses
 CREATE TABLE courses (
-  course_id   INT         NOT NULL AUTO_INCREMENT,
-  course_code VARCHAR(20) NOT NULL,
+  course_id   INT          NOT NULL AUTO_INCREMENT,
+  course_code VARCHAR(20)  NOT NULL,
   course_name VARCHAR(100) NULL,
 
   PRIMARY KEY (course_id),
@@ -45,10 +45,10 @@ CREATE TABLE courses (
 
 -- 4. academic_profile
 CREATE TABLE academic_profile (
-  academic_profile_id INT  NOT NULL AUTO_INCREMENT,
-  user_id             INT  NOT NULL,
-  course_id           INT  NOT NULL,
-  year_level          INT  NULL,
+  academic_profile_id INT         NOT NULL AUTO_INCREMENT,
+  user_id             INT         NOT NULL,
+  course_id           INT         NOT NULL,
+  year_level          INT         NULL,
   section             VARCHAR(50) NULL,
   academic_status     ENUM('Enrolled','Transferred','Graduated','Dropped') NOT NULL DEFAULT 'Enrolled',
 
@@ -64,9 +64,10 @@ CREATE TABLE academic_profile (
 
 -- 5. school_years
 CREATE TABLE school_years (
-  school_year_id INT NOT NULL AUTO_INCREMENT,
-  year_start     INT NOT NULL,
-  year_end       INT NOT NULL,
+  school_year_id INT                        NOT NULL AUTO_INCREMENT,
+  year_start     INT                        NOT NULL,
+  year_end       INT                        NOT NULL,
+  year_status    ENUM('Current','Ended')    NOT NULL DEFAULT 'Current',
 
   PRIMARY KEY (school_year_id),
   CONSTRAINT chk_year_range CHECK (year_end = year_start + 1)
@@ -74,10 +75,11 @@ CREATE TABLE school_years (
 
 -- 6. full_amount
 CREATE TABLE full_amount (
-  full_amount_id INT           NOT NULL AUTO_INCREMENT,
-  school_year_id INT           NOT NULL,
-  semester       ENUM('First','Second') NOT NULL,
-  full_amount    DECIMAL(10,2) NOT NULL,
+  full_amount_id  INT                        NOT NULL AUTO_INCREMENT,
+  school_year_id  INT                        NOT NULL,
+  semester        ENUM('First','Second')     NOT NULL,
+  full_amount     DECIMAL(10,2)              NOT NULL,
+  semester_status ENUM('Current','Ended')    NOT NULL DEFAULT 'Current',
 
   PRIMARY KEY (full_amount_id),
   UNIQUE KEY uq_full_amount_sy_sem (school_year_id, semester),
@@ -155,3 +157,24 @@ CREATE TABLE receipts (
     FOREIGN KEY (issued_by) REFERENCES accounts (account_id)
     ON UPDATE CASCADE ON DELETE RESTRICT
 );
+
+ALTER TABLE full_amount
+DROP INDEX uq_full_amount_sy_sem;
+
+USE ssg_system;
+
+SET SQL_SAFE_UPDATES = 0;
+
+UPDATE full_amount
+SET semester_status = 'Ended'
+WHERE semester_status = 'Current'
+  AND full_amount_id NOT IN (
+    SELECT * FROM (
+      SELECT MAX(full_amount_id)
+      FROM full_amount
+      WHERE semester_status = 'Current'
+      GROUP BY semester
+    ) AS latest
+  );
+
+SET SQL_SAFE_UPDATES = 1;

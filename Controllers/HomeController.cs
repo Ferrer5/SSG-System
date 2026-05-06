@@ -1,10 +1,12 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using BCrypt.Net;
 using MyMvcApp.Models;
 using MyMvcApp.Services;
 using MyMvcApp.Data;
+using MyMvcApp.Filters;
 
 namespace MyMvcApp.Controllers;
 
@@ -64,17 +66,16 @@ public class HomeController : Controller
     // DASHBOARDS — role-guarded
     // ----------------------------------------------------------------
 
+    // ── STUDENT DASHBOARD ──
+    [ServiceFilter(typeof(AuthFilter))]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> Dashboard()
     {
-        // Guard: only allow logged-in non-admin users
         var role = HttpContext.Session.GetString("UserRole");
-        if (string.IsNullOrEmpty(role))
-            return RedirectToAction("Login", "Home");
 
         if (role == "Admin")
             return RedirectToAction("AdminDashboard", "Home");
 
-        // If this user has a dedicated role dashboard action, route there.
         if (role == "Treasurer")
             return RedirectToAction("TreasurerDashboard", "Home");
 
@@ -82,71 +83,61 @@ public class HomeController : Controller
             return RedirectToAction("ProfessorDashboard", "Home");
 
         var pendingAccounts = await GetPendingAccountsAsync();
-        var students = await GetStudentsAsync();
+        var students        = await GetStudentsAsync();
 
         var model = new DashboardViewModel
         {
             RequestedAccounts = pendingAccounts,
-            Students = students
+            Students          = students
         };
 
         return View("~/Views/Dashboard/student_dashboard.cshtml", model);
     }
 
+    // ── ADMIN DASHBOARD ──
+    [ServiceFilter(typeof(AuthFilter))]
+    [TypeFilter(typeof(RoleFilter), Arguments = new object[] { new[] { "Admin" } })]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public async Task<IActionResult> AdminDashboard()
     {
-        // Guard: only Admins can access this page
-        var role = HttpContext.Session.GetString("UserRole");
-        if (string.IsNullOrEmpty(role))
-            return RedirectToAction("Login", "Home");
-
-        if (!string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase))
-            return RedirectToAction("Dashboard", "Home");
-
-        var pendingAccounts = await GetPendingAccountsAsync();
+        var pendingAccounts    = await GetPendingAccountsAsync();
         var allAccountRequests = await GetAllAccountRequestsAsync();
-        var students = await GetStudentsAsync();
-        var admins = await GetAdminsAsync();
-        var treasurers = await GetTreasurersAsync();
-        var professors = await GetProfessorsAsync();
+        var students           = await GetStudentsAsync();
+        var admins             = await GetAdminsAsync();
+        var treasurers         = await GetTreasurersAsync();
+        var professors         = await GetProfessorsAsync();
 
         var studentOnlyCount = students.Count(s => s.Role == "Student");
 
         var model = new DashboardViewModel
         {
-            RequestedAccounts = pendingAccounts,
-            AllAccountRequests = allAccountRequests,
-            Students = students,
-            Admins = admins,
-            Treasurers = treasurers,
-            Professors = professors,
+            RequestedAccounts     = pendingAccounts,
+            AllAccountRequests    = allAccountRequests,
+            Students              = students,
+            Admins                = admins,
+            Treasurers            = treasurers,
+            Professors            = professors,
             ApprovedAccountsCount = studentOnlyCount + treasurers.Count + professors.Count + admins.Count
         };
 
         return View("~/Views/Dashboard/admin_dashboard.cshtml", model);
     }
 
+    // ── TREASURER DASHBOARD ──
+    [ServiceFilter(typeof(AuthFilter))]
+    [TypeFilter(typeof(RoleFilter), Arguments = new object[] { new[] { "Treasurer" } })]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult TreasurerDashboard()
     {
-        var role = HttpContext.Session.GetString("UserRole");
-        if (string.IsNullOrEmpty(role))
-            return RedirectToAction("Login", "Home");
-
-        if (role != "Treasurer")
-            return RedirectToDashboard(role);
-
         return View("~/Views/Dashboard/treasurer_dashboard.cshtml");
     }
 
+    // ── PROFESSOR DASHBOARD ──
+    [ServiceFilter(typeof(AuthFilter))]
+    [TypeFilter(typeof(RoleFilter), Arguments = new object[] { new[] { "Professor" } })]
+    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
     public IActionResult ProfessorDashboard()
     {
-        var role = HttpContext.Session.GetString("UserRole");
-        if (string.IsNullOrEmpty(role))
-            return RedirectToAction("Login", "Home");
-
-        if (role != "Professor")
-            return RedirectToDashboard(role);
-
         return View("~/Views/Dashboard/professor_dashboard.cshtml");
     }
 
@@ -155,6 +146,8 @@ public class HomeController : Controller
     // ----------------------------------------------------------------
 
     [HttpPost]
+    [IgnoreAntiforgeryToken]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         try
@@ -230,7 +223,9 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Login failed: {ex.Message}" });
+            // Log the real error, show safe message to user
+            Console.WriteLine($"Login failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -245,11 +240,29 @@ public class HomeController : Controller
         return RedirectToAction("Login", "Home");
     }
 
+    // ── ADD THESE TWO BACK ──────────────────────────────────────
+    [HttpGet]
+    public IActionResult CheckAuth()
+    {
+        var isAuthenticated = HttpContext.Session.GetString("UserId") != null;
+        return Json(new { authenticated = isAuthenticated });
+    }
+
+    [HttpGet]
+    public IActionResult ClearSession()
+    {
+        HttpContext.Session.Clear();
+        return Json(new { success = true });
+    }
+    // ────────────────────────────────────────────────────────────
+
     // ----------------------------------------------------------------
     // REGISTER
     // ----------------------------------------------------------------
 
+    // ── REGISTER — add these checks before calling _authService.RegisterAccountAsync ──
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Register([FromBody] RegistrationRequest request)
     {
         try
@@ -257,14 +270,30 @@ public class HomeController : Controller
             if (request == null)
                 return Json(new { success = false, message = "Registration request is null." });
 
-            if (string.IsNullOrWhiteSpace(request.SchoolId) || string.IsNullOrWhiteSpace(request.Password))
-                return Json(new { success = false, message = "School ID and password are required." });
+            // ── LENGTH VALIDATION ──
+            if (string.IsNullOrWhiteSpace(request.SchoolId) || request.SchoolId.Length > 20)
+                return Json(new { success = false, message = "School ID must be between 1 and 20 characters." });
 
-            if (!string.IsNullOrWhiteSpace(request.Email) && !IsValidEmail(request.Email))
-                return Json(new { success = false, message = "Invalid email format." });
+            if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 6 || request.Password.Length > 100)
+                return Json(new { success = false, message = "Password must be between 6 and 100 characters." });
 
-            if (request.Password.Length < 6)
-                return Json(new { success = false, message = "Password must be at least 6 characters long." });
+            if (!string.IsNullOrWhiteSpace(request.FirstName) && request.FirstName.Length > 50)
+                return Json(new { success = false, message = "First name must not exceed 50 characters." });
+
+            if (!string.IsNullOrWhiteSpace(request.LastName) && request.LastName.Length > 50)
+                return Json(new { success = false, message = "Last name must not exceed 50 characters." });
+
+            if (!string.IsNullOrWhiteSpace(request.MiddleName) && request.MiddleName.Length > 50)
+                return Json(new { success = false, message = "Middle name must not exceed 50 characters." });
+
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                if (request.Email.Length > 100)
+                    return Json(new { success = false, message = "Email must not exceed 100 characters." });
+
+                if (!IsValidEmail(request.Email))
+                    return Json(new { success = false, message = "Invalid email format." });
+            }
 
             var result = await _authService.RegisterAccountAsync(request);
 
@@ -289,7 +318,8 @@ public class HomeController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Registration failed: {ex.Message}" });
+            Console.WriteLine($"Registration failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -298,6 +328,7 @@ public class HomeController : Controller
     // ----------------------------------------------------------------
 
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
     {
         try
@@ -337,7 +368,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Failed to process request: {ex.Message}" });
+            Console.WriteLine($"Forgot password failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -346,6 +378,7 @@ Best regards,<br>SSG Financial Management System";
     // ----------------------------------------------------------------
 
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> VerifyResetCode([FromBody] VerifyCodeRequest request)
     {
         try
@@ -374,7 +407,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Failed to verify code: {ex.Message}" });
+            Console.WriteLine($"Verify code failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -390,6 +424,7 @@ Best regards,<br>SSG Financial Management System";
     }
 
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
     {
         try
@@ -421,7 +456,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Failed to reset password: {ex.Message}" });
+            Console.WriteLine($"Reset password failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -439,19 +475,15 @@ Best regards,<br>SSG Financial Management System";
             if (account == null)
                 return Json(new { success = false, message = "Account not found." });
 
-            if (!Enum.TryParse<RequestStatus>(request.Status, true, out var newStatus))
-                return Json(new { success = false, message = "Invalid status." });
-
-            account.RequestStatus = newStatus;
-            if (newStatus == RequestStatus.Approved)
-                account.IsActive = true;
+            account.RequestStatus = request.Status;
             await _context.SaveChangesAsync();
 
             return Json(new { success = true, message = $"Account {request.Status} successfully." });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Failed to update account status: {ex.Message}" });
+            Console.WriteLine($"Update account status failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -477,7 +509,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Failed: {ex.Message}" });
+            Console.WriteLine($"Toggle activation failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -511,7 +544,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = "Delete failed: " + ex.Message });
+            Console.WriteLine($"Delete account failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -539,11 +573,37 @@ Best regards,<br>SSG Financial Management System";
         });
     }
 
+    // ── UPDATE STUDENT — add these checks at the top ──
     [HttpPost]
     public async Task<IActionResult> UpdateStudent([FromBody] UpdateStudentRequest request)
     {
         try
         {
+            // ── LENGTH VALIDATION ──
+            if (string.IsNullOrWhiteSpace(request.FirstName) || request.FirstName.Length > 50)
+                return Json(new { success = false, message = "First name must be between 1 and 50 characters." });
+
+            if (string.IsNullOrWhiteSpace(request.LastName) || request.LastName.Length > 50)
+                return Json(new { success = false, message = "Last name must be between 1 and 50 characters." });
+
+            if (!string.IsNullOrWhiteSpace(request.MiddleName) && request.MiddleName.Length > 50)
+                return Json(new { success = false, message = "Middle name must not exceed 50 characters." });
+
+            if (!string.IsNullOrWhiteSpace(request.Email))
+            {
+                if (request.Email.Length > 100)
+                    return Json(new { success = false, message = "Email must not exceed 100 characters." });
+
+                if (!IsValidEmail(request.Email))
+                    return Json(new { success = false, message = "Invalid email format." });
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Section) && request.Section.Length > 10)
+                return Json(new { success = false, message = "Section must not exceed 10 characters." });
+
+            if (request.YearLevel.HasValue && (request.YearLevel < 1 || request.YearLevel > 4))
+                return Json(new { success = false, message = "Year level must be between 1 and 4." });
+
             var user = await _context.Users
                 .Include(u => u.Account)
                 .Include(u => u.AcademicProfile)
@@ -574,7 +634,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Update failed: {ex.Message}" });
+            Console.WriteLine($"Update student failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -585,14 +646,15 @@ Best regards,<br>SSG Financial Management System";
         {
             var courses = await _context.Courses
                 .OrderBy(c => c.CourseCode)
-                .Select(c => new { c.CourseId, c.CourseCode, c.CourseName })
+                .Select(c => new { c.CourseId, c.CourseCode })
                 .ToListAsync();
 
             return Json(new { success = true, courses });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Failed to get courses: {ex.Message}" });
+            Console.WriteLine($"Get courses failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -636,7 +698,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = "Failed to change role: " + ex.Message });
+            Console.WriteLine($"Change role failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -680,7 +743,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = ex.Message });
+            Console.WriteLine($"Get rejected requests failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 
@@ -753,7 +817,8 @@ Best regards,<br>SSG Financial Management System";
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Test failed: {ex.Message}" });
+            Console.WriteLine($"Test DB failed: {ex}");
+            return Json(new { success = false, message = "An unexpected error occurred. Please try again." });
         }
     }
 

@@ -1236,6 +1236,55 @@ document.addEventListener('DOMContentLoaded', function() {
     window.history.replaceState({}, '', url.pathname + (q ? '?' + q : '') + url.hash);
   })();
 
+  /**
+   * LOGOUT HANDLER
+   * Detects logout parameter and manages history to prevent back-button access to protected pages
+   * - Cleans up history entries created during logout process
+   * - Ensures back button from login page exits/closes the browser naturally
+   */
+  (function handleLogoutRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const isLogoutRedirect = params.get('logout') === '1' || params.get('auth') === 'required';
+    
+    if (!isLogoutRedirect) return;
+
+    // Check if we came from the logout page's sessionStorage flag
+    const logoutTimestamp = sessionStorage.getItem('ssg_logout_timestamp');
+    const logoutActive = sessionStorage.getItem('ssg_logout_active');
+    
+    if (logoutActive === 'true' && logoutTimestamp) {
+      // This is a confirmed logout redirect - clean up the sessionStorage
+      sessionStorage.removeItem('ssg_logout_active');
+      sessionStorage.removeItem('ssg_logout_timestamp');
+      
+      // Replace the current history entry to remove the logout parameter from URL
+      // This makes the URL clean for the user, and prepares for natural back-button behavior
+      const cleanUrl = window.location.pathname + (window.location.hash || '');
+      try {
+        // Try to replace the current entry with the clean URL
+        window.history.replaceState({ logoutProcessed: true }, '', cleanUrl);
+        
+        // If this was the result of a back button navigation (detected via persisted state),
+        // we might want to push an additional state to create a "dead end"
+        if (window.history.state && window.history.state.logoutProcessed) {
+          // Push a state that will prevent further back navigation to protected pages
+          window.history.pushState({ loginEntry: true }, '', cleanUrl);
+        }
+      } catch (e) {
+        // Fallback: just navigate to clean URL
+        window.location.replace(cleanUrl);
+      }
+    } else {
+      // Direct navigation with logout param (not from logout page) - just clean the URL
+      const cleanUrl = window.location.pathname + (window.location.hash || '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+    
+    // Clear any remaining auth-related session storage
+    sessionStorage.removeItem('ssg_last_auth_check');
+    sessionStorage.removeItem('ssg_last_auth_result');
+  })();
+
   // First nav `<a>` is Home — highlight when not opening login from deep link
   const mobileNavEl = document.getElementById('mobileNav');
   const homeNavLink = mobileNavEl?.querySelector('a');

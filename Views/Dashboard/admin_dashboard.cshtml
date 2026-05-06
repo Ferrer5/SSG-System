@@ -151,6 +151,18 @@
 </head>
 <body>
 
+<!-- ── AUTH LOADING OVERLAY — sits on top of everything until auth is confirmed ── -->
+<div id="auth-overlay" style="position:fixed;inset:0;z-index:9999;background:var(--bg,#071a0c);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity .4s ease;">
+    <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;box-shadow:0 0 24px rgba(39,167,68,.3);">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+    </div>
+    <div style="width:42px;height:42px;border:3px solid rgba(39,167,68,.2);border-top-color:#27a744;border-radius:50%;animation:spin .8s linear infinite;"></div>
+    <p style="font-size:13px;font-weight:500;color:rgba(232,245,236,.5);letter-spacing:.06em;">Verifying session<span id="overlay-dots"></span></p>
+</div>
+<style>@@keyframes spin{to{transform:rotate(360deg)}}</style>
+
 <div class="top-accent"></div>
 <div style="display:flex;min-height:100vh;width:100%;position:relative">
 
@@ -1288,6 +1300,71 @@ async function refreshProfessors() {
     } catch {}
 }
 
+
+    // ── AUTH GUARD WITH OVERLAY ──────────────────────────────────
+    const overlay = document.getElementById('auth-overlay');
+    let isRedirecting = false; // ← guard flag prevents infinite loop
+
+    function showDashboard() {
+        if (!overlay) return;
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+        setTimeout(() => { if (overlay) overlay.remove(); }, 420);
+    }
+
+    function hardRedirectToLogin() {
+        if (isRedirecting) return; // ← stop if already redirecting
+        isRedirecting = true;
+        window.location.replace('/');
+    }
+
+    function checkAuth() {
+        if (isRedirecting) return; // ← stop if already redirecting
+        fetch('/Home/CheckAuth?_=' + Date.now(), { cache: 'no-store' })
+            .then(r => {
+                if (!r.ok) throw new Error('CheckAuth endpoint not found: ' + r.status);
+                return r.json();
+            })
+            .then(data => {
+                if (data.authenticated) { showDashboard(); }
+                else { hardRedirectToLogin(); }
+            })
+            .catch((err) => {
+                console.error('Auth check failed:', err);
+                hardRedirectToLogin();
+            });
+    }
+
+    // Run on page load
+    checkAuth();
+
+    // Run when browser restores from bfcache (mobile swipe-back)
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            isRedirecting = false; // reset flag on fresh page show
+            if (overlay) {
+                overlay.style.opacity = '1';
+                overlay.style.display = 'flex';
+                overlay.style.pointerEvents = 'auto';
+            }
+            checkAuth();
+        }
+    });
+
+    // Run when tab becomes visible again
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden && !isRedirecting) checkAuth();
+    });
+
+    // Trap back button
+    history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', function () {
+        if (!isRedirecting) {
+            checkAuth();
+            history.pushState(null, '', window.location.href);
+        }
+    });
+    // ────────────────────────────────────────────────────────────
 </script>
 </body>
 </html>

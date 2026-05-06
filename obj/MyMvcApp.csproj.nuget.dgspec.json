@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ronal\\SSG-System-ronaldbranch\\MyMvcApp.csproj": {}
+    "C:\\Users\\ronal\\SSG-system2\\SSG-System-ronaldbranch\\MyMvcApp.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ronal\\SSG-System-ronaldbranch\\MyMvcApp.csproj": {
+    "C:\\Users\\ronal\\SSG-system2\\SSG-System-ronaldbranch\\MyMvcApp.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ronal\\SSG-System-ronaldbranch\\MyMvcApp.csproj",
+        "projectUniqueName": "C:\\Users\\ronal\\SSG-system2\\SSG-System-ronaldbranch\\MyMvcApp.csproj",
         "projectName": "MyMvcApp",
-        "projectPath": "C:\\Users\\ronal\\SSG-System-ronaldbranch\\MyMvcApp.csproj",
+        "projectPath": "C:\\Users\\ronal\\SSG-system2\\SSG-System-ronaldbranch\\MyMvcApp.csproj",
         "packagesPath": "C:\\Users\\ronal\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ronal\\SSG-System-ronaldbranch\\obj\\",
+        "outputPath": "C:\\Users\\ronal\\SSG-system2\\SSG-System-ronaldbranch\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ronal\\AppData\\Roaming\\NuGet\\NuGet.Config"

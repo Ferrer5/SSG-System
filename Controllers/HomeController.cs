@@ -615,13 +615,14 @@ Best regards,<br>SSG Financial Management System";
             // update name
             user.FirstName  = request.FirstName;
             user.LastName   = request.LastName;
+
             user.MiddleName = request.MiddleName;
 
             // update account info
             if (user.Account != null)
             {
                 user.Account.Email = request.Email;
-                user.Account.SchoolId = request.SchoolId;
+                user.Account.SchoolId = request.SchoolId ?? user.Account.SchoolId;
             }
 
             await _context.SaveChangesAsync();

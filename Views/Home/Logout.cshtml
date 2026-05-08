@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Logging out...</title>
+    <script>
+        // 1. Clear any client-side storage
+        localStorage.removeItem('currentUser');
+        sessionStorage.clear();
+
+        // 2. Replace the current history entry (dashboard) with login
+        //    so back from login has nowhere protected to go
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, '', '/');
+        }
+
+        // 3. Push a dummy "login" entry so the first back press
+        //    lands here (login) instead of the dashboard
+        if (window.history && window.history.pushState) {
+            window.history.pushState(null, '', '/');
+            window.history.pushState(null, '', '/');
+        }
+
+        // 4. Intercept the back button while on this page
+        window.addEventListener('popstate', function () {
+            window.history.pushState(null, '', '/');
+        });
+
+        // 5. Redirect to home/login
+        window.location.replace('/');
+    </script>
+</head>
+<body>
+    <p>Logging out...</p>
+</body>
+</html>
+<script>
+    // ── AUTH GUARD ──────────────────────────────────────────────
+    function checkAuth() {
+        fetch('/Home/CheckAuth?_=' + Date.now(), { cache: 'no-store' })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.authenticated) hardRedirectToLogin();
+            })
+            .catch(() => hardRedirectToLogin());
+    }
+
+    function hardRedirectToLogin() {
+        // Replace entire history so forward button can't return here
+        window.location.replace('/');
+    }
+
+    // Run on normal load
+    checkAuth();
+
+    // Run when browser restores page from bfcache (back/forward swipe)
+    window.addEventListener('pageshow', function (e) {
+        if (e.persisted) {
+            // Page was served from bfcache — recheck auth immediately
+            checkAuth();
+        }
+    });
+
+    // Run when tab becomes visible again (tab switch, app switch on mobile)
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) checkAuth();
+    });
+
+    // Trap the back button — push a state so back press re-triggers popstate
+    history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', function () {
+        checkAuth();
+        history.pushState(null, '', window.location.href);
+    });
+    // ────────────────────────────────────────────────────────────
+</script>

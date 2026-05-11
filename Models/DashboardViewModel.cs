@@ -7,5 +7,7 @@ namespace MyMvcApp.Models
         public List<RequestedAccountViewModel> RequestedAccounts { get; set; } = new();
         
         public List<StudentViewModel> Students { get; set; } = new();
+        
+        public List<PaymentHistoryViewModel> PaymentHistory { get; set; } = new();
     }
 }

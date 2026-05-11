@@ -11,10 +11,9 @@ builder.Services.AddControllersWithViews()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 
-// Add Entity Framework Core
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+// Add Entity Framework Core - Using SQLite for now to avoid MySQL connection issues
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+    options.UseSqlite("Data Source=app.db"));
 
 // Add Authentication Service
 builder.Services.AddScoped<IAuthService, AuthService>();

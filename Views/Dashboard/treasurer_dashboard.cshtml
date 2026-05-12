@@ -85,8 +85,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-heig
 .stat-sub{font-size:10.5px;color:var(--text-d);padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
 
 /* ── CONTENT CARDS ── */
-.content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;margin-bottom:14px;position:relative;overflow:hidden}
-.content-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent)}
+.content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;margin-bottom:14px;position:relative;overflow:visible}
+.content-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent)}
 .cc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
 .cc-title{font-size:13.5px;font-weight:700;color:#fff}
 
@@ -213,6 +213,17 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 #toast.show{opacity:1;transform:translateY(0)}
 #toast.ok{background:#052e16;border:1px solid rgba(39,167,68,.3)}
 #toast.fail{background:#450a0a;border:1px solid rgba(239,68,68,.3)}
+
+/* ── DROPDOWN ── */
+.dropdown-wrap{position:relative;display:inline-block}
+.dot-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dot-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.dropdown-menu{display:none;position:absolute;right:0;bottom:34px;top:auto;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:10px;min-width:160px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden}
+.dropdown-menu.open{display:block}
+.dropdown-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12.5px;color:var(--text-m);cursor:pointer;transition:background .1s}
+.dropdown-item:hover{background:rgba(39,167,68,.08);color:var(--text)}
+.dropdown-item.danger{color:var(--red-badge-t)}
+.dropdown-item.danger:hover{background:rgba(239,68,68,.08)}
 </style>
 </head>
 <body>
@@ -693,11 +704,30 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
       <input type="hidden" id="of-uid"/>
     </div>
     <div class="form-grid">
-      <div class="form-group"><label class="form-label">Semester</label><select class="form-select" id="of-sem"><option value="First">1st Semester</option><option value="Second">2nd Semester</option></select></div>
+      <div class="form-group">
+    <label class="form-label">School Year & Semester</label>
+    <select class="form-select" id="of-sem" onchange="onSemesterChange()">
+        <option value="">Loading...</option>
+    </select>
+    <div style="font-size:10.5px;color:var(--text-d);margin-top:4px" id="of-sem-status"></div>
+</div>
       <div class="form-group"><label class="form-label">Amount Paid (₱)</label><input class="form-input" id="of-amount" type="number" placeholder="200.00" oninput="checkPaymentStatus()"/></div>
     </div>
     <div class="form-group"><label class="form-label">Payment Status</label><div class="status-box" id="of-status">Enter amount to determine status</div></div>
-    <div class="form-group"><label class="form-label">Receipt Number (optional)</label><input class="form-input" id="of-receipt" placeholder="e.g. OR-2026-001"/></div>
+    <div class="form-group">
+    <label class="form-label">Receipt Number</label>
+    <div style="display:flex;gap:8px;align-items:center">
+        <input class="form-input" id="of-receipt" placeholder="Generating…" 
+               style="flex:1;font-family:'DM Mono',monospace"/>
+        <button type="button" onclick="autoFillReceiptNumber()" 
+                style="padding:8px 12px;background:var(--green-glow);border:1px solid rgba(39,167,68,.2);border-radius:8px;color:#5fdd8e;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">
+            ↻ Regenerate
+        </button>
+    </div>
+    <div style="font-size:10.5px;color:var(--text-d);margin-top:4px">
+        Auto-generated · Treasurer can still edit manually if needed
+    </div>
+</div>
     <div class="modal-footer"><button class="btn-outline" onclick="closeModal('modal-orgfee')">Cancel</button><button class="btn-primary" onclick="saveOrgFee()">Save Payment</button></div>
   </div>
 </div>
@@ -735,6 +765,21 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 <div id="toast"></div>
 
 <script>
+function toggleDropdown(btn) {
+  const menu = btn.nextElementSibling;
+  const isOpen = menu.classList.contains('open');
+  // close all open dropdowns first
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  if (!isOpen) menu.classList.add('open');
+}
+
+// close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap')) {
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
 // ── CONFIG ──────────────────────────────────────────────────────
 let REQ_FEE = 200; // Will be updated from current semester fee
 
@@ -748,6 +793,7 @@ let DB = {
 let STUDENTS = [];
 let CURRENT_SCHOOL_YEAR = null;
 let CURRENT_SEMESTER = null;
+let STUDENTS_LAST_FETCH = 0;
 
 // ── STATE ────────────────────────────────────────────────────────
 let histQ = '', histType = '', expQ = '';
@@ -756,7 +802,10 @@ let barChart, donutChart;
 
 // ── UTILS ────────────────────────────────────────────────────────
 function p(n) { return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 }); }
-function fd(d) { return new Date(d + 'T00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }); }
+function fd(d) {
+  if (!d) return '—';
+  return new Date(d.split('T')[0] + 'T00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 function today() { return new Date().toISOString().split('T')[0]; }
 
 async function loadDashboardData() {
@@ -872,21 +921,102 @@ async function loadExpenses() {
 
 async function loadStudents() {
   try {
-    const res = await fetch('/Home/GetStudentsForPayment');
+    const sem = document.getElementById('of-sem')?.value || '';
+    const res = await fetch(`/Home/GetStudentsForPayment?semester=${encodeURIComponent(sem)}`);
     const data = await res.json();
     if (data.success) {
       STUDENTS = data.students.map(s => ({
         userId: s.userId,
         schoolId: s.schoolId,
         name: s.name,
-        course: s.courseCode,
-        yr: s.yearSection,
+        courseCode: s.courseCode,
+        yearSection: s.yearSection,
         hasPaid: s.hasPaid
       }));
+      STUDENTS_LAST_FETCH = Date.now();
+    } else {
+      console.error('Failed to load students:', data.message || 'Unknown error');
     }
   } catch (err) {
     console.error('Failed to load students:', err);
   }
+}
+
+async function ensureStudentsFresh(force = false) {
+  const now = Date.now();
+  const staleMs = 30000; // Refresh every 30s at most unless forced
+  if (force || STUDENTS.length === 0 || (now - STUDENTS_LAST_FETCH) > staleMs) {
+    await loadStudents();
+  }
+}
+
+// Load available semesters into the dropdown
+async function loadAvailableSemesters() {
+    try {
+        const res  = await fetch('/Home/GetAvailableSemesters');
+        const data = await res.json();
+        const sel  = document.getElementById('of-sem');
+
+        if (!data.success || !data.fees.length) {
+            sel.innerHTML = '<option value="">No semesters with fees set</option>';
+            return;
+        }
+
+        sel.innerHTML = data.fees.map(f => {
+            const semLabel    = f.semester === 'First' ? '1st' : '2nd';
+            const statusColor = f.semesterStatus === 'Current' ? '#5fdd8e' : '#fbbf24';
+            return `<option value="${f.semester}"
+                            data-full-amount-id="${f.fullAmountId}"
+                            data-year-start="${f.yearStart}"
+                            data-year-end="${f.yearEnd}"
+                            data-amount="${f.amount}"
+                            data-status="${f.semesterStatus}">
+                        ${f.yearStart}–${f.yearEnd} · ${semLabel} Semester · ₱${parseFloat(f.amount).toFixed(2)} · ${f.semesterStatus}
+                    </option>`;
+        }).join('');
+
+        // Trigger status label update
+        updateSemesterStatusLabel();
+    } catch (err) {
+        console.error('Failed to load semesters:', err);
+    }
+}
+
+// Show the status badge below the dropdown
+function updateSemesterStatusLabel() {
+    const sel      = document.getElementById('of-sem');
+    const opt      = sel.options[sel.selectedIndex];
+    const statusEl = document.getElementById('of-sem-status');
+    if (!opt || !opt.dataset.status) { statusEl.textContent = ''; return; }
+
+    const status   = opt.dataset.status;
+    const color    = status === 'Current' ? '#5fdd8e' : '#fbbf24';
+    const yearStart = opt.dataset.yearStart;
+    const yearEnd   = opt.dataset.yearEnd;
+    const semLabel  = opt.value === 'First' ? '1st' : '2nd';
+
+    statusEl.innerHTML = `
+        <span style="color:${color};font-weight:600">● ${status}</span>
+        &nbsp;·&nbsp; A.Y. ${yearStart}–${yearEnd} &nbsp;·&nbsp; ${semLabel} Semester
+    `;
+
+    // Update REQ_FEE to match selected semester
+    REQ_FEE = parseFloat(opt.dataset.amount) || REQ_FEE;
+    document.getElementById('of-amount').placeholder = REQ_FEE.toFixed(2);
+
+    // Re-check payment status if amount is already entered
+    if (document.getElementById('of-amount').value) checkPaymentStatus();
+}
+
+function onSemesterChange() {
+    updateSemesterStatusLabel();
+    // Refresh student list so hasPaid reflects the new semester,
+    // but don't wipe out the already-selected student.
+    STUDENTS = [];
+    document.getElementById('of-list').style.display = 'none';
+    // Only reset amount and status so treasurer re-enters for the new semester
+    document.getElementById('of-amount').value = '';
+    document.getElementById('of-status').textContent = 'Enter amount to determine status';
 }
 
 async function loadCurrentSemesterInfo() {
@@ -1044,7 +1174,27 @@ async function renderHistory() {
       <td><span class="badge ${t.type==='income'?'bg':'br'}">${t.type==='income'?'Income':'Expense'}</span></td>
       <td class="td-mono td-m">${t.receipt}</td>
       <td class="${t.type==='income'?'amt-in':'amt-out'}">${t.type==='income'?'+':'-'}${p(t.amt)}</td>
-      <td><button class="btn-danger" onclick="deleteTx('${t.src}',${t.sid})">Delete</button></td>
+      <td>
+        <div class="dropdown-wrap">
+          <button class="dot-btn" onclick="toggleDropdown(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+          <div class="dropdown-menu">
+            <div class="dropdown-item" onclick="viewReceipt('${t.src}',${t.sid},'${t.receipt}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+              View Receipt
+            </div>
+            <div class="dropdown-item" onclick="editTransaction('${t.src}',${t.sid})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Edit
+            </div>
+            <div class="dropdown-item danger" onclick="deleteTx('${t.src}',${t.sid})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Delete
+            </div>
+          </div>
+        </div>
+      </td>
     </tr>`).join('') || '<tr class="empty-row"><td colspan="7">No transactions found.</td></tr>';
 }
 
@@ -1068,7 +1218,27 @@ async function renderIncome() {
       <td><span class="badge bg">${r.cat}</span></td>
       <td class="td-mono td-m">${r.receipt}</td>
       <td class="amt-in">+${p(r.amt)}</td>
-      <td><button class="btn-danger" onclick="deleteTx('${r.type}',${r.id})">Delete</button></td>
+      <td>
+        <div class="dropdown-wrap">
+          <button class="dot-btn" onclick="toggleDropdown(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+          <div class="dropdown-menu">
+            <div class="dropdown-item" onclick="viewReceipt('${r.type}',${r.id},'${r.receipt}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+              View Receipt
+            </div>
+            <div class="dropdown-item" onclick="editIncome('${r.type}',${r.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Edit
+            </div>
+            <div class="dropdown-item danger" onclick="deleteTx('${r.type}',${r.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Delete
+            </div>
+          </div>
+        </div>
+      </td>
     </tr>`).join('') || '<tr class="empty-row"><td colspan="6">No income records yet.</td></tr>';
 }
 
@@ -1099,25 +1269,68 @@ function filterExpenses(q) { expQ = q; renderExpenses(); }
 function openModal(id) {
   document.getElementById(id).classList.add('open');
   document.querySelectorAll('.form-input[type=date]').forEach(i => { if (!i.value) i.value = today(); });
+  if (id === 'modal-orgfee') {
+    loadAvailableSemesters();
+    autoFillReceiptNumber();  // ← add this
+  }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
+async function autoFillReceiptNumber() {
+    try {
+        const res  = await fetch('/Home/GetNextReceiptNumber');
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('of-receipt').value = data.receiptNumber;
+        }
+    } catch (err) {
+        console.error('Failed to get receipt number:', err);
+    }
+}
+
 // ── STUDENT SEARCH ────────────────────────────────────────────────
 async function searchStudents(q) {
-  if (STUDENTS.length === 0) await loadStudents();
-
   let list = document.getElementById('of-list');
-  if (!q) { list.style.display = 'none'; return; }
-  let paid = STUDENTS.filter(s=>s.hasPaid).map(s=>s.userId);
-  let res  = STUDENTS.filter(s=>s.name.toLowerCase().includes(q.toLowerCase())||s.schoolId.includes(q));
-  list.style.display = 'block';
-  list.innerHTML = res.length ? res.map(s => `
-    <div class="student-item${paid.includes(s.userId)?' paid':''}" onclick="selectStudent(${s.userId},'${s.name}','${s.course}','${s.yr}','${s.schoolId}')">
-      <div>
-        <div class="student-name">${s.name} ${paid.includes(s.userId)?'<span class="badge by" style="font-size:9px">Paid</span>':''}</div>
-        <div class="student-info">${s.schoolId} · ${s.course} ${s.yr}</div>
-      </div>
-    </div>`).join('') : '<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">No students found.</div>';
+  const query = (q || '').trim().toLowerCase();
+  if (!query) { list.style.display = 'none'; return; }
+
+  try {
+    const response = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query));
+    const data = await response.json();
+    if (!data.success) {
+      list.style.display = 'block';
+      const msg = data.message ? String(data.message) : 'Unable to load students.';
+      list.innerHTML = `<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">${msg}</div>`;
+      return;
+    }
+
+    const res = data.students.map(s => ({
+      userId: s.userId,
+      schoolId: s.schoolId,
+      name: s.name,
+      courseCode: s.courseCode,
+      yearSection: s.yearSection,
+      hasPaid: s.hasPaid
+    }));
+
+    list.style.display = 'block';
+    list.innerHTML = res.length ? res.map(s => `
+      <div class="student-item${s.hasPaid ? ' paid' : ''}" 
+           onclick="${s.hasPaid ? '' : `selectStudent(${s.userId},'${s.name.replace(/'/g, "\\'")}','${s.courseCode.replace(/'/g, "\\'")}','${s.yearSection.replace(/'/g, "\\'")}','${s.schoolId.replace(/'/g, "\\'")}')`}">
+        <div>
+          <div class="student-name">
+            ${s.name} 
+            ${s.hasPaid ? '<span class="badge by" style="font-size:9px">Paid</span>' : ''}
+          </div>
+          <div class="student-info">${s.schoolId} · ${s.courseCode} ${s.yearSection}</div>
+        </div>
+      </div>`).join('')
+      : '<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">No students found.</div>';
+  } catch (err) {
+    console.error('Failed to search students:', err);
+    list.style.display = 'block';
+    list.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">Request failed while loading students.</div>';
+  }
 }
 
 function selectStudent(uid, name, course, yr, sid) {
@@ -1143,9 +1356,13 @@ function checkPaymentStatus() {
 // ── SAVE FUNCTIONS ───────────────────────────────────────────────
 async function saveOrgFee() {
   if (!selStudent) { showToast('Please select a student first.', 'fail'); return; }
-  let amt     = parseFloat(document.getElementById('of-amount').value) || 0;
-  let sem     = document.getElementById('of-sem').value;
-  let receipt = document.getElementById('of-receipt').value.trim();
+
+  const sel     = document.getElementById('of-sem');
+  const sem     = sel.value;
+  if (!sem) { showToast('Please select a semester.', 'fail'); return; }
+
+  const amt     = parseFloat(document.getElementById('of-amount').value) || 0;
+  const receipt = document.getElementById('of-receipt').value.trim();
   if (!amt) { showToast('Enter an amount.', 'fail'); return; }
 
   try {
@@ -1563,10 +1780,25 @@ async function refreshFees() {
             : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
         </td>
         <td style="text-align:right">
-          <button class="btn-danger" onclick="deleteFee(${f.fullAmountId})" style="font-size:11px;padding:5px 12px">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Delete
-          </button>
+          <div class="dropdown-wrap">
+            <button class="dot-btn" onclick="toggleDropdown(this)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+            </button>
+            <div class="dropdown-menu">
+              <div class="dropdown-item" onclick="editFee(${f.fullAmountId}, ${f.amount})">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Edit Amount
+              </div>
+              <div class="dropdown-item" onclick="changeFeeStatus(${f.fullAmountId}, '${f.semesterStatus}')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                ${f.semesterStatus === 'Current' ? 'Mark as Ended' : 'Set as Current'}
+              </div>
+              <div class="dropdown-item danger" onclick="deleteFee(${f.fullAmountId})">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Delete
+              </div>
+            </div>
+          </div>
         </td>
       </tr>
     `).join('');
@@ -1588,6 +1820,159 @@ async function deleteFee(fullAmountId) {
     if (data.success) { showToast(data.message, 'ok'); await refreshFees(); }
     else showToast(data.message, 'fail');
   } catch { showToast('Request failed.', 'fail'); }
+}
+
+function editFee(fullAmountId, currentAmount) {
+    const newAmount = prompt('Enter new fee amount:', currentAmount);
+    if (newAmount === null) return; // cancelled
+    const amount = parseFloat(newAmount);
+    if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    fetch('/Home/EditFee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+        body: JSON.stringify({ fullAmountId, amount })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+        else showToast(data.message, 'fail');
+    })
+    .catch(() => showToast('Request failed.', 'fail'));
+}
+
+async function changeFeeStatus(fullAmountId, currentStatus) {
+    const newStatus = currentStatus === 'Current' ? 'Ended' : 'Current';
+    if (!confirm(`Set this fee as ${newStatus}?`)) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    try {
+        const res  = await fetch('/Home/SetFeeStatus', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+            body:    JSON.stringify({ fullAmountId, status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+        else showToast(data.message, 'fail');
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+function viewReceipt(type, id, receipt) {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  if (!receipt || receipt === '—') {
+    showToast('No receipt number recorded for this entry.', 'fail');
+    return;
+  }
+  // Simple modal-style alert — you can replace with a real modal later
+  showToast('Receipt / OR #: ' + receipt, 'ok');
+}
+
+function editIncome(type, id) {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  if (type === 'OrgFee') {
+    showToast('To edit an org fee payment, delete and re-record it.', 'fail');
+  } else {
+    // OtherFund — find record and open the fund modal pre-filled
+    const fund = DB.funds.find(f => f.id === id);
+    if (!fund) { showToast('Record not found.', 'fail'); return; }
+    document.getElementById('fn-source').value = fund.source || '';
+    document.getElementById('fn-desc').value   = fund.desc  || '';
+    document.getElementById('fn-amount').value = fund.amt   || '';
+    document.getElementById('fn-date').value   = fund.date  || today();
+    openModal('modal-fund');
+    // Mark as edit mode
+    document.querySelector('#modal-fund .btn-primary').setAttribute('data-edit-id', id);
+    document.querySelector('#modal-fund .btn-primary').onclick = () => updateFund(id);
+  }
+}
+
+async function updateFund(id) {
+  const source = document.getElementById('fn-source').value.trim();
+  const desc   = document.getElementById('fn-desc').value.trim();
+  const amt    = parseFloat(document.getElementById('fn-amount').value) || 0;
+  const date   = document.getElementById('fn-date').value || today();
+  if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
+
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res = await fetch('/Home/UpdateOtherFund', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({ id, source, description: desc, amount: amt, receivedDate: new Date(date).toISOString() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-fund');
+      // Reset modal button back to save mode
+      document.querySelector('#modal-fund .btn-primary').onclick = saveFund;
+      await renderIncome();
+      await renderDashboard();
+      showToast('Fund updated successfully.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to update.', 'fail');
+    }
+  } catch {
+    showToast('Request failed.', 'fail');
+  }
+}
+
+function editTransaction(src, id) {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+
+  if (src === 'OrgFee') {
+    showToast('To edit an org fee payment, delete and re-record it.', 'fail');
+
+  } else if (src === 'OtherFund') {
+    const fund = DB.funds.find(f => f.id === id);
+    if (!fund) { showToast('Record not found.', 'fail'); return; }
+    document.getElementById('fn-source').value = fund.source || '';
+    document.getElementById('fn-desc').value   = fund.desc   || '';
+    document.getElementById('fn-amount').value = fund.amt    || '';
+    document.getElementById('fn-date').value   = fund.date   || today();
+    openModal('modal-fund');
+    document.querySelector('#modal-fund .btn-primary').onclick = () => updateFund(id);
+
+  } else if (src === 'Expense') {
+    const exp = DB.expenses.find(e => e.id === id);
+    if (!exp) { showToast('Record not found.', 'fail'); return; }
+    document.getElementById('ex-desc').value   = exp.desc || '';
+    document.getElementById('ex-amount').value = exp.amt  || '';
+    document.getElementById('ex-date').value   = exp.date || today();
+    openModal('modal-expense');
+    document.querySelector('#modal-expense .btn-primary').onclick = () => updateExpense(id);
+  }
+}
+
+async function updateExpense(id) {
+  const desc = document.getElementById('ex-desc').value.trim();
+  const amt  = parseFloat(document.getElementById('ex-amount').value) || 0;
+  const date = document.getElementById('ex-date').value || today();
+  if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
+
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res = await fetch('/Home/UpdateExpense', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({ id, description: desc, amount: amt, expenseDate: new Date(date).toISOString() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-expense');
+      // Reset modal button back to save mode
+      document.querySelector('#modal-expense .btn-primary').onclick = saveExpense;
+      await renderHistory();
+      await renderExpenses();
+      await renderDashboard();
+      showToast('Expense updated successfully.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to update.', 'fail');
+    }
+  } catch {
+    showToast('Request failed.', 'fail');
+  }
 }
 
 // ── INIT ─────────────────────────────────────────────────────────

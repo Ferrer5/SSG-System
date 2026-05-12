@@ -815,8 +815,27 @@ body.login-open .lp-right { transform: translateX(0); }
         <p class="back-to-login">Already have an account? <a onclick="goToSignIn()" style="color: #000000; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign in</a></p>
       </div>
 
-
-
+      <!-- ── SCREEN: Email OTP Verification ── -->
+      <div class="rp-screen" id="screenEmailOTP">
+        <div style="padding:40px 0 20px;">
+          <h1 class="rp-h1">Verify Your Email</h1>
+          <p class="rp-subtitle">A 6-digit code was sent to <strong id="otpEmailDisplay"></strong>. Enter it below.</p>
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label">Verification Code</label>
+            <input type="text" id="signupOtpCode" class="form-input" style="max-width:450px;"
+                   placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric" />
+          </div>
+          <button class="submit-btn" style="max-width:450px;" onclick="handleEmailOTPVerify()">Verify & Create Account</button>
+          <p class="back-to-login" style="margin-top:16px;">
+            Didn't receive a code?
+            <a onclick="resendSignupOTP()" style="color:#000;text-decoration:none;font-weight:600;"
+               onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Resend</a>
+            &nbsp;·&nbsp;
+            <a onclick="goToSignUp()" style="color:#000;text-decoration:none;"
+               onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Back</a>
+          </p>
+        </div>
+      </div>
 
       <!-- ── SCREEN: Forgot Password ── -->
       <div class="rp-screen" id="screenForgot">
@@ -1033,79 +1052,116 @@ function handleSignIn() {
   .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
 }
 
+// Stores the validated payload while waiting for OTP confirmation
+window._pendingSignUpPayload = null;
+
 function handleSignUp() {
-  // Debug: Check if elements exist
-  console.log('Debug: Checking form elements...');
-  console.log('firstName element:', document.getElementById('firstName'));
-  console.log('lastName element:', document.getElementById('lastName'));
-  console.log('email element:', document.getElementById('email'));
-  console.log('password element:', document.getElementById('password'));
-  
-  const firstName = document.getElementById('firstName')?.value || '';
-  const lastName = document.getElementById('lastName')?.value || '';
-  const middleName = document.getElementById('middleName')?.value || '';
-  const email = document.getElementById('email')?.value || '';
-  const password = document.getElementById('password')?.value || '';
+  const firstName       = document.getElementById('firstName')?.value.trim() || '';
+  const lastName        = document.getElementById('lastName')?.value.trim() || '';
+  const middleName      = document.getElementById('middleName')?.value.trim() || '';
+  const email           = document.getElementById('email')?.value.trim() || '';
+  const password        = document.getElementById('password')?.value || '';
   const confirmPassword = document.getElementById('confirmPassword')?.value || '';
-  const course = document.getElementById('course')?.value || '';
-  const section = document.getElementById('section')?.value || '';
-  const yearLevel = document.getElementById('yearLevel')?.value || '';
-  const studentId = document.getElementById('studentId')?.value || '';
+  const course          = document.getElementById('course')?.value || '';
+  const section         = document.getElementById('section')?.value.trim() || '';
+  const yearLevel       = document.getElementById('yearLevel')?.value || '';
+  const studentId       = document.getElementById('studentId')?.value.trim() || '';
+  const schoolId        = studentId || `STU-${Date.now()}`;
 
-  // Debug: Log collected values
-  console.log('Debug: Collected values:');
-  console.log('firstName:', firstName);
-  console.log('lastName:', lastName);
-  console.log('email:', email);
-  console.log('password:', password ? '[SET]' : '[EMPTY]');
-  console.log('studentId:', studentId);
-
-  // Generate School ID from Student ID for now (in real app, this would be separate)
-  const schoolId = studentId || `STU-${Date.now()}`;
-
-  if (!firstName||!lastName||!email||!schoolId||!password||!confirmPassword) {
+  // --- Validation ---
+  if (!firstName || !lastName || !email || !schoolId || !password || !confirmPassword) {
     alert('Please fill in all required fields'); return;
   }
   if (password !== confirmPassword) { alert('Passwords do not match'); return; }
-  if (password.length < 6) { alert('Password must be at least 6 characters long'); return; }
-  if (email && !/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email)) { alert('Please enter a valid email address'); return; }
+  if (password.length < 6)          { alert('Password must be at least 6 characters'); return; }
+  if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email)) { alert('Please enter a valid email address'); return; }
 
-  const btn = event.target;
-  const orig = btn.textContent;
-  btn.textContent = 'Creating Account...'; btn.disabled = true;
+  // Store payload for after OTP is confirmed
+  window._pendingSignUpPayload = {
+    schoolId, firstName, lastName, middleName, email,
+    password, role: 'Student',
+    courseCode: course,
+    yearLevel: yearLevel ? parseInt(yearLevel) : null,
+    section, studentId
+  };
 
-  const payload = { 
-      schoolId, 
-      firstName, 
-      lastName, 
-      middleName, 
-      email, 
-      password, 
-      role: 'Student', 
-      courseCode: course, 
-      yearLevel: yearLevel ? parseInt(yearLevel) : null, 
-      section, 
-      studentId 
-    };
-    
-    console.log('Debug: Payload being sent:', payload);
-    console.log('Debug: Payload JSON:', JSON.stringify(payload));
+  sendSignupOTP(email);
+}
 
-  fetch('/Home/Register', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(payload)
+function sendSignupOTP(email) {
+  const btn = document.querySelector('#screenSignUp .submit-btn');
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = 'Sending Code…'; btn.disabled = true; }
+
+  fetch('/Home/SendEmailOTP', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
   })
   .then(r => r.json())
   .then(data => {
     if (data.success) {
-      alert(`Registration successful! ${data.message}`);
-      document.querySelectorAll('.form-input').forEach(i => i.value='');
-      goToSignIn();
+      document.getElementById('otpEmailDisplay').textContent = email;
+      showLeftScreen(1);
+      showRightScreen('screenEmailOTP');
+      document.getElementById('signupOtpCode').value = '';
+      document.getElementById('signupOtpCode').focus();
     } else {
-      alert(`Registration failed: ${data.message}`);
-      btn.textContent = orig; btn.disabled = false;
+      alert(`Could not send code: ${data.message}`);
     }
+  })
+  .catch(() => alert('An error occurred. Please try again.'))
+  .finally(() => { if (btn) { btn.textContent = orig; btn.disabled = false; } });
+}
+
+function resendSignupOTP() {
+  const payload = window._pendingSignUpPayload;
+  if (!payload?.email) { goToSignUp(); return; }
+  sendSignupOTP(payload.email);
+}
+
+function handleEmailOTPVerify() {
+  const code    = document.getElementById('signupOtpCode').value.trim();
+  const payload = window._pendingSignUpPayload;
+
+  if (!payload) { alert('Session expired. Please fill the form again.'); goToSignUp(); return; }
+  if (!code || code.length !== 6) { alert('Please enter the 6-digit code'); return; }
+
+  const btn  = event.target;
+  const orig = btn.textContent;
+  btn.textContent = 'Verifying…'; btn.disabled = true;
+
+  // Verify OTP first, then register
+  fetch('/Home/VerifyEmailOTP', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: payload.email, code })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) {
+      alert(`Verification failed: ${data.message}`);
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    }
+    // OTP confirmed — now register
+    return fetch('/Home/Register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(regData => {
+      if (regData.success) {
+        alert(`Account created! ${regData.message}`);
+        window._pendingSignUpPayload = null;
+        document.querySelectorAll('.form-input').forEach(i => i.value = '');
+        goToSignIn();
+      } else {
+        alert(`Registration failed: ${regData.message}`);
+        btn.textContent = orig; btn.disabled = false;
+      }
+    });
   })
   .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
 }

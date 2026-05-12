@@ -333,12 +333,16 @@
     <div class="content-card">
       <div class="cc-hdr">
         <div class="cc-title">Recent Fee Summary</div>
-        <span class="badge by">SY 2025–2026</span>
+        <span class="badge by">
+    @(Model.PaymentHistory != null && Model.PaymentHistory.Any()
+        ? "SY " + Model.PaymentHistory.First().Term
+        : "No active term")
+</span>
       </div>
       <div class="tbl-wrap">
         <table>
           <thead>
-            <tr><th>Term</th><th>Course</th><th>Total Amount</th><th>Balance</th><th>Status</th></tr>
+            <tr><th>School Year</th><th>Course</th><th>Total Amount</th><th>Balance</th><th>Status</th></tr>
           </thead>
           <tbody>
             @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
@@ -397,7 +401,7 @@
       <div class="tbl-wrap">
         <table>
           <thead>
-            <tr><th>Semester</th><th>Balance</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+            <tr><th>School Year</th><th>Balance</th><th>Amount</th><th>Status</th><th>Action</th></tr>
           </thead>
           <tbody>
             @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())

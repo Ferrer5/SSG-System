@@ -9,6 +9,7 @@ public enum PaymentStatus
     Partial
 }
 
+[Table("org_fee_payments")]
 public class OrgFeePayment
 {
     [Key]

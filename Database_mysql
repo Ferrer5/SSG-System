@@ -64,16 +64,16 @@ CREATE TABLE academic_profile (
 
 -- 5. school_years
 CREATE TABLE school_years (
-  school_year_id INT                        NOT NULL AUTO_INCREMENT,
-  year_start     INT                        NOT NULL,
-  year_end       INT                        NOT NULL,
-  year_status    ENUM('Current','Ended')    NOT NULL DEFAULT 'Current',
+  school_year_id INT                     NOT NULL AUTO_INCREMENT,
+  year_start     INT                     NOT NULL,
+  year_end       INT                     NOT NULL,
+  year_status    ENUM('Current','Ended') NOT NULL DEFAULT 'Current',
 
   PRIMARY KEY (school_year_id),
   CONSTRAINT chk_year_range CHECK (year_end = year_start + 1)
 );
 
--- 6. full_amount
+-- 6. full_amount  (no unique key — allows multiple records per school year/semester)
 CREATE TABLE full_amount (
   full_amount_id  INT                        NOT NULL AUTO_INCREMENT,
   school_year_id  INT                        NOT NULL,
@@ -82,30 +82,27 @@ CREATE TABLE full_amount (
   semester_status ENUM('Current','Ended')    NOT NULL DEFAULT 'Current',
 
   PRIMARY KEY (full_amount_id),
-  UNIQUE KEY uq_full_amount_sy_sem (school_year_id, semester),
   CONSTRAINT fk_full_amount_sy
     FOREIGN KEY (school_year_id) REFERENCES school_years (school_year_id)
     ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
--- 7. org_fee_payments
+-- 7. org_fee_payments  (uses full_amount_id — no school_year_id/semester/amount_required)
 CREATE TABLE org_fee_payments (
-  payment_id      INT           NOT NULL AUTO_INCREMENT,
-  user_id         INT           NOT NULL,
-  school_year_id  INT           NOT NULL,
-  semester        ENUM('First','Second') NOT NULL,
-  amount          DECIMAL(10,2) NOT NULL,
-  amount_required DECIMAL(10,2) NOT NULL,
-  payment_status  ENUM('Partial','Paid') NOT NULL,
-  received_by     INT           NOT NULL,
-  payment_date    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  payment_id     INT           NOT NULL AUTO_INCREMENT,
+  user_id        INT           NOT NULL,
+  full_amount_id INT           NOT NULL,
+  amount         DECIMAL(10,2) NOT NULL,
+  payment_status ENUM('Partial','Paid') NOT NULL,
+  received_by    INT           NOT NULL,
+  payment_date   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   PRIMARY KEY (payment_id),
   CONSTRAINT fk_payment_user
     FOREIGN KEY (user_id) REFERENCES users (user_id)
     ON UPDATE CASCADE ON DELETE RESTRICT,
-  CONSTRAINT fk_payment_sy
-    FOREIGN KEY (school_year_id) REFERENCES school_years (school_year_id)
+  CONSTRAINT fk_payment_full_amount
+    FOREIGN KEY (full_amount_id) REFERENCES full_amount (full_amount_id)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT fk_payment_receiver
     FOREIGN KEY (received_by) REFERENCES accounts (account_id)
@@ -157,24 +154,3 @@ CREATE TABLE receipts (
     FOREIGN KEY (issued_by) REFERENCES accounts (account_id)
     ON UPDATE CASCADE ON DELETE RESTRICT
 );
-
-ALTER TABLE full_amount
-DROP INDEX uq_full_amount_sy_sem;
-
-USE ssg_system;
-
-SET SQL_SAFE_UPDATES = 0;
-
-UPDATE full_amount
-SET semester_status = 'Ended'
-WHERE semester_status = 'Current'
-  AND full_amount_id NOT IN (
-    SELECT * FROM (
-      SELECT MAX(full_amount_id)
-      FROM full_amount
-      WHERE semester_status = 'Current'
-      GROUP BY semester
-    ) AS latest
-  );
-
-SET SQL_SAFE_UPDATES = 1;

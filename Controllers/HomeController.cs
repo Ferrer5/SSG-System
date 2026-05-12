@@ -380,8 +380,7 @@ public class HomeController : Controller
 
             var account = await _context.Accounts
                 .Include(a => a.User)
-                .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.StudentId.ToLower()
-                                       && a.Role == UserRole.Student);
+                .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.StudentId.ToLower());
 
             // Always return the same message — don't reveal if ID exists or not
             var genericMessage = $"If that ID exists, a verification code has been sent to the registered email.";
@@ -427,8 +426,7 @@ Best regards,<br>SSG Financial Management System";
                 return Json(new { success = false, message = "Student ID and verification code are required." });
 
             var account = await _context.Accounts
-                .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.StudentId.ToLower()
-                                       && a.Role == UserRole.Student);
+                .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.StudentId.ToLower());
 
             if (account == null
                 || account.PasswordResetToken != request.Code
@@ -474,8 +472,7 @@ Best regards,<br>SSG Financial Management System";
                 return Json(new { success = false, message = "Password must be at least 6 characters long." });
 
             var account = await _context.Accounts
-                .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.StudentId.ToLower()
-                                       && a.Role == UserRole.Student);
+                .FirstOrDefaultAsync(a => a.SchoolId.ToLower() == request.StudentId.ToLower());
 
             if (account == null
                 || account.PasswordResetToken != "verified"
@@ -1326,20 +1323,29 @@ Best regards,<br>SSG Financial Management System";
                 return Json(new { success = false, message = "Amount must be greater than zero." });
 
             var semesterInput = (request.Semester ?? string.Empty).Trim();
+
+            // Debug logging to see exactly what we received
+            Console.WriteLine($"DEBUG: Received semester value: '{semesterInput}' (length: {semesterInput.Length})");
+
             Semester semester;
             if (semesterInput.Equals("1st", StringComparison.OrdinalIgnoreCase) ||
-                semesterInput.Equals("First", StringComparison.OrdinalIgnoreCase))
+                semesterInput.Equals("First", StringComparison.OrdinalIgnoreCase) ||
+                semesterInput.Equals("1st Semester", StringComparison.OrdinalIgnoreCase))
             {
                 semester = Semester.First;
+                Console.WriteLine($"DEBUG: Mapped to Semester.First");
             }
             else if (semesterInput.Equals("2nd", StringComparison.OrdinalIgnoreCase) ||
-                     semesterInput.Equals("Second", StringComparison.OrdinalIgnoreCase))
+                     semesterInput.Equals("Second", StringComparison.OrdinalIgnoreCase) ||
+                     semesterInput.Equals("2nd Semester", StringComparison.OrdinalIgnoreCase))
             {
                 semester = Semester.Second;
+                Console.WriteLine($"DEBUG: Mapped to Semester.Second");
             }
             else
             {
-                return Json(new { success = false, message = "Invalid semester." });
+                Console.WriteLine($"DEBUG: Invalid semester value: '{semesterInput}'");
+                return Json(new { success = false, message = $"Invalid semester value received: '{semesterInput}'" });
             }
 
             var sy = await _context.SchoolYears
@@ -1715,24 +1721,53 @@ Best regards,<br>SSG Financial Management System";
     {
         try
         {
-            // Get the current active fee — it already knows the school year and semester
-            var currentFee = await _context.FullAmounts
-                .Include(f => f.SchoolYear)
-                .FirstOrDefaultAsync(f => f.SemesterStatus == SemesterStatus.Current);
+            // Parse semester from request
+            var semesterInput = (request.Semester ?? string.Empty).Trim();
+            Semester semester;
+            if (semesterInput.Equals("First", StringComparison.OrdinalIgnoreCase) ||
+                semesterInput.Equals("1st",   StringComparison.OrdinalIgnoreCase))
+                semester = Semester.First;
+            else if (semesterInput.Equals("Second", StringComparison.OrdinalIgnoreCase) ||
+                     semesterInput.Equals("2nd",    StringComparison.OrdinalIgnoreCase))
+                semester = Semester.Second;
+            else
+                return Json(new { success = false, message = "Invalid semester selected." });
 
-            if (currentFee == null)
-                return Json(new { success = false, message = "No active fee amount set. Ask the treasurer to set a fee first." });
+            // Find current school year
+            var currentSchoolYear = await _context.SchoolYears
+                .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
+
+            if (currentSchoolYear == null)
+                return Json(new { success = false, message = "No active school year found. Please contact the administrator." });
+
+            // Find fee for selected semester in current school year
+            var targetFee = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .FirstOrDefaultAsync(f => f.SchoolYearId == currentSchoolYear.SchoolYearId
+                                       && f.Semester     == semester);
+
+            if (targetFee == null)
+                return Json(new { success = false, message = $"No fee set for {semesterInput} Semester of {currentSchoolYear.YearStart}–{currentSchoolYear.YearEnd}. Please set the fee in Settings first." });
 
             var userIdStr = HttpContext.Session.GetString("UserId");
             if (!int.TryParse(userIdStr, out var receivedBy))
                 return Json(new { success = false, message = "Invalid session." });
 
+            // Check if student already has a Paid record for this fee
+            var existingPayment = await _context.OrgFeePayments
+                .FirstOrDefaultAsync(p => p.UserId       == request.UserId
+                                       && p.FullAmountId == targetFee.FullAmountId
+                                       && p.PaymentStatus == PaymentStatus.Paid);
+
+            if (existingPayment != null)
+                return Json(new { success = false, message = $"This student has already fully paid for the {semesterInput} Semester." });
+
             var payment = new OrgFeePayment
             {
                 UserId        = request.UserId,
-                FullAmountId  = currentFee.FullAmountId,    // links to school year + semester
+                FullAmountId  = targetFee.FullAmountId,
                 Amount        = request.Amount,
-                PaymentStatus = request.Amount >= currentFee.Amount
+                PaymentStatus = request.Amount >= targetFee.Amount
                                     ? PaymentStatus.Paid
                                     : PaymentStatus.Partial,
                 ReceivedBy    = receivedBy,
@@ -1753,7 +1788,12 @@ Best regards,<br>SSG Financial Management System";
                 await _context.SaveChangesAsync();
             }
 
-            return Json(new { success = true, message = "Payment recorded successfully.", paymentId = payment.PaymentId });
+            return Json(new
+            {
+                success   = true,
+                message   = "Payment recorded successfully.",
+                paymentId = payment.PaymentId
+            });
         }
         catch (Exception ex)
         {
@@ -1865,6 +1905,29 @@ Best regards,<br>SSG Financial Management System";
     }
 
     [HttpPost]
+    public async Task<IActionResult> UpdateOtherFund([FromBody] UpdateOtherFundRequest request)
+    {
+        try
+        {
+            var fund = await _context.OtherFunds.FindAsync(request.Id);
+            if (fund == null)
+                return Json(new { success = false, message = "Fund not found." });
+
+            fund.Source      = request.Source;
+            fund.Description = request.Description;
+            fund.Amount      = request.Amount;
+            fund.ReceivedDate = request.ReceivedDate ?? fund.ReceivedDate;
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Fund updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
     public async Task<IActionResult> DeleteExpense([FromBody] DeleteTransactionRequest request)
     {
         try
@@ -1884,36 +1947,290 @@ Best regards,<br>SSG Financial Management System";
         }
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetStudentsForPayment()
+    [HttpPost]
+    public async Task<IActionResult> UpdateExpense([FromBody] UpdateExpenseRequest request)
     {
         try
         {
+            var expense = await _context.Expenses.FindAsync(request.Id);
+            if (expense == null)
+                return Json(new { success = false, message = "Expense not found." });
+
+            expense.Description = request.Description;
+            expense.Amount      = request.Amount;
+            expense.ExpenseDate = request.ExpenseDate ?? expense.ExpenseDate;
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Expense updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetStudentsForPayment(string? q = null, string? semester = null)
+    {
+        try
+        {
+            // Parse semester filter if provided
+            Semester? semFilter = null;
+            if (!string.IsNullOrWhiteSpace(semester))
+            {
+                if (semester.Equals("First", StringComparison.OrdinalIgnoreCase)) semFilter = Semester.First;
+                if (semester.Equals("Second", StringComparison.OrdinalIgnoreCase)) semFilter = Semester.Second;
+            }
+
+            // Get current school year
+            var currentSchoolYear = await _context.SchoolYears
+                .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
+
+            // Find fee for selected semester
+            FullAmount? targetFee = null;
+            if (currentSchoolYear != null && semFilter.HasValue)
+            {
+                targetFee = await _context.FullAmounts
+                    .FirstOrDefaultAsync(f => f.SchoolYearId == currentSchoolYear.SchoolYearId
+                                           && f.Semester     == semFilter.Value);
+            }
+
+            var query = (q ?? string.Empty).Trim().ToLower();
+
             var students = await _context.Users
-                .Include(u => u.AcademicProfile)
-                    .ThenInclude(ap => ap.Course)
                 .Include(u => u.Account)
-                .Include(u => u.Payments)
+                .Include(u => u.AcademicProfile)
+                    .ThenInclude(ap => ap!.Course)
                 .Where(u => u.Account != null
-                    && u.Account.RequestStatus == RequestStatus.Approved
-                    && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer))
-                .Select(u => new
-                {
-                    u.UserId,
-                    u.Account.SchoolId,
-                    name = u.LastName != null && u.FirstName != null
-                        ? $"{u.LastName.ToUpper()}, {u.FirstName.ToUpper()}"
-                        : "N/A",
-                    courseCode = u.AcademicProfile != null && u.AcademicProfile.Course != null
-                        ? u.AcademicProfile.Course.CourseCode : "N/A",
+                         && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer)
+                         && u.Account.IsActive
+                         && u.Account.RequestStatus == RequestStatus.Approved
+                         && (string.IsNullOrEmpty(query)
+                             || (u.Account.SchoolId != null && u.Account.SchoolId.ToLower().Contains(query))
+                             || (u.FirstName != null && u.FirstName.ToLower().Contains(query))
+                             || (u.LastName  != null && u.LastName.ToLower().Contains(query))))
+                .Select(u => new {
+                    userId      = u.UserId,
+                    schoolId    = u.Account!.SchoolId,
+                    name        = (u.LastName  ?? "") + ", " + (u.FirstName ?? "")
+                                  + (!string.IsNullOrWhiteSpace(u.MiddleName)
+                                      ? " " + u.MiddleName.Substring(0, 1) + "."
+                                      : ""),
+                    courseCode  = u.AcademicProfile != null && u.AcademicProfile.Course != null
+                                  ? u.AcademicProfile.Course.CourseCode : "N/A",
                     yearSection = u.AcademicProfile != null
-                        ? $"{(u.AcademicProfile.YearLevel.HasValue ? u.AcademicProfile.YearLevel.Value.ToString() : "N/A")}-{(u.AcademicProfile.Section ?? "N/A")}"
-                        : "N/A",
-                    hasPaid = u.Payments.Any(p => p.PaymentStatus == PaymentStatus.Paid)
+                                  ? (u.AcademicProfile.YearLevel != null
+                                      ? u.AcademicProfile.YearLevel.ToString() : "")
+                                + "-" + (u.AcademicProfile.Section ?? "")
+                                  : "N/A",
+                    // hasPaid is now specific to selected semester's fee
+                    hasPaid = targetFee != null
+                              && _context.OrgFeePayments.Any(p =>
+                                     p.UserId       == u.UserId
+                                  && p.FullAmountId == targetFee.FullAmountId
+                                  && p.PaymentStatus == PaymentStatus.Paid)
                 })
+                .OrderBy(s => s.name)
                 .ToListAsync();
 
             return Json(new { success = true, students });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAvailableSemesters()
+    {
+        try
+        {
+            var fees = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .OrderByDescending(f => f.SchoolYear.YearStart)
+                .ThenBy(f => f.Semester)
+                .Select(f => new {
+                    fullAmountId   = f.FullAmountId,
+                    schoolYearId   = f.SchoolYearId,
+                    yearStart      = f.SchoolYear.YearStart,
+                    yearEnd        = f.SchoolYear.YearEnd,
+                    semester       = f.Semester.ToString(),
+                    semesterStatus = f.SemesterStatus.ToString(),
+                    amount         = f.Amount,
+                    label          = $"{f.SchoolYear.YearStart}–{f.SchoolYear.YearEnd} · " +
+                                     $"{(f.Semester == Semester.First ? "1st" : "2nd")} Semester · " +
+                                     $"₱{f.Amount:N2} · {f.SemesterStatus}"
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, fees });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // EMAIL OTP FOR SIGNUP
+    // ----------------------------------------------------------------
+
+    [HttpPost]
+    public async Task<IActionResult> SendEmailOTP([FromBody] SendOtpRequest req)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(req.Email))
+                return Json(new { success = false, message = "Email is required." });
+
+            if (!IsValidEmail(req.Email))
+                return Json(new { success = false, message = "Invalid email format." });
+
+            // Check if email already exists
+            var existingAccount = await _context.Accounts
+                .FirstOrDefaultAsync(a => a.Email != null && a.Email.ToLower() == req.Email.ToLower());
+
+            if (existingAccount != null)
+                return Json(new { success = false, message = "Email already registered." });
+
+            // Generate 6-digit OTP
+            var otp = new Random().Next(100000, 999999).ToString();
+            var cacheKey = $"signup_otp_{req.Email.ToLower()}";
+            
+            // Store OTP in session
+            HttpContext.Session.SetString(cacheKey, otp);
+            HttpContext.Session.SetString($"{cacheKey}_expires", DateTime.UtcNow.AddMinutes(10).ToString("O"));
+
+            // Send email
+            var emailBody = $@"Hello,<br><br>
+Your SSG verification code is:<br><br>
+<strong>{otp}</strong><br><br>
+This code expires in 10 minutes.<br><br>
+If you did not request this, please ignore this email.<br><br>
+Best regards,<br>SSG Financial Management System";
+
+            await _emailService.SendEmailAsync(req.Email, "Your SSG Verification Code", emailBody);
+
+            return Json(new { success = true, message = "Code sent to your email." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Failed to send code: {ex.Message}" });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> VerifyEmailOTP([FromBody] VerifyOtpRequest req)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(req.Email) || string.IsNullOrWhiteSpace(req.Code))
+                return Json(new { success = false, message = "Email and code are required." });
+
+            var cacheKey = $"signup_otp_{req.Email.ToLower()}";
+            var storedOtp = HttpContext.Session.GetString(cacheKey);
+            var expiresStr = HttpContext.Session.GetString($"{cacheKey}_expires");
+
+            if (string.IsNullOrEmpty(storedOtp) || string.IsNullOrEmpty(expiresStr))
+                return Json(new { success = false, message = "No code found for this email." });
+
+            if (DateTime.UtcNow > DateTime.Parse(expiresStr))
+            {
+                HttpContext.Session.Remove(cacheKey);
+                HttpContext.Session.Remove($"{cacheKey}_expires");
+                return Json(new { success = false, message = "Code has expired." });
+            }
+
+            if (storedOtp != req.Code)
+                return Json(new { success = false, message = "Invalid code." });
+
+            // Clear OTP after successful verification
+            HttpContext.Session.Remove(cacheKey);
+            HttpContext.Session.Remove($"{cacheKey}_expires");
+
+            return Json(new { success = true, message = "Email verified successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Verification failed: {ex.Message}" });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetNextReceiptNumber()
+    {
+        try
+        {
+            var last = await _context.Receipts
+                .OrderByDescending(r => r.ReceiptId)
+                .FirstOrDefaultAsync();
+
+            int nextNum = 1;
+            if (last != null)
+            {
+                // Extract number from format "OR-2026-001"
+                var parts = last.ReceiptNumber.Split('-');
+                if (parts.Length == 3 && int.TryParse(parts[2], out int lastNum))
+                    nextNum = lastNum + 1;
+            }
+
+            var year     = DateTime.Now.Year;
+            var receipt  = $"OR-{year}-{nextNum:D3}";
+
+            return Json(new { success = true, receiptNumber = receipt });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> EditFee([FromBody] EditFeeRequest request)
+    {
+        try
+        {
+            var fee = await _context.FullAmounts.FindAsync(request.FullAmountId);
+            if (fee == null)
+                return Json(new { success = false, message = "Fee record not found." });
+
+            fee.Amount = request.Amount;
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Fee amount updated successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SetFeeStatus([FromBody] SetFeeStatusRequest request)
+    {
+        try
+        {
+            // If marking as Current, demote all others first
+            if (request.Status == "Current")
+            {
+                var currentFees = await _context.FullAmounts
+                    .Where(f => f.SemesterStatus == SemesterStatus.Current)
+                    .ToListAsync();
+                foreach (var f in currentFees)
+                    f.SemesterStatus = SemesterStatus.Ended;
+            }
+
+            var fee = await _context.FullAmounts.FindAsync(request.FullAmountId);
+            if (fee == null)
+                return Json(new { success = false, message = "Fee record not found." });
+
+            fee.SemesterStatus = request.Status == "Current"
+                ? SemesterStatus.Current
+                : SemesterStatus.Ended;
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = $"Status changed to {request.Status}." });
         }
         catch (Exception ex)
         {
@@ -2010,11 +2327,12 @@ public class AddProfessorRequest
     public string  Password   { get; set; } = string.Empty;
 }
 
-public class AddSchoolYearRequest
-{
-    public int YearStart { get; set; }
-    public int YearEnd   { get; set; }
-}
+
+    public class AddSchoolYearRequest
+    {
+        public int YearStart { get; set; }
+        public int YearEnd   { get; set; }
+    }
 
 public class DeleteSchoolYearRequest
 {
@@ -2048,13 +2366,15 @@ public class AddOrgFeePaymentRequest
 {
     public int     UserId        { get; set; }
     public decimal Amount        { get; set; }
+    public string? Semester      { get; set; }  // add this
     public string? ReceiptNumber { get; set; }
 }
 
-public class AddOtherFundRequest
-{
-    public string? Source { get; set; }
-    public string? Description { get; set; }
+
+    public class AddOtherFundRequest
+    {
+        public string? Source { get; set; }
+        public string? Description { get; set; }
     public decimal Amount { get; set; }
     public DateTime? ReceivedDate { get; set; }
 }
@@ -2069,4 +2389,36 @@ public class AddExpenseRequest
 public class DeleteTransactionRequest
 {
     public int Id { get; set; }
+}
+
+public class UpdateOtherFundRequest
+{
+    public int       Id           { get; set; }
+    public string?   Source       { get; set; }
+    public string?   Description  { get; set; }
+    public decimal   Amount       { get; set; }
+    public DateTime? ReceivedDate { get; set; }
+}
+
+public class UpdateExpenseRequest
+{
+    public int       Id          { get; set; }
+    public string?   Description { get; set; }
+    public decimal   Amount      { get; set; }
+    public DateTime? ExpenseDate { get; set; }
+}
+
+public record SendOtpRequest(string Email);
+public record VerifyOtpRequest(string Email, string Code);
+
+public class EditFeeRequest
+{
+    public int     FullAmountId { get; set; }
+    public decimal Amount       { get; set; }
+}
+
+public class SetFeeStatusRequest
+{
+    public int    FullAmountId { get; set; }
+    public string Status       { get; set; } = string.Empty;
 }

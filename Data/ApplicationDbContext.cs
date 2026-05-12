@@ -121,8 +121,8 @@ namespace MyMvcApp.Data
                     .IsRequired()
                     .HasColumnName("semester")
                     .HasConversion(
-                        v => v == Semester.First ? "First" : "Second",
-                        v => v == "First" ? Semester.First : Semester.Second
+                        v => v == Semester.First ? "1st" : "2nd",
+                        v => v == "1st" ? Semester.First : Semester.Second
                     );
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("full_amount");
                 entity.Property(e => e.SemesterStatus)
@@ -140,6 +140,7 @@ namespace MyMvcApp.Data
             // OrgFeePayment configuration
             modelBuilder.Entity<OrgFeePayment>(entity =>
             {
+                entity.ToTable("org_fee_payments");
                 entity.HasKey(e => e.PaymentId);
                 entity.Property(e => e.PaymentId).HasColumnName("payment_id");
                 entity.Property(e => e.UserId).IsRequired().HasColumnName("user_id");

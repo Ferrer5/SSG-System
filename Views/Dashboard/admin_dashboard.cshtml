@@ -1831,6 +1831,9 @@ async function setFeeAmount() {
     const semester     = document.getElementById('fee-semester').value;
     const amount       = parseFloat(document.getElementById('fee-amount').value);
 
+    // Add this temporarily to verify
+    console.log('Sending:', { schoolYearId, semester, amount });
+
     if (!schoolYearId)      { showToast('Please select a school year.', 'fail'); return; }
     if (!semester)          { showToast('Please select a semester.', 'fail'); return; }
     if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
@@ -1963,10 +1966,25 @@ async function refreshFees() {
                         : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
                 </td>
                 <td style="text-align:right">
-                    <button class="btn-rj" onclick="deleteFee(${f.fullAmountId})" style="font-size:11px;padding:5px 12px">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                        Delete
-                    </button>
+                    <div class="dropdown-wrap">
+                        <button class="dot-btn" onclick="toggleDropdown(this)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-item" onclick="editFee(${f.fullAmountId}, ${f.amount})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                Edit Amount
+                            </div>
+                            <div class="dropdown-item" onclick="changeFeeStatus(${f.fullAmountId}, '${f.semesterStatus}')">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                ${f.semesterStatus === 'Current' ? 'Mark as Ended' : 'Set as Current'}
+                            </div>
+                            <div class="dropdown-item danger" onclick="deleteFee(${f.fullAmountId})">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                Delete
+                            </div>
+                        </div>
+                    </div>
                 </td>
             </tr>
         `).join('');
@@ -2014,6 +2032,43 @@ async function deleteFee(fullAmountId) {
             method:  'POST',
             headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ?? '' },
             body:    JSON.stringify({ fullAmountId })
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+        else showToast(data.message, 'fail');
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+function editFee(fullAmountId, currentAmount) {
+    const newAmount = prompt('Enter new fee amount:', currentAmount);
+    if (newAmount === null) return; // cancelled
+    const amount = parseFloat(newAmount);
+    if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    fetch('/Home/EditFee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+        body: JSON.stringify({ fullAmountId, amount })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+        else showToast(data.message, 'fail');
+    })
+    .catch(() => showToast('Request failed.', 'fail'));
+}
+
+async function changeFeeStatus(fullAmountId, currentStatus) {
+    const newStatus = currentStatus === 'Current' ? 'Ended' : 'Current';
+    if (!confirm(`Set this fee as ${newStatus}?`)) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    try {
+        const res  = await fetch('/Home/SetFeeStatus', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+            body:    JSON.stringify({ fullAmountId, status: newStatus })
         });
         const data = await res.json();
         if (data.success) { showToast(data.message, 'ok'); refreshFees(); }

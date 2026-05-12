@@ -28,6 +28,8 @@ namespace MyMvcApp.Models
 
         [ForeignKey("SchoolYearId")]
         public SchoolYear SchoolYear { get; set; } = null!;
+
+        public virtual ICollection<OrgFeePayment> OrgFeePayments { get; set; } = new List<OrgFeePayment>();
     }
 
     public enum Semester

@@ -23,7 +23,6 @@ namespace MyMvcApp.Models
 
         // Navigation properties
         public virtual ICollection<FullAmount> FullAmounts { get; set; } = new List<FullAmount>();
-        public virtual ICollection<OrgFeePayment> OrgFeePayments { get; set; } = new List<OrgFeePayment>();
     }
 
     public enum YearStatus

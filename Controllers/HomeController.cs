@@ -66,31 +66,103 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Dashboard()
     {
-        // Guard: only allow logged-in non-admin users
         var role = HttpContext.Session.GetString("UserRole");
         if (string.IsNullOrEmpty(role))
             return RedirectToAction("Login", "Home");
 
-        if (role == "Admin")
-            return RedirectToAction("AdminDashboard", "Home");
+        if (role == "Admin")     return RedirectToAction("AdminDashboard",     "Home");
+        if (role == "Treasurer") return RedirectToAction("TreasurerDashboard", "Home");
+        if (role == "Professor") return RedirectToAction("ProfessorDashboard", "Home");
 
-        // If this user has a dedicated role dashboard action, route there.
-        if (role == "Treasurer")
-            return RedirectToAction("TreasurerDashboard", "Home");
+        var userIdStr = HttpContext.Session.GetString("UserId");
+        if (!int.TryParse(userIdStr, out var userId))
+            return RedirectToAction("Login", "Home");
 
-        if (role == "Professor")
-            return RedirectToAction("ProfessorDashboard", "Home");
+        var paymentHistory = new List<StudentPaymentHistoryViewModel>();
 
-        var pendingAccounts = await GetPendingAccountsAsync();
-        var students = await GetStudentsAsync();
-
-        var model = new DashboardViewModel
+        try
         {
-            RequestedAccounts = pendingAccounts,
-            Students = students
-        };
+            // 1. Get the current active fee (set by treasurer — carries school year + semester)
+            var currentFee = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .FirstOrDefaultAsync(f => f.SemesterStatus == SemesterStatus.Current);
 
-        return View("~/Views/Dashboard/student_dashboard.cshtml", model);
+            // Debug: Log all FullAmount records
+            var allFees = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .ToListAsync();
+            
+            // File-based debug logging
+            var debugLog = $"DEBUG: Found {allFees.Count} FullAmount records:\n";
+            foreach (var fee in allFees)
+            {
+                debugLog += $"  - ID: {fee.FullAmountId}, SY: {fee.SchoolYear?.YearStart}-{fee.SchoolYear?.YearEnd}, Semester: {fee.Semester}, Status: {fee.SemesterStatus}, Amount: {fee.Amount}\n";
+            }
+            debugLog += $"DEBUG: Current fee: {currentFee?.FullAmountId ?? 0}\n";
+            
+            System.IO.File.WriteAllText("debug_fees.txt", debugLog);
+            
+            Console.WriteLine($"DEBUG: Found {allFees.Count} FullAmount records:");
+            foreach (var fee in allFees)
+            {
+                Console.WriteLine($"  - ID: {fee.FullAmountId}, SY: {fee.SchoolYear?.YearStart}-{fee.SchoolYear?.YearEnd}, Semester: {fee.Semester}, Status: {fee.SemesterStatus}, Amount: {fee.Amount}");
+            }
+            Console.WriteLine($"DEBUG: Current fee: {currentFee?.FullAmountId ?? 0}");
+
+            if (currentFee != null)
+            {
+                // 2. Check if this student has already paid for this specific fee
+                var studentPayment = await _context.OrgFeePayments
+                    .FirstOrDefaultAsync(p => p.UserId == userId
+                                           && p.FullAmountId == currentFee.FullAmountId);
+
+                var amountPaid = studentPayment?.Amount ?? 0;
+                var balance    = currentFee.Amount - amountPaid;
+
+                var status = amountPaid == 0                  ? "Unpaid"
+                           : amountPaid >= currentFee.Amount  ? "Paid"
+                                                              : "Partial";
+
+                // Create payment entries: one for the total fee, one for the paid amount (if any)
+                var payments = new List<StudentPaymentViewModel>
+                {
+                    new StudentPaymentViewModel
+                    {
+                        Semester = currentFee.Semester.ToString(),
+                        Course   = "Org Fee",
+                        Amount   = currentFee.Amount,
+                        Status   = "Total"
+                    }
+                };
+
+                // Add paid amount entry if there's a payment
+                if (amountPaid > 0)
+                {
+                    payments.Add(new StudentPaymentViewModel
+                    {
+                        Semester = currentFee.Semester.ToString(),
+                        Course   = "Org Fee",
+                        Amount   = amountPaid,
+                        Status   = "Paid"
+                    });
+                }
+
+                paymentHistory.Add(new StudentPaymentHistoryViewModel
+                {
+                    Term          = $"{currentFee.SchoolYear.YearStart}–{currentFee.SchoolYear.YearEnd}",
+                    Course        = "Org Fee",
+                    OverallStatus = status,
+                    Payments      = payments
+                });
+            }
+        }
+        catch
+        {
+            paymentHistory = new List<StudentPaymentHistoryViewModel>();
+        }
+
+        return View("~/Views/Dashboard/student_dashboard.cshtml",
+            new DashboardViewModel { PaymentHistory = paymentHistory });
     }
 
     public async Task<IActionResult> AdminDashboard()
@@ -194,8 +266,9 @@ public class HomeController : Controller
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.AccountId == account.AccountId);
 
-            // Step 5: Store session
-            HttpContext.Session.SetString("UserId",    account.AccountId.ToString());
+            // Step 5: Store session (use actual UserId for payment lookups)
+            HttpContext.Session.SetString("UserId",    user?.UserId.ToString() ?? account.AccountId.ToString());
+            HttpContext.Session.SetString("AccountId", account.AccountId.ToString());
             HttpContext.Session.SetString("UserRole",  account.Role.ToString());
             HttpContext.Session.SetString("SchoolId",  account.SchoolId);
             HttpContext.Session.SetString("Email",     account.Email ?? "");
@@ -1312,6 +1385,31 @@ Best regards,<br>SSG Financial Management System";
         }
     }
 
+    [HttpGet]
+    public async Task<IActionResult> DebugFullAmounts()
+    {
+        try
+        {
+            var allFees = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .ToListAsync();
+            
+            var result = allFees.Select(f => new {
+                f.FullAmountId,
+                SchoolYear = f.SchoolYear != null ? $"{f.SchoolYear.YearStart}-{f.SchoolYear.YearEnd}" : "N/A",
+                f.Semester,
+                f.Amount,
+                SemesterStatus = f.SemesterStatus.ToString()
+            }).ToList();
+
+            return Json(new { success = true, count = result.Count, fees = result });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> DeleteFee([FromBody] DeleteFeeRequest request)
     {
@@ -1345,6 +1443,477 @@ Best regards,<br>SSG Financial Management System";
             }
 
             return Json(new { success = true, message = "Fee record deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    // ----------------------------------------------------------------
+    // TREASURER FINANCIAL MANAGEMENT
+    // ----------------------------------------------------------------
+
+    [HttpGet]
+    public async Task<IActionResult> GetCurrentSchoolYearAndSemester()
+    {
+        try
+        {
+            var currentSchoolYear = await _context.SchoolYears
+                .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
+
+            var currentSemester = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .FirstOrDefaultAsync(f => f.SemesterStatus == SemesterStatus.Current);
+
+            if (currentSchoolYear == null)
+                return Json(new { success = false, message = "No current school year found." });
+
+            return Json(new
+            {
+                success = true,
+                schoolYear = new
+                {
+                    currentSchoolYear.SchoolYearId,
+                    currentSchoolYear.YearStart,
+                    currentSchoolYear.YearEnd,
+                    yearStatus = currentSchoolYear.YearStatus.ToString()
+                },
+                semester = currentSemester != null ? new
+                {
+                    currentSemester.FullAmountId,
+                    currentSemester.SchoolYearId,
+                    semester = currentSemester.Semester.ToString(),
+                    amount = currentSemester.Amount,
+                    semesterStatus = currentSemester.SemesterStatus.ToString()
+                } : null
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetOrgFeePayments()
+    {
+        try
+        {
+            var payments = await _context.OrgFeePayments
+                .Include(p => p.User)
+                    .ThenInclude(u => u.AcademicProfile)
+                        .ThenInclude(ap => ap.Course)
+                .Include(p => p.User)
+                    .ThenInclude(u => u.Account)
+                .Include(p => p.FullAmount)
+                    .ThenInclude(f => f.SchoolYear)
+                .Include(p => p.Receipts)
+                .OrderByDescending(p => p.PaymentDate)
+                .Select(p => new
+                {
+                    p.PaymentId,
+                    p.UserId,
+                    studentName = p.User != null
+                        ? $"{(p.User.LastName  != null ? p.User.LastName.ToUpper()  : "")}, " +
+                          $"{(p.User.FirstName != null ? p.User.FirstName.ToUpper() : "")}"
+                        : "Unknown",
+                    schoolId = p.User.Account.SchoolId,
+                    courseCode = p.User.AcademicProfile != null && p.User.AcademicProfile.Course != null
+                        ? p.User.AcademicProfile.Course.CourseCode : "N/A",
+                    yearSection = p.User.AcademicProfile != null
+                        ? $"{(p.User.AcademicProfile.YearLevel.HasValue ? p.User.AcademicProfile.YearLevel.Value.ToString() : "N/A")}" +
+                          $"-{(p.User.AcademicProfile.Section ?? "N/A")}"
+                        : "N/A",
+                    // school year and semester now come from FullAmount
+                    schoolYear     = p.FullAmount.SchoolYear != null
+                        ? $"{p.FullAmount.SchoolYear.YearStart} – {p.FullAmount.SchoolYear.YearEnd}" : "N/A",
+                    semester       = p.FullAmount.Semester.ToString(),
+                    amountRequired = p.FullAmount.Amount,    // required amount lives in full_amount table
+                    p.Amount,                                // amount actually paid
+                    paymentStatus  = p.PaymentStatus.ToString(),
+                    p.PaymentDate,
+                    receiptNumber  = p.Receipts.FirstOrDefault() != null
+                        ? p.Receipts.FirstOrDefault()!.ReceiptNumber : null
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, payments });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetOtherFunds()
+    {
+        try
+        {
+            var funds = await _context.OtherFunds
+                .Include(f => f.Receiver)
+                    .ThenInclude(r => r.User)
+                .OrderByDescending(f => f.ReceivedDate)
+                .Select(f => new
+                {
+                    f.FundId,
+                    f.Source,
+                    f.Description,
+                    f.Amount,
+                    f.ReceivedDate,
+                    receivedBy = f.Receiver != null && f.Receiver.User != null
+                        ? $"{(f.Receiver.User.LastName != null ? f.Receiver.User.LastName.ToUpper() : "")}, {(f.Receiver.User.FirstName != null ? f.Receiver.User.FirstName.ToUpper() : "")}"
+                        : "Unknown"
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, funds });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetExpenses()
+    {
+        try
+        {
+            var expenses = await _context.Expenses
+                .Include(e => e.Recorder)
+                    .ThenInclude(r => r.User)
+                .OrderByDescending(e => e.ExpenseDate)
+                .Select(e => new
+                {
+                    e.ExpenseId,
+                    e.Description,
+                    e.Amount,
+                    e.ExpenseDate,
+                    recordedBy = e.Recorder != null && e.Recorder.User != null
+                        ? $"{(e.Recorder.User.LastName != null ? e.Recorder.User.LastName.ToUpper() : "")}, {(e.Recorder.User.FirstName != null ? e.Recorder.User.FirstName.ToUpper() : "")}"
+                        : "Unknown"
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, expenses });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetTreasurerDashboardStats()
+    {
+        try
+        {
+            var orgFeeTotal = await _context.OrgFeePayments
+                .SumAsync(p => p.Amount);
+
+            var otherFundsTotal = await _context.OtherFunds
+                .SumAsync(f => f.Amount);
+
+            var expensesTotal = await _context.Expenses
+                .SumAsync(e => e.Amount);
+
+            var totalIncome = orgFeeTotal + otherFundsTotal;
+            var balance = totalIncome - expensesTotal;
+
+            var currentSchoolYear = await _context.SchoolYears
+                .FirstOrDefaultAsync(sy => sy.YearStatus == YearStatus.Current);
+
+            var currentSemester = await _context.FullAmounts
+                .FirstOrDefaultAsync(f => f.SemesterStatus == SemesterStatus.Current);
+
+            var recentTransactions = new List<object>();
+
+            var recentPayments = await _context.OrgFeePayments
+                .Include(p => p.User)
+                .OrderByDescending(p => p.PaymentDate)
+                .Take(5)
+                .Select(p => new
+                {
+                    type = "income",
+                    category = "Org Fee",
+                    description = p.User != null
+                        ? $"Org Fee – {(p.User.LastName != null ? p.User.LastName.ToUpper() : "")}, {(p.User.FirstName != null ? p.User.FirstName.ToUpper() : "")}"
+                        : "Org Fee",
+                    amount = p.Amount,
+                    date = p.PaymentDate,
+                    receipt = p.Receipts.FirstOrDefault() != null ? p.Receipts.FirstOrDefault().ReceiptNumber : "—"
+                })
+                .ToListAsync();
+
+            var recentFunds = await _context.OtherFunds
+                .OrderByDescending(f => f.ReceivedDate)
+                .Take(5)
+                .Select(f => new
+                {
+                    type = "income",
+                    category = "Other Fund",
+                    description = f.Description ?? f.Source ?? "Other Fund",
+                    amount = f.Amount,
+                    date = f.ReceivedDate,
+                    receipt = "—"
+                })
+                .ToListAsync();
+
+            var recentExpenses = await _context.Expenses
+                .OrderByDescending(e => e.ExpenseDate)
+                .Take(5)
+                .Select(e => new
+                {
+                    type = "expense",
+                    category = "Expense",
+                    description = e.Description ?? "Expense",
+                    amount = e.Amount,
+                    date = e.ExpenseDate,
+                    receipt = "—"
+                })
+                .ToListAsync();
+
+            recentTransactions.AddRange(recentPayments);
+            recentTransactions.AddRange(recentFunds);
+            recentTransactions.AddRange(recentExpenses);
+            recentTransactions = recentTransactions.OrderByDescending(t => ((DateTime)t.GetType().GetProperty("date").GetValue(t))).Take(6).ToList();
+
+            return Json(new
+            {
+                success = true,
+                stats = new
+                {
+                    totalIncome,
+                    orgFeeTotal,
+                    otherFundsTotal,
+                    expensesTotal,
+                    balance,
+                    expenseCount = await _context.Expenses.CountAsync(),
+                    largestExpense = await _context.Expenses.AnyAsync()
+                        ? await _context.Expenses.MaxAsync(e => e.Amount)
+                        : 0
+                },
+                schoolYear = currentSchoolYear != null
+                    ? $"{currentSchoolYear.YearStart} – {currentSchoolYear.YearEnd}"
+                    : "Not Set",
+                semester = currentSemester != null
+                    ? (currentSemester.Semester == Semester.First ? "1st" : "2nd")
+                    : "Not Set",
+                recentTransactions
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddOrgFeePayment([FromBody] AddOrgFeePaymentRequest request)
+    {
+        try
+        {
+            // Get the current active fee — it already knows the school year and semester
+            var currentFee = await _context.FullAmounts
+                .Include(f => f.SchoolYear)
+                .FirstOrDefaultAsync(f => f.SemesterStatus == SemesterStatus.Current);
+
+            if (currentFee == null)
+                return Json(new { success = false, message = "No active fee amount set. Ask the treasurer to set a fee first." });
+
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            if (!int.TryParse(userIdStr, out var receivedBy))
+                return Json(new { success = false, message = "Invalid session." });
+
+            var payment = new OrgFeePayment
+            {
+                UserId        = request.UserId,
+                FullAmountId  = currentFee.FullAmountId,    // links to school year + semester
+                Amount        = request.Amount,
+                PaymentStatus = request.Amount >= currentFee.Amount
+                                    ? PaymentStatus.Paid
+                                    : PaymentStatus.Partial,
+                ReceivedBy    = receivedBy,
+                PaymentDate   = DateTime.Now
+            };
+
+            _context.OrgFeePayments.Add(payment);
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(request.ReceiptNumber))
+            {
+                _context.Receipts.Add(new Receipt
+                {
+                    ReceiptNumber = request.ReceiptNumber,
+                    PaymentId     = payment.PaymentId,
+                    IssuedBy      = receivedBy
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true, message = "Payment recorded successfully.", paymentId = payment.PaymentId });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddOtherFund([FromBody] AddOtherFundRequest request)
+    {
+        try
+        {
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            if (!int.TryParse(userIdStr, out var receivedBy))
+                return Json(new { success = false, message = "Invalid session." });
+
+            var fund = new OtherFund
+            {
+                Source = request.Source,
+                Description = request.Description,
+                Amount = request.Amount,
+                ReceivedBy = receivedBy,
+                ReceivedDate = request.ReceivedDate ?? DateTime.Now
+            };
+
+            _context.OtherFunds.Add(fund);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Fund recorded successfully.", fundId = fund.FundId });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddExpense([FromBody] AddExpenseRequest request)
+    {
+        try
+        {
+            var userIdStr = HttpContext.Session.GetString("UserId");
+            if (!int.TryParse(userIdStr, out var recordedBy))
+                return Json(new { success = false, message = "Invalid session." });
+
+            var expense = new Expense
+            {
+                Description = request.Description,
+                Amount = request.Amount,
+                RecordedBy = recordedBy,
+                ExpenseDate = request.ExpenseDate ?? DateTime.Now
+            };
+
+            _context.Expenses.Add(expense);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Expense recorded successfully.", expenseId = expense.ExpenseId });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteOrgFeePayment([FromBody] DeleteTransactionRequest request)
+    {
+        try
+        {
+            var payment = await _context.OrgFeePayments
+                .Include(p => p.Receipts)
+                .FirstOrDefaultAsync(p => p.PaymentId == request.Id);
+
+            if (payment == null)
+                return Json(new { success = false, message = "Payment not found." });
+
+            if (payment.Receipts.Any())
+                _context.Receipts.RemoveRange(payment.Receipts);
+
+            _context.OrgFeePayments.Remove(payment);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Payment deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteOtherFund([FromBody] DeleteTransactionRequest request)
+    {
+        try
+        {
+            var fund = await _context.OtherFunds.FindAsync(request.Id);
+            if (fund == null)
+                return Json(new { success = false, message = "Fund not found." });
+
+            _context.OtherFunds.Remove(fund);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Fund deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteExpense([FromBody] DeleteTransactionRequest request)
+    {
+        try
+        {
+            var expense = await _context.Expenses.FindAsync(request.Id);
+            if (expense == null)
+                return Json(new { success = false, message = "Expense not found." });
+
+            _context.Expenses.Remove(expense);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true, message = "Expense deleted successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetStudentsForPayment()
+    {
+        try
+        {
+            var students = await _context.Users
+                .Include(u => u.AcademicProfile)
+                    .ThenInclude(ap => ap.Course)
+                .Include(u => u.Account)
+                .Include(u => u.Payments)
+                .Where(u => u.Account != null
+                    && u.Account.RequestStatus == RequestStatus.Approved
+                    && (u.Account.Role == UserRole.Student || u.Account.Role == UserRole.Treasurer))
+                .Select(u => new
+                {
+                    u.UserId,
+                    u.Account.SchoolId,
+                    name = u.LastName != null && u.FirstName != null
+                        ? $"{u.LastName.ToUpper()}, {u.FirstName.ToUpper()}"
+                        : "N/A",
+                    courseCode = u.AcademicProfile != null && u.AcademicProfile.Course != null
+                        ? u.AcademicProfile.Course.CourseCode : "N/A",
+                    yearSection = u.AcademicProfile != null
+                        ? $"{(u.AcademicProfile.YearLevel.HasValue ? u.AcademicProfile.YearLevel.Value.ToString() : "N/A")}-{(u.AcademicProfile.Section ?? "N/A")}"
+                        : "N/A",
+                    hasPaid = u.Payments.Any(p => p.PaymentStatus == PaymentStatus.Paid)
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, students });
         }
         catch (Exception ex)
         {
@@ -1473,4 +2042,31 @@ public class SetFeeAmountRequest
 public class DeleteFeeRequest
 {
     public int FullAmountId { get; set; }
+}
+
+public class AddOrgFeePaymentRequest
+{
+    public int     UserId        { get; set; }
+    public decimal Amount        { get; set; }
+    public string? ReceiptNumber { get; set; }
+}
+
+public class AddOtherFundRequest
+{
+    public string? Source { get; set; }
+    public string? Description { get; set; }
+    public decimal Amount { get; set; }
+    public DateTime? ReceivedDate { get; set; }
+}
+
+public class AddExpenseRequest
+{
+    public string? Description { get; set; }
+    public decimal Amount { get; set; }
+    public DateTime? ExpenseDate { get; set; }
+}
+
+public class DeleteTransactionRequest
+{
+    public int Id { get; set; }
 }

@@ -120,10 +120,9 @@ namespace MyMvcApp.Data
                 entity.Property(e => e.Semester)
                     .IsRequired()
                     .HasColumnName("semester")
-                    .HasColumnType("varchar(10)")
                     .HasConversion(
-                        v => v == Semester.First ? "1st" : "2nd",
-                        v => (v == "1st" || v == "First") ? Semester.First : Semester.Second
+                        v => v == Semester.First ? "First" : "Second",
+                        v => v == "First" ? Semester.First : Semester.Second
                     );
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("full_amount");
                 entity.Property(e => e.SemesterStatus)
@@ -144,17 +143,8 @@ namespace MyMvcApp.Data
                 entity.HasKey(e => e.PaymentId);
                 entity.Property(e => e.PaymentId).HasColumnName("payment_id");
                 entity.Property(e => e.UserId).IsRequired().HasColumnName("user_id");
-                entity.Property(e => e.SchoolYearId).IsRequired().HasColumnName("school_year_id");
-                entity.Property(e => e.Semester)
-                    .IsRequired()
-                    .HasColumnName("semester")
-                    .HasColumnType("varchar(10)")
-                    .HasConversion(
-                        v => v == Semester.First ? "1st" : "2nd",
-                        v => (v == "1st" || v == "First") ? Semester.First : Semester.Second
-                    );
+                entity.Property(e => e.FullAmountId).IsRequired().HasColumnName("full_amount_id");
                 entity.Property(e => e.Amount).IsRequired().HasPrecision(10, 2).HasColumnName("amount");
-                entity.Property(e => e.AmountRequired).IsRequired().HasPrecision(10, 2).HasColumnName("amount_required");
                 entity.Property(e => e.PaymentStatus)
                     .IsRequired()
                     .HasColumnName("payment_status")
@@ -171,9 +161,9 @@ namespace MyMvcApp.Data
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                entity.HasOne(e => e.SchoolYear)
-                    .WithMany(sy => sy.OrgFeePayments)
-                    .HasForeignKey(e => e.SchoolYearId)
+                entity.HasOne(e => e.FullAmount)
+                    .WithMany(fa => fa.OrgFeePayments)
+                    .HasForeignKey(e => e.FullAmountId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.Receiver)

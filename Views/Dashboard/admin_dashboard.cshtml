@@ -923,7 +923,7 @@
 <div id="toast"></div>
 
 <script>
-function showPage(name, navEl) {
+async function showPage(name, navEl) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     var page = document.getElementById('page-' + name);
@@ -937,7 +937,7 @@ function showPage(name, navEl) {
     if (name === 'rejected')    refreshRejected();
     if (name === 'students')    refreshStudents();
     if (name === 'professors')  refreshProfessors();
-    if (name === 'settings')    refreshSchoolYears();
+    if (name === 'settings')    await refreshSchoolYears();
 }
 async function updateStatus(accountId, status) {
     const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
@@ -1764,15 +1764,15 @@ function autoMiddlePeriod(input) {
 }
 
 // Settings functionality
-function switchSettingsTab(name, btn) {
+async function switchSettingsTab(name, btn) {
     document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
     document.getElementById('settings-' + name).classList.add('active');
     btn.classList.add('active');
 
-    if (name === 'sy')      refreshSchoolYears();
-    if (name === 'courses') refreshCourses();
-    if (name === 'fees')    refreshFees();
+    if (name === 'sy')      await refreshSchoolYears();
+    if (name === 'courses') await refreshCourses();
+    if (name === 'fees')    await refreshFees();
 }
 
 async function addSchoolYear() {

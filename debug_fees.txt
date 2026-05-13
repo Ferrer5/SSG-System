@@ -1,0 +1,4 @@
+DEBUG: Found 2 FullAmount records:
+  - ID: 6, SY: 2025-2026, Semester: First, Status: Ended, Amount: 300.00
+  - ID: 7, SY: 2025-2026, Semester: Second, Status: Current, Amount: 300.00
+DEBUG: Current fee: 7

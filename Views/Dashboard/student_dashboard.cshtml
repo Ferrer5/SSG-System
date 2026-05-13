@@ -1,0 +1,937 @@
+@model MyMvcApp.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Student Dashboard";
+    var firstName   = Context.Session.GetString("FirstName") ?? "Student";
+    var lastName    = Context.Session.GetString("LastName") ?? "";
+    var middleName  = Context.Session.GetString("MiddleName") ?? "";
+    var schoolId    = Context.Session.GetString("SchoolId") ?? "";
+    var studentId   = schoolId;
+    var courseCode  = Context.Session.GetString("CourseCode") ?? "";
+    var courseName  = Context.Session.GetString("CourseName") ?? "";
+    var yearLevel   = Context.Session.GetString("YearLevel") ?? "";
+    var section     = Context.Session.GetString("Section") ?? "";
+    var initials    = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+  }
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SSG Finance — Student Dashboard</title>
+  <link rel="icon" type="image/png" href="~/favicon.png" />
+  <style>
+    @@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&family=DM+Mono:wght@400;500&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap');
+
+    *{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#071a0c;
+      --bg2:#0c2413;
+      --sidebar:#081509;
+      --green:#27a744;
+      --green-d:#1a7a4a;
+      --green-glow:rgba(39,167,68,.18);
+      --green-glow2:rgba(39,167,68,.08);
+      --glass:rgba(255,255,255,.045);
+      --glass-b:rgba(255,255,255,.09);
+      --text:#e8f5ec;
+      --text-m:rgba(232,245,236,.6);
+      --text-d:rgba(232,245,236,.35);
+      --card:#0f2918;
+      --card-b:rgba(255,255,255,.07);
+      --green-badge:rgba(39,167,68,.18);
+      --green-badge-t:#5fdd8e;
+      --yellow-badge:rgba(251,191,36,.14);
+      --yellow-badge-t:#fbbf24;
+      --red-badge:rgba(239,68,68,.14);
+      --red-badge-t:#f87171;
+    }
+
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-height:100vh;color:var(--text);font-size:14px;width:100%;overflow-x:hidden}
+
+    /* ── SIDEBAR ── */
+    .sidebar{width:210px;background:var(--sidebar);border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;flex-shrink:0;transition:transform 0.3s ease;z-index:100;position:fixed;height:100vh;left:0;top:0}
+    .sidebar.collapsed{transform:translateX(-100%)}
+    .mobile-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:99}
+    .mobile-overlay.active{display:block}
+    .mobile-menu-btn{display:none;position:fixed;top:20px;left:20px;z-index:101;background:var(--card);border:1px solid var(--card-b);border-radius:8px;padding:8px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+    .mobile-menu-btn svg{width:20px;height:20px;color:var(--text)}
+    .sb-brand{display:flex;align-items:center;gap:10px;padding:20px 16px 18px;border-bottom:1px solid rgba(255,255,255,.05)}
+    .sb-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(39,167,68,.3)}
+    .sb-logo svg{width:18px;height:18px}
+    .sb-brand-name{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
+    .sb-brand-sub{font-size:10px;color:rgba(39,167,68,.85);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+    .sb-label{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-d);padding:16px 16px 5px}
+    .nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-m);cursor:pointer;transition:all .15s;text-decoration:none;position:relative}
+    .nav-item:hover{background:var(--glass);color:var(--text)}
+    .nav-item.active{background:var(--green-glow);color:#5fdd8e;border:1px solid rgba(74,222,128,.12)}
+    .nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.85}
+    .sb-spacer{flex:1}
+    .sb-user{padding:10px 8px 10px;border-top:1px solid rgba(255,255,255,.05)}
+    .user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--glass)}
+    .user-av{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+    .user-name{font-size:12px;font-weight:600;color:#fff}
+    .user-role{font-size:10.5px;color:var(--text-d)}
+    .signout{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:3px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--text-d);cursor:pointer;transition:all .15s;text-decoration:none}
+    .signout:hover{background:rgba(239,68,68,.08);color:#f87171}
+    .signout svg{width:14px;height:14px}
+
+    /* ── MAIN ── */
+    .main{flex:1;min-width:0;padding:36px 36px 60px;background:var(--bg);overflow-y:auto;overflow-x:hidden;position:relative;height:100vh;margin-left:210px;transition:margin-left 0.3s ease}
+    .main.sidebar-collapsed{margin-left:0}
+    .main::before{content:'';position:absolute;top:-80px;right:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(39,167,68,.06) 0%,transparent 70%);pointer-events:none;border-radius:50%}
+
+    .page{display:none}.page.active{display:block}
+
+    .page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+    .page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
+    .page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
+
+    /* ── STAT CARDS ── */
+    .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;width:100%}
+    .stat-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;backdrop-filter:blur(8px)}
+    .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.25),transparent)}
+    .stat-lbl{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d)}
+    .stat-row{display:flex;align-items:center;justify-content:space-between}
+    .stat-val{font-size:28px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.04em}
+    .stat-val.amount{font-size:22px}
+    .stat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+    .stat-icon.g{background:rgba(39,167,68,.15)}
+    .stat-icon.y{background:rgba(251,191,36,.12)}
+    .stat-icon.r{background:rgba(239,68,68,.12)}
+    .stat-icon svg{width:15px;height:15px}
+    .stat-trend{font-size:11px;font-weight:500;color:var(--green)}
+    .stat-trend.warn{color:#fbbf24}
+    .stat-trend.ok{color:#5fdd8e}
+
+    /* ── CONTENT CARDS ── */
+    .content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;overflow:visible;margin-bottom:16px;backdrop-filter:blur(8px);position:relative;width:100%;isolation:isolate}
+    .content-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent);z-index:1}
+    .cc-hdr{display:flex;align-items:center;justify-content:space-between;padding:15px 20px 13px;border-bottom:1px solid rgba(255,255,255,.05)}
+    .cc-title{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
+
+    /* ── TABLES ── */
+    .tbl-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:12.5px}
+    thead th{padding:10px 15px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
+    tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:rgba(39,167,68,.05)}
+    td{padding:11px 15px;color:var(--text);vertical-align:middle}
+    .td-m{color:var(--text-m)}
+    .td-mono{font-family:'DM Mono',monospace;font-size:11.5px}
+
+    /* ── BADGES ── */
+    .badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.02em}
+    .bg{background:var(--green-badge);color:var(--green-badge-t)}
+    .by{background:var(--yellow-badge);color:var(--yellow-badge-t)}
+    .br{background:var(--red-badge);color:var(--red-badge-t)}
+
+    /* ── STATUS PILLS ── */
+    .status-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+    .status-pill .dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+    .status-paid{background:var(--green-badge);color:var(--green-badge-t)}.status-paid .dot{background:#5fdd8e}
+    .status-pending{background:var(--yellow-badge);color:var(--yellow-badge-t)}.status-pending .dot{background:#fbbf24}
+    .status-overdue{background:var(--red-badge);color:var(--red-badge-t)}.status-overdue .dot{background:#f87171}
+    .status-partial{background:rgba(139,92,246,.14);color:#c4b5fd}.status-partial .dot{background:#c4b5fd}
+
+    /* ── PAY BUTTON ── */
+    .btn-pay{display:inline-flex;align-items:center;gap:5px;padding:5px 14px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid rgba(39,167,68,.25);background:var(--green-badge);color:var(--green-badge-t);transition:all .15s;font-family:inherit}
+    .btn-pay:hover{background:rgba(39,167,68,.28);transform:translateY(-1px)}
+    .btn-pay:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+    /* ── DOWNLOAD BUTTON ── */
+    .btn-download{display:flex;align-items:center;gap:8px;padding:9px 20px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.12);background:transparent;color:var(--text-m);transition:all .15s;font-family:inherit;margin:14px 20px}
+    .btn-download:hover{border-color:var(--green);color:var(--green);background:var(--green-glow2)}
+
+    /* ── NOTICE ── */
+    .notice{display:flex;align-items:flex-start;gap:10px;padding:13px 16px;border-radius:10px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.15);margin-bottom:16px}
+    .notice svg{width:16px;height:16px;flex-shrink:0;margin-top:1px}
+    .notice-text{font-size:12px;color:var(--text-m);line-height:1.6}
+
+    /* ── MODAL (DARK) ── */
+    .modal{display:none;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center}
+    .modal.open{display:flex}
+    .modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px)}
+    .modal-box{position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 32px;width:100%;max-width:560px;box-shadow:0 24px 60px rgba(0,0,0,.5);max-height:80vh;overflow-y:auto}
+    .modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .modal-title{font-size:16px;font-weight:700;color:#fff}
+    .modal-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;font-family:inherit}
+
+    /* ── RECEIPT MODAL ── */
+    .receipt-modal{display:none;position:fixed;inset:0;z-index:600;align-items:center;justify-content:center}
+    .receipt-modal.open{display:flex}
+    .receipt-modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px)}
+    .receipt-modal-inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:12px;max-height:95vh;overflow-y:auto;padding:16px}
+
+    /* receipt controls bar */
+    .receipt-controls{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:8px 14px;width:100%;max-width:620px}
+    .receipt-ctrl-title{flex:1;font-size:12.5px;font-weight:600;color:var(--text-m)}
+    .btn-receipt-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
+    .btn-receipt-close:hover{background:rgba(239,68,68,.12);color:#f87171}
+    .btn-pdf{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(39,167,68,.3);background:rgba(39,167,68,.15);color:#5fdd8e;transition:all .15s;font-family:inherit;flex-shrink:0}
+    .btn-pdf:hover{background:rgba(39,167,68,.25);transform:translateY(-1px)}
+
+    /* ── THE ACTUAL RECEIPT (white paper) ── */
+    /* Long bond paper: 8.5in × 13in → at 96dpi = 816 × 1248px, scaled down to ~620px wide */
+    .receipt-paper{
+      width:620px;
+      min-height:952px; /* proportional to long bond */
+      background:#f9f8f5;
+      border:1px solid #ccc;
+      box-shadow:0 8px 40px rgba(0,0,0,.45);
+      padding:60px 64px 72px;
+      font-family:'Libre Baskerville',Georgia,serif;
+      color:#111;
+      position:relative;
+      flex-shrink:0;
+    }
+    .receipt-paper::before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(180,180,200,.18) 31px,rgba(180,180,200,.18) 32px);
+      pointer-events:none;
+    }
+
+    /* header */
+    .rp-header{text-align:center;margin-bottom:32px;position:relative;z-index:1}
+    .rp-org{font-size:20px;font-weight:700;letter-spacing:.01em;margin-bottom:2px}
+    .rp-campus{font-size:13px;font-weight:400}
+    .rp-divider{border:none;border-top:1px solid #555;margin:14px 0 10px}
+    .rp-type{font-size:14px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-top:10px}
+    .rp-copy{font-size:12px;font-style:italic;color:#444;margin-top:2px}
+
+    /* receipt no / date row */
+    .rp-meta{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px;position:relative;z-index:1}
+    .rp-meta-label{font-size:12.5px;font-weight:400}
+    .rp-meta-value{font-size:13px;font-weight:700;color:#c0392b;border-bottom:1px solid #888;min-width:140px;display:inline-block;padding-bottom:2px;text-align:center}
+    .rp-meta-value.date-val{color:#111}
+
+    /* section title */
+    .rp-section-title{text-align:center;font-size:13.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:22px;position:relative;z-index:1}
+
+    /* fields */
+    .rp-field{display:flex;align-items:baseline;margin-bottom:16px;position:relative;z-index:1}
+    .rp-field-label{font-size:13px;font-weight:400;min-width:160px;flex-shrink:0}
+    .rp-field-value{flex:1;font-size:13.5px;font-weight:700;border-bottom:1px solid #888;padding-bottom:2px;min-height:22px;padding-left:6px;font-family:'Libre Baskerville',Georgia,serif}
+    .rp-field-value.handwritten{font-family:'Libre Baskerville',Georgia,serif;font-style:italic;font-size:14px;letter-spacing:.01em}
+
+    /* status badge on receipt */
+    .rp-status-badge{display:inline-block;padding:1px 10px;border:1.5px solid #555;border-radius:4px;font-size:12.5px;font-weight:700;font-style:italic;background:#fff}
+    .rp-status-badge.paid{border-color:#1a7a4a;color:#1a7a4a;background:#f0fdf4}
+    .rp-status-badge.partial{border-color:#b45309;color:#b45309;background:#fffbeb}
+    .rp-status-badge.pending{border-color:#92400e;color:#92400e;background:#fffbeb}
+
+    /* signature section */
+    .rp-signature-section{margin-top:52px;display:flex;justify-content:flex-end;position:relative;z-index:1}
+    .rp-sig-block{text-align:center;min-width:220px}
+    .rp-sig-label{font-size:12.5px;margin-bottom:6px}
+    .rp-sig-line{border-bottom:1px solid #555;margin-bottom:4px;padding-bottom:2px;min-height:36px;display:flex;align-items:flex-end;justify-content:center;font-size:13px;font-weight:700;font-style:italic;font-family:'Libre Baskerville',serif}
+    .rp-sig-name-label{font-size:11px;color:#555}
+
+    /* watermark "COPY" */
+    .rp-watermark{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-size:90px;font-weight:700;color:rgba(0,0,0,.04);pointer-events:none;letter-spacing:.2em;z-index:0;font-family:'Libre Baskerville',serif;text-transform:uppercase}
+
+    /* ── TOAST ── */
+    #toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:9px;font-size:12.5px;font-weight:500;background:#1f2937;color:#fff;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;z-index:999;pointer-events:none;display:flex;align-items:center;gap:7px;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+    #toast.show{opacity:1;transform:translateY(0)}
+    #toast.ok{background:#052e16;border:1px solid rgba(39,167,68,.3)}
+    #toast.fail{background:#450a0a;border:1px solid rgba(239,68,68,.3)}
+
+    .top-accent{height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);position:absolute;top:0;left:0;right:0;z-index:10}
+    .empty-row td{text-align:center;padding:40px;color:var(--text-d);font-size:12.5px}
+
+    /* ── PROFILE INFO CARD ── */
+    .profile-info-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+    .info-field{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 16px}
+    .info-field label{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);display:block;margin-bottom:4px}
+    .info-field span{font-size:13px;font-weight:500;color:var(--text)}
+
+    /* ── PRINT STYLES ── */
+    @@media print {
+      body * { visibility: hidden !important; }
+      .receipt-paper, .receipt-paper * { visibility: visible !important; }
+      .receipt-paper {
+        position: fixed !important;
+        top: 0 !important; left: 0 !important;
+        width: 100% !important;
+        min-height: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        margin: 0 !important;
+        padding: 40px 50px 60px !important;
+        background: #fff !important;
+      }
+      .receipt-paper::before { display: none !important; }
+    }
+
+    /* ── MOBILE RESPONSIVE ── */
+    @@media (max-width: 768px) {
+      .mobile-menu-btn{display:flex;align-items:center;justify-content:center}
+      .sidebar{transform:translateX(-100%)}
+      .sidebar.mobile-open{transform:translateX(0)}
+      .main{margin-left:0;padding:20px 16px 60px}
+      .stat-grid{grid-template-columns:1fr;gap:10px}
+      .stat-val{font-size:24px}
+      .page-title{font-size:20px}
+      .profile-info-row{grid-template-columns:1fr}
+      .modal-box{max-width:95%;margin:20px;padding:20px}
+      .tbl-wrap{border-radius:8px}
+      table{font-size:11.5px}
+      thead th{padding:8px 10px;font-size:9px}
+      td{padding:8px 10px}
+      .nav-item{padding:10px 12px;font-size:14px}
+      .sb-brand{padding:16px 12px}
+      .notice{padding:12px 14px}
+      .notice-text{font-size:11px}
+      .receipt-paper{width:95vw;min-height:auto;padding:36px 28px 48px}
+      .receipt-modal-inner{padding:8px}
+      .receipt-controls{max-width:95vw}
+      .rp-org{font-size:16px}
+      .rp-field-label{min-width:130px;font-size:12px}
+      .rp-field-value{font-size:12.5px}
+    }
+
+    @@media (max-width: 480px) {
+      .main{padding:16px 12px 60px}
+      .page-hdr{flex-direction:column;align-items:flex-start;gap:8px}
+      .stat-card{padding:14px 16px}
+      .stat-val{font-size:20px}
+      .stat-val.amount{font-size:18px}
+      .page-title{font-size:18px}
+      .content-card{border-radius:12px}
+      .cc-hdr{padding:12px 16px}
+      .cc-title{font-size:12px}
+      .badge{font-size:9.5px;padding:2px 7px}
+      table{font-size:10.5px}
+      thead th{padding:6px 8px;font-size:8.5px}
+      td{padding:6px 8px}
+      .btn-pay{font-size:10px;padding:4px 10px}
+      .btn-download{font-size:11px;padding:8px 16px;margin:12px 16px}
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-accent"></div>
+<div style="display:flex;min-height:100vh;width:100%;position:relative">
+
+<!-- ── MOBILE MENU BUTTON ── -->
+<button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+  <svg viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+</button>
+
+<!-- ── MOBILE OVERLAY ── -->
+<div class="mobile-overlay" onclick="closeMobileMenu()"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="sb-brand-name">SSG Finance</div>
+      <div class="sb-brand-sub">Student Portal</div>
+    </div>
+  </div>
+
+  <div class="sb-label">Main</div>
+  <a class="nav-item active" id="nav-overview" onclick="showPage('overview',this)">
+    <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+    Overview
+  </a>
+  <a class="nav-item" id="nav-fees" onclick="showPage('fees',this)">
+    <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M2 10V7a2 2 0 012-2h16a2 2 0 012 2v3" stroke="currentColor" stroke-width="1.8"/></svg>
+    Current Fees
+  </a>
+  <a class="nav-item" id="nav-history" onclick="showPage('history',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/></svg>
+    Payment History
+  </a>
+
+  <div class="sb-label">Account</div>
+  <a class="nav-item" id="nav-profile" onclick="showPage('profile',this)">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    My Profile
+  </a>
+
+  <div class="sb-spacer"></div>
+  <div class="sb-user">
+    <div class="user-card">
+      <div class="user-av">@initials.ToUpper()</div>
+      <div>
+        <div class="user-name">@firstName @lastName</div>
+        <div class="user-role">Student</div>
+      </div>
+    </div>
+    <a class="signout" href="/Home/Logout">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sign Out
+    </a>
+  </div>
+</aside>
+
+<!-- ── MAIN CONTENT ── -->
+<div class="main">
+
+  <!-- ══ OVERVIEW PAGE ══ -->
+  <div class="page active" id="page-overview">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Overview</div>
+        <div class="page-sub">Welcome back, @firstName</div>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block"></span>
+        @DateTime.Now.ToString("MMMM dd, yyyy")
+      </div>
+    </div>
+
+    @{
+      var totalBalance = Model.PaymentHistory.Sum(h =>
+        h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount) -
+        h.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount));
+      var totalPaid    = Model.PaymentHistory.SelectMany(h => h.Payments).Where(p => p.Status == "Paid").Sum(p => p.Amount);
+      var pendingCount = Model.PaymentHistory.Count(h => h.OverallStatus != "Paid");
+    }
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-lbl">Outstanding Balance</div>
+        <div class="stat-row">
+          <div class="stat-val amount">₱@totalBalance.ToString("N2")</div>
+          <div class="stat-icon r">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div class="stat-trend @(totalBalance > 0 ? "warn" : "ok")">@(totalBalance > 0 ? "Amount due" : "Fully settled")</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Total Paid</div>
+        <div class="stat-row">
+          <div class="stat-val amount">₱@totalPaid.ToString("N2")</div>
+          <div class="stat-icon g">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#27a744" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div class="stat-trend ok">All confirmed payments</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-lbl">Pending Terms</div>
+        <div class="stat-row">
+          <div class="stat-val">@pendingCount</div>
+          <div class="stat-icon y">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div class="stat-trend @(pendingCount > 0 ? "warn" : "ok")">@(pendingCount > 0 ? "Awaiting payment" : "All terms paid")</div>
+      </div>
+    </div>
+
+    <div class="content-card">
+      <div class="cc-hdr">
+        <div class="cc-title">Recent Fee Summary</div>
+        <span class="badge by">
+          @(Model.PaymentHistory != null && Model.PaymentHistory.Any()
+            ? "SY " + Model.PaymentHistory.First().Term
+            : "No active term")
+        </span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>School Year</th><th>Course</th><th>Total Amount</th><th>Balance</th><th>Status</th></tr>
+          </thead>
+          <tbody>
+            @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
+            {
+              @foreach (var h in Model.PaymentHistory.Take(4))
+              {
+                var total = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
+                var paid  = h.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
+                var bal   = total - paid;
+                string sc;
+                switch (h.OverallStatus.ToLower())
+                {
+                  case "paid":    sc = "bg"; break;
+                  case "pending": sc = "by"; break;
+                  case "overdue": sc = "br"; break;
+                  default:        sc = "by"; break;
+                }
+                <tr>
+                  <td class="td-mono td-m">@h.Term</td>
+                  <td class="td-m">@h.Course</td>
+                  <td>₱@total.ToString("N2")</td>
+                  <td class="td-mono" style="color:@(bal > 0 ? "#f87171" : "#5fdd8e")">₱@bal.ToString("N2")</td>
+                  <td><span class="badge @sc">@h.OverallStatus</span></td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="notice">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4M12 16h.01" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <p class="notice-text">This dashboard is <strong>view-only</strong>. Contact your SSG office to update payment records or dispute a balance.</p>
+    </div>
+  </div>
+
+  <!-- ══ CURRENT FEES PAGE ══ -->
+  <div class="page" id="page-fees">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Current Fees</div>
+        <div class="page-sub">Your active fee obligations</div>
+      </div>
+    </div>
+    <div class="content-card">
+      <div class="cc-hdr">
+        <div class="cc-title">Fee Breakdown</div>
+        <span class="badge by">@((Model.PaymentHistory?.Count(ph => ph.OverallStatus != "Paid") ?? 0)) pending</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>School Year</th><th>Balance</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+          </thead>
+          <tbody>
+            @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
+            {
+              @foreach (var h in Model.PaymentHistory.Where(ph => ph.OverallStatus != "Paid"))
+              {
+                var total = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
+                var paid  = h.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
+                var bal   = total - paid;
+                string sc;
+                switch (h.OverallStatus.ToLower())
+                {
+                  case "paid":    sc = "bg"; break;
+                  case "pending": sc = "by"; break;
+                  case "overdue": sc = "br"; break;
+                  default:        sc = "by"; break;
+                }
+                <tr>
+                  <td class="td-mono td-m">@h.Term</td>
+                  <td class="td-mono" style="color:@(bal > 0 ? "#f87171" : "#5fdd8e")">₱@bal.ToString("N2")</td>
+                  <td>₱@total.ToString("N2")</td>
+                  <td><span class="badge @sc">@h.OverallStatus</span></td>
+                  <td>
+                    @if (bal > 0)
+                    {
+                      <button class="btn-pay" onclick="showPayModal('@h.Term', @bal)">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                        Pay Now
+                      </button>
+                    }
+                    else
+                    {
+                      <span style="font-size:12px;color:var(--text-d)">—</span>
+                    }
+                  </td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PAYMENT HISTORY PAGE ══ -->
+  <div class="page" id="page-history">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Payment History</div>
+        <div class="page-sub">@((Model.PaymentHistory?.Where(ph => ph.OverallStatus != "Unpaid").Count() ?? 0)) payment records</div>
+      </div>
+    </div>
+    <div class="content-card">
+      <div class="cc-hdr">
+        <div class="cc-title">All Transactions</div>
+        <span class="badge bg">@((Model.PaymentHistory?.Where(ph => ph.OverallStatus != "Unpaid").Count() ?? 0)) records</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Term</th><th>Semester</th><th>Amount</th><th>Remaining Balance</th><th>Status</th><th>Payment Date</th><th>Receipt</th></tr>
+          </thead>
+          <tbody>
+            @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
+            {
+              int idx = 1;
+              var filteredHistory = Model.PaymentHistory
+                    .Select((h, i) => new { History = h, OriginalIndex = i })
+                    .Where(x => x.History.OverallStatus != "Unpaid")
+                    .ToList();
+              @foreach (var item in filteredHistory.Select((h, i) => new { Item = h, Index = i }))
+              {
+                var h       = item.Item.History;
+                var origIdx = item.Item.OriginalIndex;
+                var total   = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
+                var paid    = h.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
+                var balance = total - paid;
+                string sc;
+                switch (h.OverallStatus.ToLower())
+                {
+                  case "paid":    sc = "bg"; break;
+                  case "partial": sc = "by"; break;
+                  case "pending": sc = "by"; break;
+                  case "overdue": sc = "br"; break;
+                  default:        sc = "by"; break;
+                }
+                <tr>
+                  <td class="td-mono td-m">@(idx++)</td>
+                  <td class="td-mono td-m">@h.Term</td>
+                  <td class="td-mono td-m">@(h.Payments.FirstOrDefault()?.Semester ?? "—")</td>
+                  <td>₱@total.ToString("N2")</td>
+                  <td class="td-mono" style="color:@(balance > 0 ? "#f87171" : "#5fdd8e")">₱@balance.ToString("N2")</td>
+                  <td><span class="badge @sc">@h.OverallStatus</span></td>
+                  <td class="td-mono td-m">
+                    @{
+                      var paymentDate = h.Payments.FirstOrDefault(p => p.Status == "Paid")?.PaymentDate;
+                      @((paymentDate.HasValue ? paymentDate.Value.ToString("MMM dd, yyyy") : "—"))
+                    }
+                  </td>
+                  <td>
+                    <!-- RECEIPT BUTTON replaces View button -->
+                    <button
+                      style="display:inline-flex;align-items:center;gap:5px;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s"
+                      onmouseover="this.style.borderColor='#fbbf24';this.style.color='#fbbf24'"
+                      onmouseout="this.style.borderColor='rgba(255,255,255,.12)';this.style.color='var(--text-m)'"
+                      onclick="openReceipt(@(item.Index))">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke="currentColor" stroke-width="1.8"/><polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.8"/><line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.8"/><line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.8"/><polyline points="10 9 9 9 8 9" stroke="currentColor" stroke-width="1.8"/></svg>
+                      Receipt
+                    </button>
+                  </td>
+                </tr>
+              }
+            }
+            else
+            {
+              <tr class="empty-row"><td colspan="8">No payment history available.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PROFILE PAGE ══ -->
+  <div class="page" id="page-profile">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">My Profile</div>
+        <div class="page-sub">Your account information</div>
+      </div>
+    </div>
+    <div class="content-card">
+      <div class="cc-hdr">
+        <div class="cc-title">Personal Information</div>
+        <span class="badge bg">Student</span>
+      </div>
+      <div style="padding:20px">
+        <div class="profile-info-row">
+          <div class="info-field"><label>First Name</label><span>@firstName</span></div>
+          <div class="info-field"><label>Last Name</label><span>@lastName</span></div>
+          <div class="info-field"><label>Middle Name</label><span>@(middleName.Length > 0 ? middleName : "—")</span></div>
+          <div class="info-field"><label>Student ID</label><span style="font-family:'DM Mono',monospace;font-size:12px">@(studentId.Length > 0 ? studentId : "—")</span></div>
+          <div class="info-field"><label>Course Code</label><span>@(courseCode.Length > 0 ? courseCode : "—")</span></div>
+          <div class="info-field"><label>Course Name</label><span>@(courseName.Length > 0 ? courseName : "—")</span></div>
+          <div class="info-field"><label>Year Level</label><span>@(yearLevel.Length > 0 ? yearLevel : "—")</span></div>
+          <div class="info-field"><label>Section</label><span>@(section.Length > 0 ? section : "—")</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="notice">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fbbf24" stroke-width="1.8"/><path d="M12 8v4M12 16h.01" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <p class="notice-text">To update your personal information, please contact your SSG office or registrar.</p>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div>
+
+<!-- ══ PAY MODAL ══ -->
+<div id="payModal" class="modal" onclick="handlePayModalClick(event)">
+  <div class="modal-backdrop"></div>
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">Pay Fee</div>
+        <div style="font-size:11.5px;color:var(--text-m);margin-top:2px" id="payModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="closePayModal()">✕</button>
+    </div>
+    <div style="background:rgba(39,167,68,.08);border:1px solid rgba(39,167,68,.2);border-radius:10px;padding:16px 20px;margin-bottom:20px">
+      <div style="font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);margin-bottom:4px">Amount Due</div>
+      <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-.03em" id="payModalAmount"></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-m);line-height:1.6;margin-bottom:20px">
+      To process your payment, please proceed to SSG Finance office with this information. Online payment integration is coming soon.
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closePayModal()" style="padding:9px 20px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:8px;color:var(--text-m);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RECEIPT MODAL ══ -->
+<div id="receiptModal" class="receipt-modal" onclick="handleReceiptBackdropClick(event)">
+  <div class="receipt-modal-backdrop"></div>
+  <div class="receipt-modal-inner">
+    <!-- Controls bar -->
+    <div class="receipt-controls">
+      <span class="receipt-ctrl-title" id="receiptCtrlTitle">Official Receipt</span>
+      <button class="btn-pdf" onclick="downloadReceiptPDF()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download PDF
+      </button>
+      <button class="btn-receipt-close" onclick="closeReceipt()">✕</button>
+    </div>
+
+    <!-- Paper receipt -->
+    <div class="receipt-paper" id="receiptPaper">
+      <div class="rp-watermark">COPY</div>
+
+      <!-- Header -->
+      <div class="rp-header">
+        <div class="rp-org">Supreme Student Government</div>
+        <div class="rp-campus">CTU – Ginatilan Extension Campus</div>
+        <hr class="rp-divider">
+        <div class="rp-type">Organization Fee</div>
+        <div class="rp-copy">(Owner's Copy)</div>
+      </div>
+
+      <!-- Receipt No / Date -->
+      <div class="rp-meta">
+        <div>
+          <span class="rp-meta-label">Receipt No.: </span>
+          <span class="rp-meta-value" id="rp-receipt-no">—</span>
+        </div>
+        <div>
+          <span class="rp-meta-label">Date: </span>
+          <span class="rp-meta-value date-val" id="rp-date">—</span>
+        </div>
+      </div>
+
+      <!-- Section Title -->
+      <div class="rp-section-title">Acknowledgement Receipt</div>
+
+      <!-- Fields -->
+      <div class="rp-field">
+        <span class="rp-field-label">Name:</span>
+        <span class="rp-field-value handwritten" id="rp-name">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">ID Number:</span>
+        <span class="rp-field-value handwritten" id="rp-id">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Course/Year/Section:</span>
+        <span class="rp-field-value handwritten" id="rp-course">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Amount:</span>
+        <span class="rp-field-value handwritten" id="rp-amount">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Amount in words:</span>
+        <span class="rp-field-value handwritten" id="rp-amount-words">—</span>
+      </div>
+      <div class="rp-field">
+        <span class="rp-field-label">Status:</span>
+        <span class="rp-field-value" id="rp-status-wrap">
+          <span class="rp-status-badge" id="rp-status">—</span>
+        </span>
+      </div>
+
+      <!-- Signature -->
+      <div class="rp-signature-section">
+        <div class="rp-sig-block">
+          <div class="rp-sig-label">Received by:</div>
+          <div class="rp-sig-line" id="rp-received-by">&nbsp;</div>
+          <div class="rp-sig-name-label">(Signature over Printed Name)</div>
+        </div>
+      </div>
+    </div><!-- /receipt-paper -->
+  </div>
+</div>
+
+<div id="toast"></div>
+
+
+  <script>
+    const paymentHistory = @Html.Raw(Json.Serialize(Model.PaymentHistory));
+    const receipts = @Html.Raw(Json.Serialize(Model.Receipts));
+    const filteredPaymentHistory = paymentHistory
+          .map((h, i) => ({ History: h, OriginalIndex: i }))
+          .filter(x => x.History.OverallStatus !== "Unpaid");
+    const studentName    = '@(firstName + " " + lastName)'.trim().toUpperCase();
+    const studentIdVal   = '@studentId';
+    const studentCourse  = '@courseCode';
+    const studentYear    = '@yearLevel';
+    const studentSection = '@(section)';
+
+    /* ── HELPERS ── */
+    function amountToWords(amount) {
+      if (amount === 0) return 'Zero Pesos Only';
+      const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine',
+                    'Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen',
+                    'Seventeen','Eighteen','Nineteen'];
+      const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+      function say(n) {
+        if (n < 20) return ones[n];
+        if (n < 100) return tens[Math.floor(n/10)] + (n % 10 ? ' ' + ones[n%10] : '');
+        return ones[Math.floor(n/100)] + ' Hundred' + (n % 100 ? ' ' + say(n%100) : '');
+      }
+      const pesos = Math.floor(amount);
+      const cents = Math.round((amount - pesos) * 100);
+      let result = say(pesos) + ' Peso' + (pesos !== 1 ? 's' : '');
+      if (cents > 0) result += ' and ' + say(cents) + ' Centavo' + (cents !== 1 ? 's' : '');
+      return result + ' Only';
+    }
+
+    function generateReceiptNo(term, idx) {
+      // Format: SY-SEMESTER-NNNN based on term string
+      const parts = term.replace(/[–—]/g, '-').split(/[-\s]+/);
+      const yr = parts[0] ? parts[0].slice(-2) : '00';
+      const sem = term.toLowerCase().includes('second') ? '02' : '01';
+      const num = String(idx + 1).padStart(4, '0');
+      return yr + '-' + sem + '-' + num;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return new Date().toLocaleDateString('en-PH');
+      return new Date(dateStr).toLocaleDateString('en-PH');
+    }
+
+    /* ── RECEIPT MODAL ── */
+    function openReceipt(idx) {
+      console.log('Opening receipt for index:', idx);
+      const filteredItem = filteredPaymentHistory[idx];
+      if (!filteredItem) {
+        console.log('No item found at index:', idx);
+        return;
+      }
+      
+      const history = filteredItem.History;
+      const originalIdx = filteredItem.OriginalIndex;
+      console.log('Found payment data:', history);
+
+      // Find the corresponding receipt from receipts array
+      const receipt = receipts.find(r => {
+        // Match by payment details - this ensures we get the right receipt
+        return r.PaymentId && history.Payments && history.Payments.some(p => 
+          p.Status === 'Paid' && 
+          Math.abs(p.Amount - r.Amount) < 0.01 && // Match amount
+          p.PaymentDate && r.IssueDate && 
+          new Date(p.PaymentDate).getTime() === new Date(r.IssueDate).getTime()
+        );
+      });
+      
+      console.log('Found receipt:', receipt);
+      
+      // Find the actual payment record
+      const actualPayment = (history.Payments || [])
+                      .find(p => p.Status === 'Paid');
+      console.log('Found paid payment:', actualPayment);
+      
+      // Use receipt data if available, otherwise fall back to payment data
+      const term = history.Term || '';
+      const paid = actualPayment ? actualPayment.Amount : 0;
+      const status = history.OverallStatus || 'Partial';
+      const paymentDate = receipt ? receipt.IssueDate : (actualPayment ? actualPayment.PaymentDate : null);
+      const treasurerName = receipt ? receipt.IssuedByName : (actualPayment ? (actualPayment.TreasurerName || '—') : '—');
+      const receiptNumber = receipt ? receipt.ReceiptNumber : (actualPayment ? actualPayment.ReceiptNumber : '');
+      const receiptIssueDate = receipt ? receipt.IssueDate : (actualPayment ? actualPayment.ReceiptIssueDate : null);
+      const receiptIssuedBy = receipt ? receipt.IssuedByName : (actualPayment ? (actualPayment.ReceiptIssuedBy || treasurerName) : treasurerName);
+      
+      console.log('Receipt data - Amount:', paid, 'Status:', status, 'Receipt #:', receiptNumber, 'Issue Date:', receiptIssueDate, 'Issued By:', receiptIssuedBy);
+
+      document.getElementById('receiptCtrlTitle').textContent  = 'Receipt — ' + term;
+      
+      // Use actual receipt number from database
+      const receiptNo = receiptNumber || generateReceiptNo(term, originalIdx);
+      document.getElementById('rp-receipt-no').textContent     = receiptNo;
+      
+      // Use receipt issue date if available, otherwise payment date
+      const dateToUse = receiptIssueDate ? new Date(receiptIssueDate) : (paymentDate ? new Date(paymentDate) : new Date());
+      const formattedDate = dateToUse.toLocaleDateString('en-PH', { month: '2-digit', day: '2-digit', year: '2-digit' });
+      document.getElementById('rp-date').textContent           = formattedDate;
+      
+      console.log('Final receipt data - Receipt #:', receiptNo, 'Date:', formattedDate, 'Issued By:', receiptIssuedBy);
+      
+      document.getElementById('rp-name').textContent           = studentName || '—';
+      document.getElementById('rp-id').textContent             = studentIdVal || '—';
+      document.getElementById('rp-course').textContent         = (studentCourse + ' ' + studentYear + studentSection).trim() || '—';
+      document.getElementById('rp-amount').textContent         = '₱ ' + paid.toFixed(2);
+      document.getElementById('rp-amount-words').textContent   = amountToWords(paid);
+      document.getElementById('rp-received-by').textContent   = receiptIssuedBy;
+
+      const statusEl = document.getElementById('rp-status');
+      statusEl.textContent = status;
+      statusEl.className   = 'rp-status-badge ' + status.toLowerCase();
+
+      document.getElementById('receiptModal').classList.add('open');
+    }
+
+    function closeReceipt() {
+      document.getElementById('receiptModal').classList.remove('open');
+    }
+
+    
+    function handleReceiptBackdropClick(e) {
+      if (e.target === document.getElementById('receiptModal') || e.target.classList.contains('receipt-modal-backdrop')) {
+        closeReceipt();
+      }
+    }
+
+    function downloadReceiptPDF() {
+      window.print();
+    }
+
+    /* ── PAGES ── */
+    function showPage(name, navEl) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const page = document.getElementById('page-' + name);
+      if (page) page.classList.add('active');
+      if (navEl) navEl.classList.add('active');
+      closeMobileMenu();
+    }
+
+    /* ── PAY MODAL ── */
+    function showPayModal(term, amount) {
+      document.getElementById('payModalSub').textContent    = term;
+      document.getElementById('payModalAmount').textContent = '₱' + amount.toFixed(2);
+      document.getElementById('payModal').classList.add('open');
+    }
+    function closePayModal() { document.getElementById('payModal').classList.remove('open'); }
+    function handlePayModalClick(e) {
+      if (e.target === document.getElementById('payModal') || e.target.classList.contains('modal-backdrop')) closePayModal();
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { closeReceipt(); closePayModal(); closeMobileMenu(); }
+    });
+
+    /* ── TOAST ── */
+    function showToast(msg, type) {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.className = 'show ' + type;
+      clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 3000);
+    }
+  </script>
+</body>
+</html>

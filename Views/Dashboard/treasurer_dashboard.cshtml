@@ -1,0 +1,2039 @@
+@model MyMvcApp.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Treasurer Dashboard";
+    var firstName = Context.Session.GetString("FirstName") ?? "Treasurer";
+    var lastName  = Context.Session.GetString("LastName") ?? "";
+    var schoolId  = Context.Session.GetString("SchoolId") ?? "";
+    var initials  = (firstName.Length > 0 ? firstName[0].ToString() : "") + (lastName.Length > 0 ? lastName[0].ToString() : "");
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SSG Finance — Treasurer</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ── RESET & ROOT ── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#071a0c;--sidebar:#081509;
+  --green:#27a744;--green-d:#1a7a4a;
+  --green-glow:rgba(39,167,68,.18);--green-glow2:rgba(39,167,68,.08);
+  --glass:rgba(255,255,255,.045);
+  --text:#e8f5ec;--text-m:rgba(232,245,236,.6);--text-d:rgba(232,245,236,.35);
+  --card:#0f2918;--card-b:rgba(255,255,255,.07);
+  --green-badge:rgba(39,167,68,.18);--green-badge-t:#5fdd8e;
+  --yellow-badge:rgba(251,191,36,.14);--yellow-badge-t:#fbbf24;
+  --red-badge:rgba(239,68,68,.14);--red-badge-t:#f87171;
+  --blue-badge:rgba(59,130,246,.14);--blue-badge-t:#93c5fd;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);display:flex;min-height:100vh;color:var(--text);font-size:14px;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:218px;background:var(--sidebar);border-right:1px solid rgba(255,255,255,.05);display:flex;flex-direction:column;flex-shrink:0}
+.sb-brand{display:flex;align-items:center;gap:10px;padding:20px 16px 18px;border-bottom:1px solid rgba(255,255,255,.05)}
+.sb-logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 14px rgba(39,167,68,.3)}
+.sb-logo svg{width:18px;height:18px}
+.sb-brand-name{font-size:13.5px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.sb-brand-sub{font-size:10px;color:rgba(39,167,68,.85);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+.sb-label{font-size:9.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--text-d);padding:16px 16px 5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text-m);cursor:pointer;transition:all .15s;border:1px solid transparent}
+.nav-item:hover{background:var(--glass);color:var(--text)}
+.nav-item.active{background:var(--green-glow);color:#5fdd8e;border-color:rgba(74,222,128,.12)}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.85}
+.sb-spacer{flex:1}
+.sb-user{padding:10px 8px;border-top:1px solid rgba(255,255,255,.05)}
+.user-card{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;background:var(--glass)}
+.user-av{width:30px;height:30px;border-radius:7px;background:linear-gradient(135deg,#1a7a4a,#27a744);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600;color:#fff}
+.user-role{font-size:10.5px;color:var(--text-d)}
+.signout{display:flex;align-items:center;gap:7px;padding:7px 10px;margin-top:3px;border-radius:8px;font-size:12.5px;font-weight:500;color:var(--text-d);cursor:pointer;transition:all .15s}
+.signout:hover{background:rgba(239,68,68,.08);color:#f87171}
+.signout svg{width:14px;height:14px}
+
+/* ── MAIN ── */
+.main{flex:1;min-width:0;padding:32px 32px 60px;background:var(--bg);overflow-y:auto;height:100vh;position:relative}
+.main::before{content:'';position:absolute;top:-80px;right:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(39,167,68,.06) 0%,transparent 70%);pointer-events:none;border-radius:50%}
+.top-accent{height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);position:fixed;top:0;left:0;right:0;z-index:10}
+
+/* ── PAGES ── */
+.page{display:none}.page.active{display:block}
+.page-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.page-title{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em}
+.page-sub{font-size:12px;color:var(--text-m);margin-top:2px}
+
+/* ── STAT CARDS ── */
+.stat-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+.stat-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+.stat-card.green::before{background:linear-gradient(90deg,transparent,rgba(39,167,68,.35),transparent)}
+.stat-card.red::before{background:linear-gradient(90deg,transparent,rgba(239,68,68,.35),transparent)}
+.stat-card.blue::before{background:linear-gradient(90deg,transparent,rgba(59,130,246,.35),transparent)}
+.stat-card.yellow::before{background:linear-gradient(90deg,transparent,rgba(251,191,36,.35),transparent)}
+.stat-lbl{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:8px}
+.stat-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.stat-val{font-size:28px;font-weight:800;color:#fff;line-height:1;letter-spacing:-.04em}
+.stat-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center}
+.stat-icon svg{width:15px;height:15px}
+.stat-icon.g{background:rgba(39,167,68,.15)}
+.stat-icon.r{background:rgba(239,68,68,.12)}
+.stat-icon.b{background:rgba(59,130,246,.12)}
+.stat-icon.y{background:rgba(251,191,36,.12)}
+.stat-sub{font-size:10.5px;color:var(--text-d);padding-top:6px;border-top:1px solid rgba(255,255,255,.05)}
+
+/* ── CONTENT CARDS ── */
+.content-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;margin-bottom:14px;position:relative;overflow:visible}
+.content-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent)}
+.cc-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+.cc-title{font-size:13.5px;font-weight:700;color:#fff}
+
+/* ── CHARTS ── */
+.charts-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+.chart-wrap{padding:16px;height:210px;position:relative}
+.donut-wrap{padding:16px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.donut-canvas{width:150px;height:150px}
+.donut-legend{width:100%;display:flex;flex-direction:column;gap:5px}
+.dl-row{display:flex;align-items:center;justify-content:space-between;font-size:11.5px}
+.dl-dot{width:9px;height:9px;border-radius:2px;margin-right:7px;flex-shrink:0}
+.dl-lbl{display:flex;align-items:center;color:var(--text-m)}
+.dl-val{font-family:'DM Mono',monospace;font-weight:500;font-size:11.5px}
+
+/* ── TABLE ── */
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.05);gap:10px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 12px;background:rgba(255,255,255,.04);min-width:210px;transition:all .15s}
+.search-box:focus-within{border-color:var(--green);background:rgba(39,167,68,.06)}
+.search-box input{border:none;outline:none;font-family:inherit;font-size:12.5px;color:var(--text);width:100%;background:transparent}
+.search-box input::placeholder{color:var(--text-d)}
+.search-box svg{width:14px;height:14px;color:var(--text-d);flex-shrink:0}
+.filter-select{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:7px 28px 7px 11px;font-size:12px;color:var(--text-m);font-family:inherit;cursor:pointer;outline:none;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23e8f5ec%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 6px center;background-size:18px}
+.filter-select option{background:#0a1f10}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+thead th{padding:10px 16px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text-d);border-bottom:1px solid rgba(255,255,255,.05);text-align:left;white-space:nowrap;background:rgba(255,255,255,.02)}
+tbody tr{border-bottom:1px solid rgba(255,255,255,.04);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:rgba(39,167,68,.04)}
+td{padding:11px 16px;color:var(--text);vertical-align:middle}
+.td-m{color:var(--text-m)}.td-mono{font-family:'DM Mono',monospace;font-size:11.5px}
+.empty-row td{text-align:center;padding:40px;color:var(--text-d);font-size:12.5px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+.bg{background:var(--green-badge);color:var(--green-badge-t)}
+.by{background:var(--yellow-badge);color:var(--yellow-badge-t)}
+.br{background:var(--red-badge);color:var(--red-badge-t)}
+.bb{background:var(--blue-badge);color:var(--blue-badge-t)}
+
+/* ── BUTTONS ── */
+.btn-primary{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all .15s;background:var(--green);color:#fff}
+.btn-primary:hover{background:#22963d;transform:translateY(-1px)}
+.btn-outline{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:transparent;border:1px solid rgba(255,255,255,.12);color:var(--text-m)}
+.btn-outline:hover{border-color:var(--green);color:#5fdd8e;background:var(--green-glow2)}
+.btn-danger{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:var(--red-badge);color:var(--red-badge-t);border:1px solid rgba(239,68,68,.2)}
+.btn-danger:hover{background:rgba(239,68,68,.22)}
+
+/* ── AMOUNT COLORS ── */
+.amt-in{color:#5fdd8e;font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.amt-out{color:#f87171;font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.amt-neu{color:var(--text-m);font-family:'DM Mono',monospace;font-size:12px}
+
+/* ── SUMMARY ROW ── */
+.summary-row{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.06)}
+.summary-cell{padding:12px 20px;text-align:center}
+.summary-cell:not(:last-child){border-right:1px solid rgba(255,255,255,.06)}
+.summary-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-d);margin-bottom:4px}
+.summary-val{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+
+/* ── INCOME CARDS ── */
+.income-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.income-card{background:var(--card);border:1px solid var(--card-b);border-radius:14px;padding:22px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.income-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(39,167,68,.2),transparent)}
+.income-card:hover{border-color:rgba(39,167,68,.25);background:rgba(39,167,68,.06);transform:translateY(-1px)}
+.income-card-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.income-card-icon svg{width:20px;height:20px}
+.income-card-title{font-size:14px;font-weight:700;color:#fff;margin-bottom:4px}
+.income-card-desc{font-size:12px;color:var(--text-m);line-height:1.6;margin-bottom:16px}
+
+/* ── REPORT CARDS ── */
+.report-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:18px}
+.report-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:16px;cursor:pointer;transition:all .18s}
+.report-card:hover{background:var(--green-glow2);border-color:rgba(39,167,68,.22);transform:translateY(-1px)}
+.report-card-icon{width:38px;height:38px;border-radius:10px;background:rgba(39,167,68,.15);display:flex;align-items:center;justify-content:center;margin-bottom:11px}
+.report-card-icon svg{width:17px;height:17px}
+.report-card-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:4px}
+.report-card-desc{font-size:11.5px;color:var(--text-m);line-height:1.5}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.65);backdrop-filter:blur(4px)}
+.modal-box{position:relative;z-index:1;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 30px;width:100%;max-width:500px;box-shadow:0 24px 60px rgba(0,0,0,.5);max-height:90vh;overflow-y:auto}
+.modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px}
+.modal-title{font-size:16px;font-weight:700;color:#fff}
+.modal-sub{font-size:11.5px;color:var(--text-m);margin-top:2px}
+.modal-close{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.form-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px;display:block}
+.form-group{margin-bottom:13px}
+.form-input{width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.form-input:focus{border-color:var(--green);background:rgba(39,167,68,.06)}
+.form-input::placeholder{color:var(--text-d)}
+.form-select{width:100%;background:#0a1f10;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:9px 12px;color:#fff;font-size:13px;font-family:inherit;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><path fill=%22%23fff%22 d=%22M7 10l5 5 5-5z%22/></svg>');background-repeat:no-repeat;background-position:right 10px center;background-size:20px}
+.form-select option{background:#0a1f10}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)}
+.status-box{font-size:12px;padding:8px 12px;border-radius:7px;border:1px solid rgba(39,167,68,.15);background:rgba(39,167,68,.08);color:#5fdd8e}
+
+/* ── STUDENT SEARCH ── */
+.student-list{max-height:160px;overflow-y:auto;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:#0a1f10;margin-top:5px;display:none}
+.student-item{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05);transition:background .1s}
+.student-item:last-child{border-bottom:none}
+.student-item:hover{background:rgba(39,167,68,.08)}
+.student-item.paid{opacity:.4;pointer-events:none}
+.student-name{font-size:12.5px;font-weight:600;color:#fff}
+.student-info{font-size:11px;color:var(--text-m)}
+
+/* ── REPORT PREVIEW ── */
+.rp-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.rp-sum-card{border-radius:10px;padding:14px}
+.rp-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--text-d);margin-bottom:5px}
+.rp-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:500}
+
+/* ── SETTINGS ── */
+.settings-tabs{display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.settings-tab{display:flex;align-items:center;gap:7px;padding:9px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-m);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:-1px}
+.settings-tab:hover{color:var(--text)}
+.settings-tab.active{color:#5fdd8e;border-bottom-color:#27a744}
+.settings-panel{display:none}.settings-panel.active{display:block}
+.settings-label{font-size:11px;color:var(--text-m);display:block;margin-bottom:4px}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:9px;font-size:12.5px;font-weight:500;background:#1f2937;color:#fff;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;z-index:999;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{background:#052e16;border:1px solid rgba(39,167,68,.3)}
+#toast.fail{background:#450a0a;border:1px solid rgba(239,68,68,.3)}
+
+/* ── DROPDOWN ── */
+.dropdown-wrap{position:relative;display:inline-block}
+.dot-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--text-m);width:28px;height:28px;border-radius:7px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.dot-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.dropdown-menu{display:none;position:absolute;right:0;bottom:34px;top:auto;background:#0f2918;border:1px solid rgba(255,255,255,.1);border-radius:10px;min-width:160px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden}
+.dropdown-menu.open{display:block}
+.dropdown-item{display:flex;align-items:center;gap:8px;padding:9px 14px;font-size:12.5px;color:var(--text-m);cursor:pointer;transition:background .1s}
+.dropdown-item:hover{background:rgba(39,167,68,.08);color:var(--text)}
+.dropdown-item.danger{color:var(--red-badge-t)}
+.dropdown-item.danger:hover{background:rgba(239,68,68,.08)}
+</style>
+</head>
+<body>
+
+<div class="top-accent"></div>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="sb-brand-name">SSG Finance</div>
+      <div class="sb-brand-sub">Treasurer</div>
+    </div>
+  </div>
+
+  <div class="sb-label">Overview</div>
+  <div class="nav-item active" onclick="showPage('dashboard',this)">
+    <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item" onclick="showPage('history',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Transaction History
+  </div>
+
+  <div class="sb-label">Add Transaction</div>
+  <div class="nav-item" onclick="showPage('income',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7-7 7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Add Income
+  </div>
+  <div class="nav-item" onclick="showPage('expenses',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Add Expense
+  </div>
+
+  <div class="sb-label">Reports</div>
+  <div class="nav-item" onclick="showPage('reports',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="1.8"/><path d="M9 12h6M9 16h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    Create Report
+  </div>
+
+  <div class="sb-label">System</div>
+  <div class="nav-item" onclick="showPage('settings',this)">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="1.8"/></svg>
+    Settings
+  </div>
+
+  <div class="sb-spacer"></div>
+  <div class="sb-user">
+    <div class="user-card">
+      <div class="user-av" id="user-initials">TR</div>
+      <div>
+        <div class="user-name" id="user-name">Treasurer</div>
+        <div class="user-role">Treasurer</div>
+      </div>
+    </div>
+    <div class="signout" onclick="window.location.href='@Url.Action("Logout", "Home")'">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sign Out
+    </div>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">A.Y. 2025–2026 · 1st Semester</div>
+      </div>
+      <div style="font-size:11.5px;color:var(--text-m);background:rgba(39,167,68,.1);border:1px solid rgba(39,167,68,.2);padding:6px 13px;border-radius:8px;display:flex;align-items:center;gap:6px">
+        <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;display:inline-block"></span>
+        Live
+      </div>
+    </div>
+
+    <!-- 3 STAT CARDS -->
+    <div class="stat-grid-3">
+      <div class="stat-card green">
+        <div class="stat-lbl">Total Income</div>
+        <div class="stat-row">
+          <div class="stat-val" id="s-income">₱0.00</div>
+          <div class="stat-icon g"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7-7 7 7" stroke="#27a744" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="stat-sub" id="s-income-sub">Org Fees + Other Funds</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-lbl">Total Expenses</div>
+        <div class="stat-row">
+          <div class="stat-val" id="s-expenses">₱0.00</div>
+          <div class="stat-icon r"><svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="stat-sub" id="s-exp-sub">All recorded expenses</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-lbl">Remaining Balance</div>
+        <div class="stat-row">
+          <div class="stat-val" id="s-balance">₱0.00</div>
+          <div class="stat-icon b"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="14" rx="2" stroke="#93c5fd" stroke-width="1.8"/><path d="M16 11a4 4 0 01-8 0" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        </div>
+        <div class="stat-sub" id="s-balance-sub">Income − Expenses</div>
+      </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-grid">
+      <div class="content-card">
+        <div class="cc-hdr">
+          <div class="cc-title">Monthly Overview</div>
+          <select class="filter-select" id="chart-mode" onchange="updateCharts()">
+            <option value="both">Income vs Expenses</option>
+            <option value="income">Income only</option>
+            <option value="expense">Expenses only</option>
+          </select>
+        </div>
+        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+      </div>
+      <div class="content-card">
+        <div class="cc-hdr"><div class="cc-title">Breakdown</div></div>
+        <div class="donut-wrap">
+          <div class="donut-canvas"><canvas id="donutChart"></canvas></div>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECENT TRANSACTIONS -->
+    <div class="content-card">
+      <div class="cc-hdr">
+        <div class="cc-title">Recent Transactions</div>
+        <button class="btn-outline" onclick="showPage('history',document.querySelector('[onclick*=history]'))">View All</button>
+      </div>
+      <table>
+        <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th></tr></thead>
+        <tbody id="dash-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div class="page-hdr">
+      <div><div class="page-title">Transaction History</div><div class="page-sub">Complete record of all financial entries</div></div>
+      <button class="btn-primary" onclick="openModal('modal-pick')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        Add Transaction
+      </button>
+    </div>
+    <div class="content-card">
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search by description, student name, school ID, course…" oninput="filterHistory(this.value)"/>
+        </div>
+        <select class="filter-select" onchange="filterHistoryType(this.value)">
+          <option value="">All Types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
+        </select>
+      </div>
+      <table>
+        <thead><tr><th>Date</th><th>Description</th><th>Student Info</th><th>Category</th><th>Type</th><th>Receipt / OR</th><th>Amount</th><th></th></tr></thead>
+        <tbody id="history-tbody"></tbody>
+      </table>
+      <div class="summary-row">
+        <div class="summary-cell"><div class="summary-lbl">Total Income</div><div class="summary-val amt-in" id="h-income">₱0.00</div></div>
+        <div class="summary-cell"><div class="summary-lbl">Total Expenses</div><div class="summary-val amt-out" id="h-expense">₱0.00</div></div>
+        <div class="summary-cell"><div class="summary-lbl">Remaining Balance</div><div class="summary-val" id="h-balance">₱0.00</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INCOME -->
+  <div class="page" id="page-income">
+    <div class="page-hdr"><div><div class="page-title">Add Income</div><div class="page-sub">Record student fees and other receivable funds</div></div></div>
+    <div class="income-grid">
+      <div class="income-card" onclick="openModal('modal-orgfee')">
+        <div class="income-card-icon" style="background:rgba(39,167,68,.15)">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="#5fdd8e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 12v5c0 1.657 2.686 3 6 3s6-1.343 6-3v-5" stroke="#5fdd8e" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div class="income-card-title">Student Organizational Fee</div>
+        <div class="income-card-desc">Collect and record SSG membership fees from students. Required fee: <strong style="color:#5fdd8e" id="current-fee-amount">₱200.00</strong> per student per semester.</div>
+        <button class="btn-primary" style="width:100%;justify-content:center" onclick="event.stopPropagation();openModal('modal-orgfee')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          Record Org Fee
+        </button>
+      </div>
+      <div class="income-card" onclick="openModal('modal-fund')">
+        <div class="income-card-icon" style="background:rgba(59,130,246,.15)">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <div class="income-card-title">Other Receivable Funds</div>
+        <div class="income-card-desc">Record donations, grants, fundraising proceeds, event income, or any other funds received by the organization.</div>
+        <button class="btn-outline" style="width:100%;justify-content:center" onclick="event.stopPropagation();openModal('modal-fund')">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+          Record Fund
+        </button>
+      </div>
+    </div>
+    <div class="content-card">
+      <div class="cc-hdr"><div class="cc-title">Recent Income Records</div><span class="badge bg" id="income-count">0 records</span></div>
+      <table>
+        <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Receipt / OR</th><th>Amount</th><th></th></tr></thead>
+        <tbody id="income-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EXPENSES -->
+  <div class="page" id="page-expenses">
+    <div class="page-hdr">
+      <div><div class="page-title">Add Expense</div><div class="page-sub">Track organizational expenditures</div></div>
+      <button class="btn-primary" onclick="openModal('modal-expense')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+        Record Expense
+      </button>
+    </div>
+    <div class="stat-grid-3">
+      <div class="stat-card red"><div class="stat-lbl">Total Expenses</div><div class="stat-row"><div class="stat-val" id="e-total">₱0.00</div><div class="stat-icon r"><svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div></div><div class="stat-sub">All recorded</div></div>
+      <div class="stat-card yellow"><div class="stat-lbl">No. of Records</div><div class="stat-row"><div class="stat-val" id="e-count">0</div><div class="stat-icon y"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="#fbbf24" stroke-width="1.8"/></svg></div></div><div class="stat-sub">Transactions</div></div>
+      <div class="stat-card red"><div class="stat-lbl">Largest Expense</div><div class="stat-row"><div class="stat-val" id="e-max">₱0.00</div><div class="stat-icon r"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#f87171" stroke-width="1.8"/><path d="M12 8v4l3 3" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div></div><div class="stat-sub">Single transaction</div></div>
+    </div>
+    <div class="content-card">
+      <div class="cc-hdr"><div class="cc-title">Expense Records</div><span class="badge br" id="exp-badge">0 records</span></div>
+      <div class="toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8" stroke-width="1.8"/><path d="M21 21l-4.35-4.35" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search expenses…" oninput="filterExpenses(this.value)"/>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Recorded By</th><th></th></tr></thead>
+        <tbody id="expenses-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="page" id="page-reports">
+    <div class="page-hdr"><div><div class="page-title">Create Report</div><div class="page-sub">Generate financial reports for submission or review</div></div></div>
+    <div class="content-card" style="margin-bottom:14px">
+      <div class="cc-hdr"><div class="cc-title">Report Generator</div></div>
+      <div style="padding:16px 20px;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:12px;align-items:flex-end">
+        <div><label class="form-label">Report Type</label><select class="form-select" id="r-type"><option>Summary Report</option><option>Income Statement</option><option>Expense Report</option><option>Audit Trail</option></select></div>
+        <div><label class="form-label">Period From</label><input type="date" class="form-input" id="r-from" value="2026-01-01"/></div>
+        <div><label class="form-label">Period To</label><input type="date" class="form-input" id="r-to" value="2026-12-31"/></div>
+        <button class="btn-primary" onclick="generateReport()" style="height:38px;white-space:nowrap">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Generate
+        </button>
+      </div>
+    </div>
+    <div class="content-card" style="margin-bottom:14px">
+      <div class="cc-hdr"><div class="cc-title">Report Templates</div></div>
+      <div class="report-grid">
+        <div class="report-card" onclick="quickReport('Summary Report')"><div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="#5fdd8e" stroke-width="1.8"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="#5fdd8e" stroke-width="1.8"/><path d="M9 12h6M9 16h4" stroke="#5fdd8e" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="report-card-title">Summary Report</div><div class="report-card-desc">Full overview of income, expenses, and remaining balance.</div></div>
+        <div class="report-card" onclick="quickReport('Income Statement')"><div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12l7-7 7 7" stroke="#5fdd8e" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="report-card-title">Income Statement</div><div class="report-card-desc">Breakdown of all org fees and other receivable funds.</div></div>
+        <div class="report-card" onclick="quickReport('Expense Report')"><div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="#f87171" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="report-card-title">Expense Report</div><div class="report-card-desc">All expenditures with descriptions and dates.</div></div>
+        <div class="report-card" onclick="quickReport('Audit Trail')"><div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="#fbbf24" stroke-width="1.8"/></svg></div><div class="report-card-title">Audit Trail</div><div class="report-card-desc">Full timestamped log for compliance and audits.</div></div>
+        <div class="report-card" onclick="quickReport('Summary Report')"><div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18M7 16l4-4 4 4 4-4" stroke="#93c5fd" stroke-width="1.8" stroke-linecap="round"/></svg></div><div class="report-card-title">Cash Flow Report</div><div class="report-card-desc">Monthly inflows and outflows over time.</div></div>
+        <div class="report-card" onclick="quickReport('Income Statement')"><div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#5fdd8e" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="#5fdd8e" stroke-width="1.8"/></svg></div><div class="report-card-title">Section Breakdown</div><div class="report-card-desc">Org fee collection status per year and section.</div></div>
+      </div>
+    </div>
+    <div class="content-card" id="report-preview" style="display:none">
+      <div class="cc-hdr">
+        <div class="cc-title" id="report-preview-title">Report Preview</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-outline" onclick="window.print()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Print
+          </button>
+          <button class="btn-primary" onclick="showToast('PDF export — wire to /Treasurer/GenerateReport endpoint.','ok')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            Export PDF
+          </button>
+        </div>
+      </div>
+      <div id="report-body" style="padding:22px 20px"></div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">Settings</div>
+        <div class="page-sub">System configuration</div>
+      </div>
+    </div>
+
+    <!-- Settings Tabs -->
+    <div class="settings-tabs">
+      <button class="settings-tab active" onclick="switchSettingsTab('sy',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        School Year & Semester
+      </button>
+      <button class="settings-tab" onclick="switchSettingsTab('courses',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Manage Courses
+      </button>
+      <button class="settings-tab" onclick="switchSettingsTab('fees',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M12 6v2m0 8v2M9 9.5A3 3 0 0112 8a3 3 0 010 6 3 3 0 00-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Set Fee Amount
+      </button>
+    </div>
+
+    <!-- SCHOOL YEAR & SEMESTER -->
+    <div class="settings-panel active" id="settings-sy">
+      <div class="content-card" style="margin-bottom:14px">
+        <div class="cc-hdr"><div class="cc-title">Add School Year</div></div>
+        <div style="padding:20px 24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+              <label class="settings-label">Year Start</label>
+              <input id="sy-yearStart" type="number" class="form-input" placeholder="e.g. 2025" />
+            </div>
+            <div>
+              <label class="settings-label">Year End</label>
+              <input id="sy-yearEnd" type="number" class="form-input" placeholder="e.g. 2026" />
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn-primary" onclick="addSchoolYear()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              Add School Year
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="cc-hdr"><div class="cc-title">School Years</div><span class="badge by" id="sy-count-badge">0 total</span></div>
+        <table>
+          <thead><tr><th>#</th><th>School Year</th><th>Semesters</th><th>Status</th><th></th></tr></thead>
+          <tbody id="sy-tbody">
+            <tr class="empty-row"><td colspan="5">No school years found.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MANAGE COURSES -->
+    <div class="settings-panel" id="settings-courses">
+      <div class="content-card" style="margin-bottom:14px">
+        <div class="cc-hdr"><div class="cc-title">Add Course</div></div>
+        <div style="padding:20px 24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+              <label class="settings-label">Course Code</label>
+              <input id="course-code" type="text" class="form-input" placeholder="e.g. BSIT" />
+            </div>
+            <div>
+              <label class="settings-label">Course Name</label>
+              <input id="course-name" type="text" class="form-input" placeholder="e.g. BS Information Technology" />
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn-primary" onclick="addCourse()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              Add Course
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="cc-hdr"><div class="cc-title">Courses</div><span class="badge by" id="courses-count-badge">0 total</span></div>
+        <table>
+          <thead><tr><th>#</th><th>Code</th><th>Course Name</th><th></th></tr></thead>
+          <tbody id="courses-tbody">
+            <tr class="empty-row"><td colspan="4">No courses found.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SET FEE AMOUNT -->
+    <div class="settings-panel" id="settings-fees">
+      <div class="content-card" style="margin-bottom:14px">
+        <div class="cc-hdr"><div class="cc-title">Set Organization Fee</div></div>
+        <div style="padding:20px 24px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+            <div>
+              <label class="settings-label">School Year</label>
+              <select id="fee-schoolYear" class="form-select">
+                <option value="">Select school year</option>
+              </select>
+            </div>
+            <div>
+              <label class="settings-label">Semester</label>
+              <select id="fee-semester" class="form-select">
+                <option value="First">1st Semester</option>
+                <option value="Second">2nd Semester</option>
+              </select>
+            </div>
+            <div>
+              <label class="settings-label">Amount (₱)</label>
+              <input id="fee-amount" type="number" step="0.01" class="form-input" placeholder="e.g. 200.00" />
+            </div>
+          </div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn-primary" onclick="setFeeAmount()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              Set Fee Amount
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="content-card">
+          <div style="padding:16px 20px">
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px">1st Semester Fee</div>
+            <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em" id="fee-1st-val">₱—</div>
+            <div style="font-size:11px;color:var(--text-m);margin-top:3px" id="fee-1st-sub">No fee set</div>
+          </div>
+        </div>
+        <div class="content-card">
+          <div style="padding:16px 20px">
+            <div style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:6px">2nd Semester Fee</div>
+            <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-.03em" id="fee-2nd-val">₱—</div>
+            <div style="font-size:11px;color:var(--text-m);margin-top:3px" id="fee-2nd-sub">No fee set</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="cc-hdr"><div class="cc-title">Fee History</div></div>
+        <table>
+          <thead><tr><th>School Year</th><th>Semester</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+          <tbody id="fee-history-tbody">
+            <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+@Html.AntiForgeryToken()
+
+<!-- ── MODALS ── -->
+
+<!-- Type picker -->
+<div class="modal-overlay" id="modal-pick">
+  <div class="modal-backdrop" onclick="closeModal('modal-pick')"></div>
+  <div class="modal-box" style="max-width:360px">
+    <div class="modal-hdr"><div><div class="modal-title">Add Transaction</div><div class="modal-sub">Choose a transaction type</div></div><button class="modal-close" onclick="closeModal('modal-pick')">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn-primary" style="justify-content:flex-start;padding:12px 14px" onclick="closeModal('modal-pick');openModal('modal-orgfee')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M22 10v6M2 10l10-5 10 5-10 5z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Student Organizational Fee</button>
+      <button class="btn-outline" style="justify-content:flex-start;padding:12px 14px" onclick="closeModal('modal-pick');openModal('modal-fund')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6" stroke="currentColor" stroke-width="1.8"/></svg>Other Receivable Fund</button>
+      <button class="btn-outline" style="justify-content:flex-start;padding:12px 14px;color:#f87171;border-color:rgba(239,68,68,.2)" onclick="closeModal('modal-pick');openModal('modal-expense')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7 7 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Expense</button>
+    </div>
+  </div>
+</div>
+
+<!-- Org Fee Modal -->
+<div class="modal-overlay" id="modal-orgfee">
+  <div class="modal-backdrop" onclick="closeModal('modal-orgfee')"></div>
+  <div class="modal-box">
+    <div class="modal-hdr"><div><div class="modal-title">Record Organizational Fee</div><div class="modal-sub" id="org-fee-modal-sub">Student SSG membership fee — Current: ₱200.00</div></div><button class="modal-close" onclick="closeModal('modal-orgfee')">✕</button></div>
+    <div class="form-group">
+      <label class="form-label">Search Student (name or school ID)</label>
+      <input class="form-input" id="of-search" placeholder="Type to search…" oninput="searchStudents(this.value)"/>
+      <div class="student-list" id="of-list"></div>
+    </div>
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px 12px;margin-bottom:13px;display:none" id="of-selected">
+      <div style="font-size:10px;color:var(--text-d);margin-bottom:2px">Selected student</div>
+      <div style="font-size:13px;font-weight:600;color:#fff" id="of-sel-name">—</div>
+      <div style="font-size:11px;color:var(--text-m)" id="of-sel-info">—</div>
+      <input type="hidden" id="of-uid"/>
+    </div>
+    <div class="form-grid">
+      <div class="form-group">
+    <label class="form-label">School Year & Semester</label>
+    <select class="form-select" id="of-sem" onchange="onSemesterChange()">
+        <option value="">Loading...</option>
+    </select>
+    <div style="font-size:10.5px;color:var(--text-d);margin-top:4px" id="of-sem-status"></div>
+</div>
+      <div class="form-group"><label class="form-label">Amount Paid (₱)</label><input class="form-input" id="of-amount" type="number" placeholder="200.00" oninput="checkPaymentStatus()"/></div>
+    </div>
+    <div class="form-group"><label class="form-label">Payment Status</label><div class="status-box" id="of-status">Enter amount to determine status</div></div>
+    <div class="form-group">
+    <label class="form-label">Receipt Number</label>
+    <div style="display:flex;gap:8px;align-items:center">
+        <input class="form-input" id="of-receipt" placeholder="Generating…" 
+               style="flex:1;font-family:'DM Mono',monospace"/>
+        <button type="button" onclick="autoFillReceiptNumber()" 
+                style="padding:8px 12px;background:var(--green-glow);border:1px solid rgba(39,167,68,.2);border-radius:8px;color:#5fdd8e;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">
+            ↻ Regenerate
+        </button>
+    </div>
+    <div style="font-size:10.5px;color:var(--text-d);margin-top:4px">
+        Auto-generated · Treasurer can still edit manually if needed
+    </div>
+</div>
+    <div class="modal-footer"><button class="btn-outline" onclick="closeModal('modal-orgfee')">Cancel</button><button class="btn-primary" onclick="saveOrgFee()">Save Payment</button></div>
+  </div>
+</div>
+
+<!-- Other Fund Modal -->
+<div class="modal-overlay" id="modal-fund">
+  <div class="modal-backdrop" onclick="closeModal('modal-fund')"></div>
+  <div class="modal-box">
+    <div class="modal-hdr"><div><div class="modal-title">Record Other Receivable Fund</div><div class="modal-sub">Donations, grants, fundraising — maps to other_funds</div></div><button class="modal-close" onclick="closeModal('modal-fund')">✕</button></div>
+    <div class="form-group"><label class="form-label">Source / Received From</label><input class="form-input" id="fn-source" placeholder="e.g. Alumni Association, CHED…"/></div>
+    <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="fn-desc" placeholder="e.g. Fundraising proceeds – T-shirt sale"/></div>
+    <div class="form-group"><label class="form-label">Category</label><select class="form-select" id="fn-cat"><option>Donation</option><option>Grant</option><option>Fundraising</option><option>Event Proceeds</option><option>Sponsorship</option><option>Other</option></select></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Amount (₱)</label><input class="form-input" id="fn-amount" type="number" placeholder="0.00"/></div>
+      <div class="form-group"><label class="form-label">Date Received</label><input class="form-input" type="date" id="fn-date"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn-outline" onclick="closeModal('modal-fund')">Cancel</button><button class="btn-primary" onclick="saveFund()">Save Fund</button></div>
+  </div>
+</div>
+
+<!-- Expense Modal -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal-backdrop" onclick="closeModal('modal-expense')"></div>
+  <div class="modal-box">
+    <div class="modal-hdr"><div><div class="modal-title">Record Expense</div><div class="modal-sub">Log an expenditure — maps to expenses table</div></div><button class="modal-close" onclick="closeModal('modal-expense')">✕</button></div>
+    <div class="form-group"><label class="form-label">Description</label><input class="form-input" id="ex-desc" placeholder="e.g. Printing of event tarpaulins"/></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Amount (₱)</label><input class="form-input" id="ex-amount" type="number" placeholder="0.00"/></div>
+      <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="ex-date"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn-outline" onclick="closeModal('modal-expense')">Cancel</button><button class="btn-primary" onclick="saveExpense()">Save Expense</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+function toggleDropdown(btn) {
+  const menu = btn.nextElementSibling;
+  const isOpen = menu.classList.contains('open');
+  // close all open dropdowns first
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  if (!isOpen) menu.classList.add('open');
+}
+
+// close dropdowns when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.dropdown-wrap')) {
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// ── CONFIG ──────────────────────────────────────────────────────
+let REQ_FEE = 200; // Will be updated from current semester fee
+
+// ── DATA STORE ───
+let DB = {
+  orgFees: [],
+  funds: [],
+  expenses: []
+};
+
+let STUDENTS = [];
+let CURRENT_SCHOOL_YEAR = null;
+let CURRENT_SEMESTER = null;
+let STUDENTS_LAST_FETCH = 0;
+
+// ── STATE ────────────────────────────────────────────────────────
+let histQ = '', histType = '', expQ = '';
+let selStudent = null;
+let barChart, donutChart;
+
+// ── UTILS ────────────────────────────────────────────────────────
+function p(n) { return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 }); }
+function fd(d) {
+  if (!d) return '—';
+  return new Date(d.split('T')[0] + 'T00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+
+async function loadDashboardData() {
+  try {
+    const res = await fetch('/Home/GetTreasurerDashboardStats');
+    const data = await res.json();
+    if (data.success) {
+      CURRENT_SCHOOL_YEAR = data.schoolYear;
+      CURRENT_SEMESTER = data.semester;
+
+      // Update school year display
+      const syDisplay = document.querySelector('.page-sub');
+      if (syDisplay && CURRENT_SCHOOL_YEAR !== 'Not Set') {
+        const semDisplay = CURRENT_SEMESTER !== 'Not Set' ? `${CURRENT_SEMESTER} Semester` : '';
+        syDisplay.textContent = `A.Y. ${CURRENT_SCHOOL_YEAR}${semDisplay ? ' · ' + semDisplay : ''}`;
+      }
+
+      // Update stats
+      document.getElementById('s-income').textContent = '₱' + Number(data.stats.totalIncome).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+      document.getElementById('s-expenses').textContent = '₱' + Number(data.stats.expensesTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+      document.getElementById('s-balance').textContent = '₱' + Number(data.stats.balance).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+
+      const orgFeeTotal = data.stats.orgFeeTotal;
+      const otherFundsTotal = data.stats.otherFundsTotal;
+      document.getElementById('s-income-sub').textContent = 'Org Fees (₱' + Number(orgFeeTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) + ') + Other Funds (₱' + Number(otherFundsTotal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) + ')';
+      document.getElementById('s-exp-sub').textContent = data.stats.expenseCount + ' expense record' + (data.stats.expenseCount !== 1 ? 's' : '');
+
+      const bal = data.stats.balance;
+      const balEl = document.getElementById('s-balance-sub');
+      balEl.textContent = bal >= 0 ? 'Surplus — ₱' + Number(bal).toLocaleString('en-PH', { minimumFractionDigits: 2 }) + ' available' : 'Deficit — ₱' + Number(Math.abs(bal)).toLocaleString('en-PH', { minimumFractionDigits: 2 }) + ' over budget';
+      balEl.style.color = bal >= 0 ? 'rgba(95,221,142,.8)' : 'rgba(248,113,113,.8)';
+
+      // Update recent transactions
+      const tbody = document.getElementById('dash-tbody');
+      if (data.recentTransactions.length > 0) {
+        tbody.innerHTML = data.recentTransactions.map(t => `
+          <tr>
+            <td class="td-mono td-m">${fd(t.date)}</td>
+            <td><strong>${t.description}</strong></td>
+            <td><span class="badge ${t.type==='income'?'bg':'br'}">${t.type === 'income' ? 'Income' : 'Expense'}</span></td>
+            <td class="${t.type==='income'?'amt-in':'amt-out'}">${t.type==='income'?'+':'-'}₱${Number(t.amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}</td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No transactions yet.</td></tr>';
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load dashboard data:', err);
+  }
+}
+
+async function loadOrgFeePayments() {
+  try {
+    const res = await fetch('/Home/GetOrgFeePayments');
+    const data = await res.json();
+    if (data.success) {
+      DB.orgFees = data.payments.map(p => ({
+        id: p.paymentId,
+        userId: p.userId,
+        name: p.studentName,
+        schoolId: p.schoolId,
+        course: p.courseCode,
+        yr: p.yearSection,
+        sem: p.semester,
+        amt: p.amount,
+        status: p.paymentStatus,
+        receipt: p.receiptNumber || '',
+        date: p.paymentDate.split('T')[0]
+      }));
+    }
+  } catch (err) {
+    console.error('Failed to load org fee payments:', err);
+  }
+}
+
+async function loadOtherFunds() {
+  try {
+    const res = await fetch('/Home/GetOtherFunds');
+    const data = await res.json();
+    if (data.success) {
+      DB.funds = data.funds.map(f => ({
+        id: f.fundId,
+        source: f.source,
+        desc: f.description,
+        cat: 'Other Fund',
+        amt: f.amount,
+        date: f.receivedDate.split('T')[0]
+      }));
+    }
+  } catch (err) {
+    console.error('Failed to load other funds:', err);
+  }
+}
+
+async function loadExpenses() {
+  try {
+    const res = await fetch('/Home/GetExpenses');
+    const data = await res.json();
+    if (data.success) {
+      DB.expenses = data.expenses.map(e => ({
+        id: e.expenseId,
+        desc: e.description,
+        amt: e.amount,
+        date: e.expenseDate.split('T')[0],
+        recordedBy: e.recordedBy
+      }));
+    }
+  } catch (err) {
+    console.error('Failed to load expenses:', err);
+  }
+}
+
+async function loadStudents() {
+  try {
+    const sem = document.getElementById('of-sem')?.value || '';
+    const res = await fetch(`/Home/GetStudentsForPayment?semester=${encodeURIComponent(sem)}`);
+    const data = await res.json();
+    if (data.success) {
+      STUDENTS = data.students.map(s => ({
+        userId: s.userId,
+        schoolId: s.schoolId,
+        name: s.name,
+        courseCode: s.courseCode,
+        yearSection: s.yearSection,
+        hasPaid: s.hasPaid
+      }));
+      STUDENTS_LAST_FETCH = Date.now();
+    } else {
+      console.error('Failed to load students:', data.message || 'Unknown error');
+    }
+  } catch (err) {
+    console.error('Failed to load students:', err);
+  }
+}
+
+async function ensureStudentsFresh(force = false) {
+  const now = Date.now();
+  const staleMs = 30000; // Refresh every 30s at most unless forced
+  if (force || STUDENTS.length === 0 || (now - STUDENTS_LAST_FETCH) > staleMs) {
+    await loadStudents();
+  }
+}
+
+// Load available semesters into the dropdown
+async function loadAvailableSemesters() {
+    try {
+        const res  = await fetch('/Home/GetAvailableSemesters');
+        const data = await res.json();
+        const sel  = document.getElementById('of-sem');
+
+        if (!data.success || !data.fees.length) {
+            sel.innerHTML = '<option value="">No semesters with fees set</option>';
+            return;
+        }
+
+        sel.innerHTML = data.fees.map(f => {
+            const semLabel    = f.semester === 'First' ? '1st' : '2nd';
+            const statusColor = f.semesterStatus === 'Current' ? '#5fdd8e' : '#fbbf24';
+            return `<option value="${f.semester}"
+                            data-full-amount-id="${f.fullAmountId}"
+                            data-year-start="${f.yearStart}"
+                            data-year-end="${f.yearEnd}"
+                            data-amount="${f.amount}"
+                            data-status="${f.semesterStatus}">
+                        ${f.yearStart}–${f.yearEnd} · ${semLabel} Semester · ₱${parseFloat(f.amount).toFixed(2)} · ${f.semesterStatus}
+                    </option>`;
+        }).join('');
+
+        // Trigger status label update
+        updateSemesterStatusLabel();
+    } catch (err) {
+        console.error('Failed to load semesters:', err);
+    }
+}
+
+// Show the status badge below the dropdown
+function updateSemesterStatusLabel() {
+    const sel      = document.getElementById('of-sem');
+    const opt      = sel.options[sel.selectedIndex];
+    const statusEl = document.getElementById('of-sem-status');
+    if (!opt || !opt.dataset.status) { statusEl.textContent = ''; return; }
+
+    const status   = opt.dataset.status;
+    const color    = status === 'Current' ? '#5fdd8e' : '#fbbf24';
+    const yearStart = opt.dataset.yearStart;
+    const yearEnd   = opt.dataset.yearEnd;
+    const semLabel  = opt.value === 'First' ? '1st' : '2nd';
+
+    statusEl.innerHTML = `
+        <span style="color:${color};font-weight:600">● ${status}</span>
+        &nbsp;·&nbsp; A.Y. ${yearStart}–${yearEnd} &nbsp;·&nbsp; ${semLabel} Semester
+    `;
+
+    // Update REQ_FEE to match selected semester
+    REQ_FEE = parseFloat(opt.dataset.amount) || REQ_FEE;
+    document.getElementById('of-amount').placeholder = REQ_FEE.toFixed(2);
+
+    // Re-check payment status if amount is already entered
+    if (document.getElementById('of-amount').value) checkPaymentStatus();
+}
+
+function onSemesterChange() {
+    updateSemesterStatusLabel();
+    // Refresh student list so hasPaid reflects the new semester,
+    // but don't wipe out the already-selected student.
+    STUDENTS = [];
+    document.getElementById('of-list').style.display = 'none';
+    // Only reset amount and status so treasurer re-enters for the new semester
+    document.getElementById('of-amount').value = '';
+    document.getElementById('of-status').textContent = 'Enter amount to determine status';
+}
+
+async function loadCurrentSemesterInfo() {
+  try {
+    const res = await fetch('/Home/GetCurrentSchoolYearAndSemester');
+    const data = await res.json();
+    if (data.success) {
+      CURRENT_SCHOOL_YEAR = data.schoolYear;
+      CURRENT_SEMESTER = data.semester;
+      if (data.semester) {
+        REQ_FEE = data.semester.amount;
+      }
+
+      // Update school year display
+      const syDisplay = document.querySelector('#page-dashboard .page-sub');
+      if (syDisplay && CURRENT_SCHOOL_YEAR) {
+        const semDisplay = CURRENT_SEMESTER ? `${CURRENT_SEMESTER.semester === 'First' ? '1st' : '2nd'} Semester` : '';
+        syDisplay.textContent = `A.Y. ${CURRENT_SCHOOL_YEAR.yearStart}–${CURRENT_SCHOOL_YEAR.yearEnd}${semDisplay ? ' · ' + semDisplay : ''}`;
+      }
+
+      // Update fee amount display on Income card
+      const feeDisplay = document.getElementById('current-fee-amount');
+      if (feeDisplay && data.semester) {
+        feeDisplay.textContent = '₱' + Number(data.semester.amount).toFixed(2);
+      }
+
+      // Update modal subtitle
+      const modalSub = document.getElementById('org-fee-modal-sub');
+      if (modalSub && data.semester) {
+        modalSub.textContent = `Student SSG membership fee — Current: ₱${Number(data.semester.amount).toFixed(2)}`;
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load semester info:', err);
+  }
+}
+
+function allTransactions() {
+  let rows = [];
+  DB.orgFees.forEach(x => rows.push({ 
+    type:'income', 
+    cat:'Org Fee', 
+    desc:'Org Fee – ' + x.name + ' (' + x.course + ' ' + x.yr + ')', 
+    amt:x.amt, 
+    date:x.date, 
+    receipt:x.receipt||'—', 
+    src:'OrgFee', 
+    sid:x.id,
+    studentName: x.name,
+    schoolId: x.schoolId,
+    course: x.course,
+    yearSection: x.yr
+  }));
+  DB.funds.forEach(x   => rows.push({ 
+    type:'income', 
+    cat:'Other Receivable', 
+    desc:x.desc + (x.source ? ' – from ' + x.source : ''), 
+    amt:x.amt, 
+    date:x.date, 
+    receipt:'—', 
+    src:'OtherFund', 
+    sid:x.id,
+    studentName: '',
+    schoolId: '',
+    course: '',
+    yearSection: ''
+  }));
+  DB.expenses.forEach(x=> rows.push({ 
+    type:'expense', 
+    cat:'Expense', 
+    desc:x.desc, 
+    amt:x.amt, 
+    date:x.date, 
+    receipt:'—', 
+    src:'Expense', 
+    sid:x.id,
+    studentName: '',
+    schoolId: '',
+    course: '',
+    yearSection: ''
+  }));
+  return rows.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function totalIncome()   { return DB.orgFees.reduce((s,x)=>s+x.amt,0) + DB.funds.reduce((s,x)=>s+x.amt,0); }
+function totalExpenses() { return DB.expenses.reduce((s,x)=>s+x.amt,0); }
+
+// ── PAGE NAVIGATION ──────────────────────────────────────────────
+async function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  if (name === 'dashboard') { await renderDashboard(); setTimeout(renderCharts, 100); }
+  if (name === 'history')   await renderHistory();
+  if (name === 'income')    await renderIncome();
+  if (name === 'expenses')  await renderExpenses();
+  if (name === 'settings')  await refreshSchoolYears();
+}
+
+// ── DASHBOARD ────────────────────────────────────────────────────
+async function renderDashboard() {
+  await loadDashboardData();
+
+  let inc = totalIncome(), exp = totalExpenses(), bal = inc - exp;
+  let orgT = DB.orgFees.reduce((s,x)=>s+x.amt,0);
+  let funT = DB.funds.reduce((s,x)=>s+x.amt,0);
+
+  document.getElementById('s-income-sub').textContent = 'Org Fees (' + p(orgT) + ') + Other Funds (' + p(funT) + ')';
+  document.getElementById('s-exp-sub').textContent    = DB.expenses.length + ' expense record' + (DB.expenses.length !== 1 ? 's' : '');
+
+  let balEl = document.getElementById('s-balance-sub');
+  balEl.textContent = bal >= 0 ? 'Surplus — ' + p(bal) + ' available' : 'Deficit — ' + p(Math.abs(bal)) + ' over budget';
+  balEl.style.color = bal >= 0 ? 'rgba(95,221,142,.8)' : 'rgba(248,113,113,.8)';
+}
+
+function renderCharts() {
+  let months = ['Jan','Feb','Mar','Apr','May','Jun'];
+  let mInc = [0,0,0,0,0,0], mExp = [0,0,0,0,0,0];
+  allTransactions().forEach(t => {
+    let m = new Date(t.date + 'T00:00').getMonth();
+    if (m < 6) { if (t.type==='income') mInc[m]+=t.amt; else mExp[m]+=t.amt; }
+  });
+
+  let mode = document.getElementById('chart-mode').value;
+  let datasets = [];
+  if (mode==='both'||mode==='income')  datasets.push({ label:'Income',   data:mInc, backgroundColor:'rgba(39,167,68,.75)',  borderRadius:4, borderSkipped:false });
+  if (mode==='both'||mode==='expense') datasets.push({ label:'Expenses', data:mExp, backgroundColor:'rgba(239,68,68,.65)', borderRadius:4, borderSkipped:false });
+
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: { labels: months, datasets },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins: {
+        legend: { display: datasets.length > 1, labels: { color:'rgba(232,245,236,.5)', font:{size:11}, boxWidth:10, padding:12 } },
+        tooltip: { callbacks: { label: ctx => ' ' + p(ctx.parsed.y) } }
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{color:'rgba(232,245,236,.4)',font:{size:10}} },
+        y: { grid:{color:'rgba(255,255,255,.05)'}, ticks:{color:'rgba(232,245,236,.4)',font:{size:10},callback:v=>'₱'+v.toLocaleString()} }
+      }
+    }
+  });
+
+  let orgT = DB.orgFees.reduce((s,x)=>s+x.amt,0);
+  let funT = DB.funds.reduce((s,x)=>s+x.amt,0);
+  let expT = totalExpenses();
+  let dLabels = ['Org Fees','Other Funds','Expenses'];
+  let dData   = [orgT, funT, expT];
+  let dColors = ['rgba(39,167,68,.8)','rgba(59,130,246,.8)','rgba(239,68,68,.7)'];
+  let valColors = ['#5fdd8e','#93c5fd','#f87171'];
+
+  if (donutChart) donutChart.destroy();
+  donutChart = new Chart(document.getElementById('donutChart'), {
+    type: 'doughnut',
+    data: { labels:dLabels, datasets:[{ data:dData, backgroundColor:dColors, borderWidth:0, hoverOffset:4 }] },
+    options: { responsive:true, cutout:'68%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>` ${p(ctx.parsed)}`}} } }
+  });
+
+  let total = orgT + funT + expT;
+  document.getElementById('donut-legend').innerHTML = dLabels.map((l,i) => `
+    <div class="dl-row">
+      <div class="dl-lbl"><div class="dl-dot" style="background:${dColors[i]}"></div>${l}</div>
+      <div class="dl-val" style="color:${valColors[i]}">${total>0?Math.round(dData[i]/total*100):0}% · ${p(dData[i])}</div>
+    </div>`).join('');
+}
+
+function updateCharts() { renderCharts(); }
+
+// ── HISTORY ──────────────────────────────────────────────────────
+async function renderHistory() {
+  await loadOrgFeePayments();
+  await loadOtherFunds();
+  await loadExpenses();
+
+  let tx = allTransactions().filter(t =>
+    (!histQ || 
+     t.desc.toLowerCase().includes(histQ.toLowerCase()) ||
+     t.studentName.toLowerCase().includes(histQ.toLowerCase()) ||
+     t.schoolId.toLowerCase().includes(histQ.toLowerCase()) ||
+     t.course.toLowerCase().includes(histQ.toLowerCase()) ||
+     t.yearSection.toLowerCase().includes(histQ.toLowerCase())
+    ) &&
+    (!histType || t.type === histType));
+  let inc = tx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+  let exp = tx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+  let bal = inc - exp;
+  document.getElementById('h-income').textContent  = '+' + p(inc);
+  document.getElementById('h-expense').textContent = '-' + p(exp);
+  let balEl = document.getElementById('h-balance');
+  balEl.textContent = (bal>=0?'+':'') + p(bal);
+  balEl.className = 'summary-val ' + (bal>=0?'amt-in':'amt-out');
+  document.getElementById('history-tbody').innerHTML = tx.map(t => `
+    <tr>
+      <td class="td-mono td-m">${fd(t.date)}</td>
+      <td><strong>${t.desc}</strong></td>
+      <td class="td-m">${t.studentName ? `<div style="font-size:11px"><strong>${t.studentName}</strong><br><span style="color:var(--text-d)">ID: ${t.schoolId}</span><br>${t.course} ${t.yearSection}</div>` : '—'}</td>
+      <td><span class="badge ${t.type==='income'?'bg':'br'}">${t.cat}</span></td>
+      <td><span class="badge ${t.type==='income'?'bg':'br'}">${t.type==='income'?'Income':'Expense'}</span></td>
+      <td class="td-mono td-m">${t.receipt}</td>
+      <td class="${t.type==='income'?'amt-in':'amt-out'}">${t.type==='income'?'+':'-'}${p(t.amt)}</td>
+      <td>
+        <div class="dropdown-wrap">
+          <button class="dot-btn" onclick="toggleDropdown(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+          <div class="dropdown-menu">
+            <div class="dropdown-item" onclick="viewReceipt('${t.src}',${t.sid},'${t.receipt}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+              View Receipt
+            </div>
+            <div class="dropdown-item" onclick="editTransaction('${t.src}',${t.sid})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Edit
+            </div>
+            <div class="dropdown-item danger" onclick="deleteTx('${t.src}',${t.sid})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Delete
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr class="empty-row"><td colspan="8">No transactions found.</td></tr>';
+}
+
+function filterHistory(q)     { histQ = q;    renderHistory(); }
+function filterHistoryType(v) { histType = v; renderHistory(); }
+
+// ── INCOME ───────────────────────────────────────────────────────
+async function renderIncome() {
+  await loadOrgFeePayments();
+  await loadOtherFunds();
+
+  let rows = [
+    ...DB.orgFees.map(x=>({ type:'OrgFee',    id:x.id, date:x.date, desc:'Org Fee – '+x.name+' ('+x.course+' '+x.yr+')', cat:'Org Fee',         amt:x.amt, receipt:x.receipt||'—' })),
+    ...DB.funds.map(x  =>({ type:'OtherFund', id:x.id, date:x.date, desc:x.desc+(x.source?' – '+x.source:''),            cat:'Other Receivable', amt:x.amt, receipt:'—' }))
+  ].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('income-count').textContent = rows.length + ' records';
+  document.getElementById('income-tbody').innerHTML = rows.map(r => `
+    <tr>
+      <td class="td-mono td-m">${fd(r.date)}</td>
+      <td><strong>${r.desc}</strong></td>
+      <td><span class="badge bg">${r.cat}</span></td>
+      <td class="td-mono td-m">${r.receipt}</td>
+      <td class="amt-in">+${p(r.amt)}</td>
+      <td>
+        <div class="dropdown-wrap">
+          <button class="dot-btn" onclick="toggleDropdown(this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+          <div class="dropdown-menu">
+            <div class="dropdown-item" onclick="viewReceipt('${r.type}',${r.id},'${r.receipt}')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/></svg>
+              View Receipt
+            </div>
+            <div class="dropdown-item" onclick="editIncome('${r.type}',${r.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Edit
+            </div>
+            <div class="dropdown-item danger" onclick="deleteTx('${r.type}',${r.id})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Delete
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`).join('') || '<tr class="empty-row"><td colspan="6">No income records yet.</td></tr>';
+}
+
+// ── EXPENSES ─────────────────────────────────────────────────────
+async function renderExpenses() {
+  await loadExpenses();
+
+  let exp = DB.expenses.filter(e=>!expQ||e.desc.toLowerCase().includes(expQ.toLowerCase())).sort((a,b)=>b.date.localeCompare(a.date));
+  let total = DB.expenses.reduce((s,e)=>s+e.amt,0);
+  let mx    = DB.expenses.length ? Math.max(...DB.expenses.map(e=>e.amt)) : 0;
+  document.getElementById('e-total').textContent = p(total);
+  document.getElementById('e-count').textContent = DB.expenses.length;
+  document.getElementById('e-max').textContent   = p(mx);
+  document.getElementById('exp-badge').textContent = DB.expenses.length + ' records';
+  document.getElementById('expenses-tbody').innerHTML = exp.map(e => `
+    <tr>
+      <td class="td-mono td-m">${fd(e.date)}</td>
+      <td><strong>${e.desc}</strong></td>
+      <td class="amt-out">-${p(e.amt)}</td>
+      <td class="td-m">Treasurer</td>
+      <td><button class="btn-danger" onclick="deleteTx('Expense',${e.id})">Delete</button></td>
+    </tr>`).join('') || '<tr class="empty-row"><td colspan="5">No expenses yet.</td></tr>';
+}
+
+function filterExpenses(q) { expQ = q; renderExpenses(); }
+
+// ── MODALS ───────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  document.querySelectorAll('.form-input[type=date]').forEach(i => { if (!i.value) i.value = today(); });
+  if (id === 'modal-orgfee') {
+    loadAvailableSemesters();
+    autoFillReceiptNumber();  // ← add this
+  }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+async function autoFillReceiptNumber() {
+    try {
+        const res  = await fetch('/Home/GetNextReceiptNumber');
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('of-receipt').value = data.receiptNumber;
+        }
+    } catch (err) {
+        console.error('Failed to get receipt number:', err);
+    }
+}
+
+// ── STUDENT SEARCH ────────────────────────────────────────────────
+async function searchStudents(q) {
+  let list = document.getElementById('of-list');
+  const query = (q || '').trim().toLowerCase();
+  if (!query) { list.style.display = 'none'; return; }
+
+  try {
+    const response = await fetch('/Home/GetStudentsForPayment?q=' + encodeURIComponent(query));
+    const data = await response.json();
+    if (!data.success) {
+      list.style.display = 'block';
+      const msg = data.message ? String(data.message) : 'Unable to load students.';
+      list.innerHTML = `<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">${msg}</div>`;
+      return;
+    }
+
+    const res = data.students.map(s => ({
+      userId: s.userId,
+      schoolId: s.schoolId,
+      name: s.name,
+      courseCode: s.courseCode,
+      yearSection: s.yearSection,
+      hasPaid: s.hasPaid
+    }));
+
+    list.style.display = 'block';
+    list.innerHTML = res.length ? res.map(s => `
+      <div class="student-item${s.hasPaid ? ' paid' : ''}" 
+           onclick="${s.hasPaid ? '' : `selectStudent(${s.userId},'${s.name.replace(/'/g, "\\'")}','${s.courseCode.replace(/'/g, "\\'")}','${s.yearSection.replace(/'/g, "\\'")}','${s.schoolId.replace(/'/g, "\\'")}')`}">
+        <div>
+          <div class="student-name">
+            ${s.name} 
+            ${s.hasPaid ? '<span class="badge by" style="font-size:9px">Paid</span>' : ''}
+          </div>
+          <div class="student-info">${s.schoolId} · ${s.courseCode} ${s.yearSection}</div>
+        </div>
+      </div>`).join('')
+      : '<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">No students found.</div>';
+  } catch (err) {
+    console.error('Failed to search students:', err);
+    list.style.display = 'block';
+    list.innerHTML = '<div style="padding:10px 12px;font-size:12px;color:var(--text-d)">Request failed while loading students.</div>';
+  }
+}
+
+function selectStudent(uid, name, course, yr, sid) {
+  selStudent = { userId: uid };
+  document.getElementById('of-uid').value = uid;
+  document.getElementById('of-sel-name').textContent = name;
+  document.getElementById('of-sel-info').textContent = sid + ' · ' + course + ' ' + yr;
+  document.getElementById('of-selected').style.display = 'block';
+  document.getElementById('of-list').style.display = 'none';
+  document.getElementById('of-search').value = name;
+  if (!document.getElementById('of-amount').value) document.getElementById('of-amount').value = REQ_FEE;
+  checkPaymentStatus();
+}
+
+function checkPaymentStatus() {
+  let amt = parseFloat(document.getElementById('of-amount').value) || 0;
+  let el  = document.getElementById('of-status');
+  if (!amt) { el.textContent = 'Enter amount to determine status'; el.style.color='#5fdd8e'; el.style.background='rgba(39,167,68,.08)'; el.style.borderColor='rgba(39,167,68,.15)'; return; }
+  if (amt >= REQ_FEE) { el.textContent = '✓ Full payment — Status: Paid';  el.style.color='#5fdd8e'; el.style.background='rgba(39,167,68,.08)'; el.style.borderColor='rgba(39,167,68,.15)'; }
+  else                { el.textContent = '⚠ Partial — ₱'+amt.toFixed(2)+' of ₱'+REQ_FEE; el.style.color='#fbbf24'; el.style.background='rgba(251,191,36,.08)'; el.style.borderColor='rgba(251,191,36,.15)'; }
+}
+
+// ── SAVE FUNCTIONS ───────────────────────────────────────────────
+async function saveOrgFee() {
+  if (!selStudent) { showToast('Please select a student first.', 'fail'); return; }
+
+  const sel     = document.getElementById('of-sem');
+  const sem     = sel.value;
+  if (!sem) { showToast('Please select a semester.', 'fail'); return; }
+
+  const amt     = parseFloat(document.getElementById('of-amount').value) || 0;
+  const receipt = document.getElementById('of-receipt').value.trim();
+  if (!amt) { showToast('Enter an amount.', 'fail'); return; }
+
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res = await fetch('/Home/AddOrgFeePayment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({
+        userId: selStudent.userId,
+        amount: amt,
+        semester: sem,
+        receiptNumber: receipt
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-orgfee');
+      selStudent = null;
+      ['of-search','of-amount','of-receipt'].forEach(f=>document.getElementById(f).value='');
+      document.getElementById('of-selected').style.display='none';
+      await renderDashboard();
+      await renderCharts();
+      await renderIncome();
+      showToast('Org fee payment recorded successfully.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to save payment.', 'fail');
+    }
+  } catch (err) {
+    console.error('Failed to save org fee:', err);
+    showToast('Failed to save payment. Please try again.', 'fail');
+  }
+}
+
+async function saveFund() {
+  let source = document.getElementById('fn-source').value.trim();
+  let desc   = document.getElementById('fn-desc').value.trim();
+  let cat    = document.getElementById('fn-cat').value;
+  let amt    = parseFloat(document.getElementById('fn-amount').value) || 0;
+  let date   = document.getElementById('fn-date').value || today();
+  if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
+
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res = await fetch('/Home/AddOtherFund', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({
+        source: source,
+        description: desc,
+        amount: amt,
+        receivedDate: new Date(date).toISOString()
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-fund');
+      ['fn-source','fn-desc','fn-amount'].forEach(f=>document.getElementById(f).value='');
+      await renderDashboard();
+      await renderCharts();
+      await renderIncome();
+      showToast('Fund recorded successfully.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to save fund.', 'fail');
+    }
+  } catch (err) {
+    console.error('Failed to save fund:', err);
+    showToast('Failed to save fund. Please try again.', 'fail');
+  }
+}
+
+async function saveExpense() {
+  let desc = document.getElementById('ex-desc').value.trim();
+  let amt  = parseFloat(document.getElementById('ex-amount').value) || 0;
+  let date = document.getElementById('ex-date').value || today();
+  if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
+
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res = await fetch('/Home/AddExpense', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({
+        description: desc,
+        amount: amt,
+        expenseDate: new Date(date).toISOString()
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-expense');
+      document.getElementById('ex-desc').value = '';
+      document.getElementById('ex-amount').value = '';
+      await renderDashboard();
+      await renderCharts();
+      await renderExpenses();
+      showToast('Expense recorded.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to save expense.', 'fail');
+    }
+  } catch (err) {
+    console.error('Failed to save expense:', err);
+    showToast('Failed to save expense. Please try again.', 'fail');
+  }
+}
+
+// ── DELETE ───────────────────────────────────────────────────────
+async function deleteTx(type, id) {
+  if (!confirm('Delete this transaction? This cannot be undone.')) return;
+
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    let endpoint = '';
+    if (type==='OrgFee') endpoint = '/Home/DeleteOrgFeePayment';
+    else if (type==='OtherFund') endpoint = '/Home/DeleteOtherFund';
+    else endpoint = '/Home/DeleteExpense';
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({ id: id })
+    });
+    const data = await res.json();
+    if (data.success) {
+      if (type==='OrgFee')    DB.orgFees  = DB.orgFees.filter(x=>x.id!==id);
+      else if (type==='OtherFund') DB.funds = DB.funds.filter(x=>x.id!==id);
+      else                    DB.expenses = DB.expenses.filter(x=>x.id!==id);
+      await renderDashboard();
+      await renderCharts();
+      await renderHistory();
+      await renderIncome();
+      await renderExpenses();
+      showToast('Transaction deleted.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to delete transaction.', 'fail');
+    }
+  } catch (err) {
+    console.error('Failed to delete transaction:', err);
+    showToast('Failed to delete transaction. Please try again.', 'fail');
+  }
+}
+
+// ── REPORTS ──────────────────────────────────────────────────────
+function quickReport(type) { document.getElementById('r-type').value = type; generateReport(); }
+
+function generateReport() {
+  let type = document.getElementById('r-type').value;
+  let from = document.getElementById('r-from').value;
+  let to   = document.getElementById('r-to').value;
+  let all  = allTransactions().filter(t => (!from||t.date>=from) && (!to||t.date<=to));
+  let rows = type==='Income Statement' ? all.filter(t=>t.type==='income') :
+             type==='Expense Report'   ? all.filter(t=>t.type==='expense') : all;
+  let inc  = all.filter(t=>t.type==='income').reduce((s,t)=>s+t.amt,0);
+  let exp  = all.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amt,0);
+  let bal  = inc - exp;
+
+  document.getElementById('report-preview').style.display = 'block';
+  document.getElementById('report-preview-title').textContent = type;
+  document.getElementById('report-body').innerHTML = `
+    <div class="rp-sum">
+      <div class="rp-sum-card" style="background:rgba(39,167,68,.08);border:1px solid rgba(39,167,68,.15)"><div class="rp-lbl">Total Income</div><div class="rp-val" style="color:#5fdd8e">+${p(inc)}</div></div>
+      <div class="rp-sum-card" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.15)"><div class="rp-lbl">Total Expenses</div><div class="rp-val" style="color:#f87171">-${p(exp)}</div></div>
+      <div class="rp-sum-card" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.15)"><div class="rp-lbl">Remaining Balance</div><div class="rp-val" style="color:${bal>=0?'#5fdd8e':'#f87171'}">${bal>=0?'+':''}${p(bal)}</div></div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:1px solid rgba(255,255,255,.07)">
+        <th style="padding:8px 14px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Date</th>
+        <th style="padding:8px 14px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Description</th>
+        <th style="padding:8px 14px;text-align:left;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Category</th>
+        <th style="padding:8px 14px;text-align:right;color:var(--text-d);font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase">Amount</th>
+      </tr></thead>
+      <tbody>${rows.length ? rows.map(t=>`<tr style="border-bottom:1px solid rgba(255,255,255,.04)">
+        <td style="padding:9px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-m)">${fd(t.date)}</td>
+        <td style="padding:9px 14px;color:var(--text)">${t.desc}</td>
+        <td style="padding:9px 14px"><span class="badge ${t.type==='income'?'bg':'br'}">${t.cat}</span></td>
+        <td style="padding:9px 14px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:${t.type==='income'?'#5fdd8e':'#f87171'}">${t.type==='income'?'+':'-'}${p(t.amt)}</td>
+      </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-d)">No transactions in this period.</td></tr>'}</tbody>
+    </table>`;
+  showToast(type + ' generated.', 'ok');
+}
+
+// ── TOAST ────────────────────────────────────────────────────────
+function showToast(msg, type) {
+  let t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = '', 3000);
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────────
+// Anti-forgery token for server requests
+function getToken() {
+  return document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+}
+
+async function switchSettingsTab(name, btn) {
+  document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('settings-' + name).classList.add('active');
+  btn.classList.add('active');
+
+  if (name === 'sy')      await refreshSchoolYears();
+  if (name === 'courses') await refreshCourses();
+  if (name === 'fees')    await refreshFees();
+}
+
+async function addSchoolYear() {
+  const yearStart = parseInt(document.getElementById('sy-yearStart').value);
+  const yearEnd   = parseInt(document.getElementById('sy-yearEnd').value);
+
+  if (!yearStart || !yearEnd)          { showToast('Both year start and end are required.', 'fail'); return; }
+  if (yearEnd !== yearStart + 1)       { showToast('Year end must be exactly year start + 1.', 'fail'); return; }
+
+  try {
+    const res  = await fetch('/Home/AddSchoolYear', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body:    JSON.stringify({ yearStart, yearEnd })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('sy-yearStart').value = '';
+      document.getElementById('sy-yearEnd').value   = '';
+      showToast(data.message, 'ok');
+      await refreshSchoolYears();
+    } else {
+      showToast(data.message, 'fail');
+    }
+  } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function refreshSchoolYears() {
+  try {
+    const res  = await fetch('/Home/GetSchoolYears');
+    const data = await res.json();
+    if (!data.success) return;
+
+    const tbody = document.getElementById('sy-tbody');
+    const badge = document.getElementById('sy-count-badge');
+    if (badge) badge.textContent = data.schoolYears.length + ' total';
+
+    if (data.schoolYears.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No school years found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.schoolYears.map((sy, i) => `
+      <tr>
+        <td class="td-mono td-m">${i + 1}</td>
+        <td><strong>${sy.yearStart} – ${sy.yearEnd}</strong></td>
+        <td>
+          ${sy.hasFirst  ? '<span class="badge bg" style="margin-right:4px">1st</span>' : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d);margin-right:4px">1st</span>'}
+          ${sy.hasSecond ? '<span class="badge bg">2nd</span>'                           : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">2nd</span>'}
+        </td>
+        <td>
+          ${sy.yearStatus === 'Current'
+            ? '<span class="badge bg">Current</span>'
+            : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
+        </td>
+        <td style="text-align:right">
+          <button class="btn-danger" onclick="deleteSchoolYear(${sy.schoolYearId})" style="font-size:11px;padding:5px 12px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Delete
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    // also refresh the school year dropdown in fee section
+    const sel = document.getElementById('fee-schoolYear');
+    if (sel) {
+      sel.innerHTML = '<option value="">Select school year</option>' +
+        data.schoolYears.map(sy => `<option value="${sy.schoolYearId}">${sy.yearStart} – ${sy.yearEnd}</option>`).join('');
+    }
+  } catch {}
+}
+
+async function deleteSchoolYear(schoolYearId) {
+  if (!confirm('Delete this school year? This cannot be undone.')) return;
+  try {
+    const res  = await fetch('/Home/DeleteSchoolYear', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body:    JSON.stringify({ schoolYearId })
+    });
+    const data = await res.json();
+    if (data.success) { showToast(data.message, 'ok'); await refreshSchoolYears(); }
+    else showToast(data.message, 'fail');
+  } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function addCourse() {
+  const courseCode = document.getElementById('course-code').value.trim().toUpperCase();
+  const courseName = document.getElementById('course-name').value.trim();
+
+  if (!courseCode) { showToast('Course code is required.', 'fail'); return; }
+
+  try {
+    const res  = await fetch('/Home/AddCourse', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body:    JSON.stringify({ courseCode, courseName })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('course-code').value = '';
+      document.getElementById('course-name').value = '';
+      showToast(data.message, 'ok');
+      await refreshCourses();
+    } else {
+      showToast(data.message, 'fail');
+    }
+  } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function refreshCourses() {
+  try {
+    const res  = await fetch('/Home/GetCourses');
+    const data = await res.json();
+    if (!data.success) return;
+
+    const tbody = document.getElementById('courses-tbody');
+    const badge = document.getElementById('courses-count-badge');
+    if (badge) badge.textContent = data.courses.length + ' total';
+
+    if (data.courses.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No courses found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.courses.map((c, i) => `
+      <tr>
+        <td class="td-mono td-m">${i + 1}</td>
+        <td><span class="badge bg">${c.courseCode}</span></td>
+        <td class="td-m">${c.courseName ?? '—'}</td>
+        <td style="text-align:right">
+          <button class="btn-danger" onclick="deleteCourse(${c.courseId})" style="font-size:11px;padding:5px 12px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Delete
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  } catch {}
+}
+
+async function deleteCourse(courseId) {
+  if (!confirm('Delete this course? Students assigned to it will lose their course.')) return;
+  try {
+    const res  = await fetch('/Home/DeleteCourse', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body:    JSON.stringify({ courseId })
+    });
+    const data = await res.json();
+    if (data.success) { showToast(data.message, 'ok'); await refreshCourses(); }
+    else showToast(data.message, 'fail');
+  } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function setFeeAmount() {
+  const schoolYearId = parseInt(document.getElementById('fee-schoolYear').value);
+  const semester     = document.getElementById('fee-semester').value;
+  const amount       = parseFloat(document.getElementById('fee-amount').value);
+
+  if (!schoolYearId)      { showToast('Please select a school year.', 'fail'); return; }
+  if (!semester)          { showToast('Please select a semester.', 'fail'); return; }
+  if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
+
+  try {
+    const res  = await fetch('/Home/SetFeeAmount', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body:    JSON.stringify({ schoolYearId, semester, amount })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('fee-amount').value = '';
+      showToast(data.message, 'ok');
+      await refreshFees();
+    } else {
+      showToast(data.message, 'fail');
+    }
+  } catch { showToast('Request failed.', 'fail'); }
+}
+
+async function refreshFees() {
+  try {
+    const res  = await fetch('/Home/GetFees');
+    const data = await res.json();
+    if (!data.success) return;
+
+    const tbody = document.getElementById('fee-history-tbody');
+
+    // update summary cards
+    const first  = data.fees.find(f => f.semester === 'First'  && f.isLatest);
+    const second = data.fees.find(f => f.semester === 'Second' && f.isLatest);
+
+    document.getElementById('fee-1st-val').textContent = first  ? '₱' + parseFloat(first.amount).toFixed(2)  : '₱—';
+    document.getElementById('fee-1st-sub').textContent = first  ? first.schoolYear  : 'No fee set';
+    document.getElementById('fee-2nd-val').textContent = second ? '₱' + parseFloat(second.amount).toFixed(2) : '₱—';
+    document.getElementById('fee-2nd-sub').textContent = second ? second.schoolYear : 'No fee set';
+
+    if (data.fees.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No fee records found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.fees.map(f => `
+      <tr>
+        <td><strong>${f.schoolYear}</strong></td>
+        <td><span class="badge ${f.semester === 'First' ? 'bg' : 'by'}">${f.semester === 'First' ? '1st' : '2nd'}</span></td>
+        <td class="td-mono">₱${parseFloat(f.amount).toFixed(2)}</td>
+        <td>
+          ${f.semesterStatus === 'Current'
+            ? '<span class="badge bg">Current</span>'
+            : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Ended</span>'}
+        </td>
+        <td style="text-align:right">
+          <div class="dropdown-wrap">
+            <button class="dot-btn" onclick="toggleDropdown(this)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+            </button>
+            <div class="dropdown-menu">
+              <div class="dropdown-item" onclick="editFee(${f.fullAmountId}, ${f.amount})">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Edit Amount
+              </div>
+              <div class="dropdown-item" onclick="changeFeeStatus(${f.fullAmountId}, '${f.semesterStatus}')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                ${f.semesterStatus === 'Current' ? 'Mark as Ended' : 'Set as Current'}
+              </div>
+              <div class="dropdown-item danger" onclick="deleteFee(${f.fullAmountId})">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Delete
+              </div>
+            </div>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    // refresh school year dropdown
+    await refreshSchoolYears();
+  } catch {}
+}
+
+async function deleteFee(fullAmountId) {
+  if (!confirm('Delete this fee record?')) return;
+  try {
+    const res  = await fetch('/Home/DeleteFee', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body:    JSON.stringify({ fullAmountId })
+    });
+    const data = await res.json();
+    if (data.success) { showToast(data.message, 'ok'); await refreshFees(); }
+    else showToast(data.message, 'fail');
+  } catch { showToast('Request failed.', 'fail'); }
+}
+
+function editFee(fullAmountId, currentAmount) {
+    const newAmount = prompt('Enter new fee amount:', currentAmount);
+    if (newAmount === null) return; // cancelled
+    const amount = parseFloat(newAmount);
+    if (!amount || amount <= 0) { showToast('Please enter a valid amount.', 'fail'); return; }
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    fetch('/Home/EditFee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+        body: JSON.stringify({ fullAmountId, amount })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+        else showToast(data.message, 'fail');
+    })
+    .catch(() => showToast('Request failed.', 'fail'));
+}
+
+async function changeFeeStatus(fullAmountId, currentStatus) {
+    const newStatus = currentStatus === 'Current' ? 'Ended' : 'Current';
+    if (!confirm(`Set this fee as ${newStatus}?`)) return;
+
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    try {
+        const res  = await fetch('/Home/SetFeeStatus', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+            body:    JSON.stringify({ fullAmountId, status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) { showToast(data.message, 'ok'); refreshFees(); }
+        else showToast(data.message, 'fail');
+    } catch { showToast('Request failed.', 'fail'); }
+}
+
+function viewReceipt(type, id, receipt) {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  if (!receipt || receipt === '—') {
+    showToast('No receipt number recorded for this entry.', 'fail');
+    return;
+  }
+  // Simple modal-style alert — you can replace with a real modal later
+  showToast('Receipt / OR #: ' + receipt, 'ok');
+}
+
+function editIncome(type, id) {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  if (type === 'OrgFee') {
+    showToast('To edit an org fee payment, delete and re-record it.', 'fail');
+  } else {
+    // OtherFund — find record and open the fund modal pre-filled
+    const fund = DB.funds.find(f => f.id === id);
+    if (!fund) { showToast('Record not found.', 'fail'); return; }
+    document.getElementById('fn-source').value = fund.source || '';
+    document.getElementById('fn-desc').value   = fund.desc  || '';
+    document.getElementById('fn-amount').value = fund.amt   || '';
+    document.getElementById('fn-date').value   = fund.date  || today();
+    openModal('modal-fund');
+    // Mark as edit mode
+    document.querySelector('#modal-fund .btn-primary').setAttribute('data-edit-id', id);
+    document.querySelector('#modal-fund .btn-primary').onclick = () => updateFund(id);
+  }
+}
+
+async function updateFund(id) {
+  const source = document.getElementById('fn-source').value.trim();
+  const desc   = document.getElementById('fn-desc').value.trim();
+  const amt    = parseFloat(document.getElementById('fn-amount').value) || 0;
+  const date   = document.getElementById('fn-date').value || today();
+  if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
+
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res = await fetch('/Home/UpdateOtherFund', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({ id, source, description: desc, amount: amt, receivedDate: new Date(date).toISOString() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-fund');
+      // Reset modal button back to save mode
+      document.querySelector('#modal-fund .btn-primary').onclick = saveFund;
+      await renderIncome();
+      await renderDashboard();
+      showToast('Fund updated successfully.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to update.', 'fail');
+    }
+  } catch {
+    showToast('Request failed.', 'fail');
+  }
+}
+
+function editTransaction(src, id) {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+
+  if (src === 'OrgFee') {
+    showToast('To edit an org fee payment, delete and re-record it.', 'fail');
+
+  } else if (src === 'OtherFund') {
+    const fund = DB.funds.find(f => f.id === id);
+    if (!fund) { showToast('Record not found.', 'fail'); return; }
+    document.getElementById('fn-source').value = fund.source || '';
+    document.getElementById('fn-desc').value   = fund.desc   || '';
+    document.getElementById('fn-amount').value = fund.amt    || '';
+    document.getElementById('fn-date').value   = fund.date   || today();
+    openModal('modal-fund');
+    document.querySelector('#modal-fund .btn-primary').onclick = () => updateFund(id);
+
+  } else if (src === 'Expense') {
+    const exp = DB.expenses.find(e => e.id === id);
+    if (!exp) { showToast('Record not found.', 'fail'); return; }
+    document.getElementById('ex-desc').value   = exp.desc || '';
+    document.getElementById('ex-amount').value = exp.amt  || '';
+    document.getElementById('ex-date').value   = exp.date || today();
+    openModal('modal-expense');
+    document.querySelector('#modal-expense .btn-primary').onclick = () => updateExpense(id);
+  }
+}
+
+async function updateExpense(id) {
+  const desc = document.getElementById('ex-desc').value.trim();
+  const amt  = parseFloat(document.getElementById('ex-amount').value) || 0;
+  const date = document.getElementById('ex-date').value || today();
+  if (!desc || !amt) { showToast('Description and amount are required.', 'fail'); return; }
+
+  try {
+    const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? '';
+    const res = await fetch('/Home/UpdateExpense', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token },
+      body: JSON.stringify({ id, description: desc, amount: amt, expenseDate: new Date(date).toISOString() })
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal('modal-expense');
+      // Reset modal button back to save mode
+      document.querySelector('#modal-expense .btn-primary').onclick = saveExpense;
+      await renderHistory();
+      await renderExpenses();
+      await renderDashboard();
+      showToast('Expense updated successfully.', 'ok');
+    } else {
+      showToast(data.message || 'Failed to update.', 'fail');
+    }
+  } catch {
+    showToast('Request failed.', 'fail');
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+async function init() {
+  await loadCurrentSemesterInfo();
+  await renderDashboard();
+  await loadStudents();
+  setTimeout(renderCharts, 200);
+}
+
+init();
+
+// ── SESSION (replace with actual session values from Razor) ──────
+// document.getElementById('user-initials').textContent = '@initials';
+// document.getElementById('user-name').textContent = '@firstName @lastName';
+</script>
+</body>
+</html>

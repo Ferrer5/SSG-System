@@ -1,0 +1,1364 @@
+@{
+    ViewData["Title"] = "SSG Portal";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SSG Portal</title>
+<link rel="icon" type="image/png" href="/images/favicon.png" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+<style>
+/* ─────────────────────────────────────────────
+   ROOT & RESET
+───────────────────────────────────────────── */
+:root {
+  --green:      #27a744;
+  --green-dark: #218c3a;
+  --green-deep: #1a6e2e;
+  --white:      #ffffff;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  height: 100%;
+  overflow: hidden;
+  background: #0a280e;
+}
+
+/* ─────────────────────────────────────────────
+   SHARED HERO BACKGROUND  (always visible)
+───────────────────────────────────────────── */
+#heroBg {
+  position: fixed;
+  inset: 0;
+  background: url('/images/CtuGinatilan.jpg') no-repeat center / cover;
+  filter: blur(3px);
+  transform: scale(1.08);
+  z-index: 0;
+  transition: filter 0.9s ease, transform 0.9s ease;
+}
+
+#heroOverlay {
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(to bottom,
+      rgba(20,60,30,0.82) 0%,
+      rgba(10,40,20,0.52) 40%,
+      rgba(10,40,20,0.52) 65%,
+      rgba(20,60,30,0.80) 100%);
+  z-index: 1;
+  transition: opacity 0.9s ease;
+}
+
+/* When login is open, darken overlay slightly */
+body.login-open #heroOverlay {
+  opacity: 0.75;
+}
+
+/* ─────────────────────────────────────────────
+   TOP ACCENT LINE
+───────────────────────────────────────────── */
+.top-accent {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  z-index: 1000;
+}
+
+/* ─────────────────────────────────────────────
+   ══ LANDING PAGE ══
+───────────────────────────────────────────── */
+#landingPage {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  color: var(--white);
+  transition: opacity 0.7s cubic-bezier(0.4,0,0.2,1),
+              transform 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+
+#landingPage.hidden {
+  opacity: 0;
+  transform: scale(0.97);
+  pointer-events: none;
+}
+
+@@keyframes pageIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* NAVBAR */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 72px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+  position: relative;
+  /* Above .main-section (also z-index 2) so fixed mobile .nav-links receives clicks */
+  z-index: 5;
+}
+
+@@keyframes fadeDown {
+  from { opacity:0; transform:translateY(-16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.logo { display:flex; align-items:center; gap:12px; }
+
+.logo img {
+  width:48px; height:48px;
+  border-radius:50%;
+  border:2px solid var(--green);
+  object-fit:cover;
+  box-shadow:0 0 14px rgba(39,167,68,0.45);
+}
+
+.logo-text { display:flex; flex-direction:column; line-height:1.15; }
+.logo-text .brand { font-size:17px; font-weight:700; color:var(--white); }
+.logo-text .sub   {
+  font-size:10px; letter-spacing:0.14em;
+  color:rgba(39,167,68,0.9); text-transform:uppercase; font-weight:500;
+}
+
+.nav-links { display:flex; align-items:center; gap:4px; }
+
+.nav-links a {
+  text-decoration: none;
+  color: rgba(255,255,255,0.82);
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 8px;
+  position: relative;
+  cursor: pointer;
+  transition: color 0.25s ease, background 0.25s ease;
+}
+
+.nav-links a::after {
+  content:''; position:absolute;
+  bottom:4px; left:50%;
+  transform:translateX(-50%) scaleX(0);
+  width:60%; height:1.5px;
+  background:var(--green); border-radius:2px;
+  transition:transform 0.25s ease;
+}
+
+.nav-links a:hover { color:var(--white); background:rgba(255,255,255,0.08); }
+.nav-links a:hover:not(.active)::after { transform:translateX(-50%) scaleX(1); }
+
+/* active state rules */
+.nav-links a.active {
+  color: var(--green);
+  font-weight: 600;
+}
+.nav-links a.active::after { transform:translateX(-50%) scaleX(1); }
+.nav-links a.active:hover { color: var(--green); }
+
+.nav-links a.nav-login {
+  background:var(--green); color:#fff;
+  border-radius:8px; padding:8px 22px;
+  margin-left:8px; font-weight:600; font-size:13.5px;
+  transition:background 0.2s ease, transform 0.2s ease;
+}
+.nav-links a.nav-login:hover {
+  background:var(--green-dark); transform:translateY(-1px);
+}
+.nav-links a.nav-login::after { display:none; }
+
+/* Burger Menu - Hidden on desktop */
+.burger-menu {
+  display:none;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:5px;
+  width:44px;
+  height:44px;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  padding:8px;
+  border-radius:8px;
+  transition:background 0.2s ease;
+}
+.burger-menu:hover { background:rgba(255,255,255,0.1); }
+.burger-menu span {
+  display:block;
+  width:24px;
+  height:2.5px;
+  background:rgba(255,255,255,0.9);
+  border-radius:2px;
+  transition:all 0.3s ease;
+}
+.burger-menu.active span:nth-child(1) {
+  transform:rotate(45deg) translate(5px, 5px);
+}
+.burger-menu.active span:nth-child(2) {
+  opacity:0;
+}
+.burger-menu.active span:nth-child(3) {
+  transform:rotate(-45deg) translate(5px, -5px);
+}
+
+.clock {
+  font-size:13px; font-weight:600; letter-spacing:0.06em;
+  color:rgba(255,255,255,0.75);
+  background:rgba(39,167,68,0.15);
+  border:1px solid rgba(39,167,68,0.35);
+  padding:7px 14px; border-radius:8px;
+  backdrop-filter:blur(8px);
+  min-width:130px; text-align:center;
+}
+
+/* MAIN SECTION */
+.main-section {
+  flex:1;
+  display:flex; flex-direction:column; justify-content:center;
+  padding:0 72px 60px;
+  max-width:680px;
+  position:relative; z-index:2;
+}
+
+.eyebrow {
+  font-size:11px; letter-spacing:0.22em;
+  text-transform:uppercase; color:var(--green);
+  font-weight:600; margin-bottom:18px;
+  display:flex; align-items:center; gap:10px;
+  animation: fadeUp 0.7s 0.2s ease both;
+}
+.eyebrow::before {
+  content:''; display:inline-block;
+  width:28px; height:1.5px;
+  background:var(--green); border-radius:2px;
+}
+
+.main-title {
+  font-size:clamp(38px,5vw,58px);
+  font-weight:800; line-height:1.12;
+  margin-bottom:14px; letter-spacing:-1px;
+  animation: fadeUp 0.7s 0.35s ease both;
+}
+.main-title span { color:var(--green); }
+
+.main-desc {
+  font-size:14px; color:rgba(255,255,255,0.65);
+  line-height:1.7; margin-bottom:40px;
+  max-width:460px; font-weight:300;
+  animation: fadeUp 0.7s 0.5s ease both;
+}
+
+@@keyframes fadeUp {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* BOTTOM BAR */
+.bottom-bar {
+  position:fixed; bottom:0; left:0; right:0; z-index:15;
+  display:flex; justify-content:space-between; align-items:center;
+  padding:18px 72px;
+  border-top:1px solid rgba(255,255,255,0.08);
+  background:rgba(0,0,0,0.28);
+  backdrop-filter:blur(6px);
+  transition:opacity 0.5s ease;
+  animation: fadeUp 0.7s 0.9s ease both;
+}
+
+body.login-open .bottom-bar { opacity:0; pointer-events:none; }
+
+.bottom-bar p { font-size:12px; color:rgba(255,255,255,0.38); letter-spacing:0.04em; }
+
+.bottom-badge {
+  display:flex; align-items:center; gap:6px;
+  font-size:12px; color:var(--green); font-weight:500; letter-spacing:0.08em;
+}
+.bottom-badge span {
+  width:6px; height:6px; border-radius:50%;
+  background:#4ade80; box-shadow:0 0 6px #4ade80;
+}
+
+/* ─────────────────────────────────────────────
+   ══ LOGIN OVERLAY ══
+   Slides in from right over the hero bg
+───────────────────────────────────────────── */
+#loginOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  pointer-events: none;
+}
+
+/* LEFT PANEL — semi-transparent green, slides from left */
+.lp-left {
+  width: 42%;
+  flex-shrink: 0;
+  background: rgba(20, 90, 40, 0.38);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border-right: 1px solid rgba(255,255,255,0.10);
+  display: flex;
+  flex-direction: column;
+  padding: 36px 44px 32px;
+  position: relative;
+  overflow: hidden;
+  transform: translateX(-100%);
+  transition: transform 0.85s cubic-bezier(0.77,0,0.18,1);
+}
+
+/* subtle noise texture */
+.lp-left::before {
+  content:'';
+  position:absolute; inset:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none; z-index:0;
+}
+
+/* RIGHT PANEL */
+.lp-right {
+  flex: 1;
+  background: #ffffff;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.85s cubic-bezier(0.77,0,0.18,1);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Active state — both panels slide in */
+body.login-open #loginOverlay { pointer-events: all; }
+body.login-open .lp-left  { transform: translateX(0); }
+body.login-open .lp-right { transform: translateX(0); }
+
+/* ── LEFT PANEL INTERNALS ── */
+.lp-top {
+  display:flex; align-items:center; gap:14px;
+  position:relative; z-index:1;
+}
+
+.lp-logo-circle {
+  width:52px; height:52px; border-radius:50%;
+  background:#f5c518; overflow:hidden; flex-shrink:0;
+  box-shadow:0 0 16px rgba(245,197,24,0.3);
+}
+.lp-logo-circle img { width:100%; height:100%; object-fit:cover; }
+
+.lp-school-info { display:flex; flex-direction:column; }
+.lp-school-name { color:#fff; font-size:16px; font-weight:700; line-height:1.2; }
+.lp-school-sub  { color:rgba(255,255,255,0.80); font-size:12px; font-weight:400; margin-top:2px; }
+
+/* Left panel track for multiple screens */
+.lp-left-track {
+  flex:1; display:flex; flex-direction:column;
+  position:relative; z-index:1;
+}
+
+.lp-screen {
+  flex-shrink:0; width:100%; height:100%;
+  display:flex; flex-direction:column; justify-content:center;
+  opacity:0;
+  transform:translateY(18px);
+  transition:opacity 0.55s ease, transform 0.55s ease;
+  position:absolute; top:0; left:0;
+  pointer-events:none;
+}
+.lp-screen.active {
+  opacity:1; transform:translateY(0); pointer-events:all;
+}
+
+.lp-headline {
+  color:#fff; font-size:48px; font-weight:800;
+  line-height:1.12; margin-bottom:20px; letter-spacing:-1px;
+}
+.lp-desc {
+  color:rgba(255,255,255,0.75); font-size:13px;
+  line-height:1.65; max-width:300px;
+}
+
+.lp-copyright {
+  position:relative; z-index:1;
+  color:rgba(255,255,255,0.35); font-size:12px;
+  margin-top:auto; padding-top:24px;
+}
+
+/* ── RIGHT PANEL INTERNALS ── */
+.lp-right-inner {
+  padding: 60px 64px;
+  flex:1;
+  display:flex; flex-direction:column; justify-content:flex-start;
+  min-height:100vh;
+}
+
+.lp-close {
+  position: fixed;        /* changed from absolute */
+  top: 28px;
+  right: 32px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.07);
+  border: 1px solid rgba(0,0,0,0.15);
+  color: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  z-index: 100;           /* bumped up so it stays above scrolling content */
+}
+.lp-close:hover { background:rgba(0,0,0,0.12); color:#000; transform:rotate(90deg); }
+
+/* ── FORM STYLES ── */
+.rp-screen { display:none; }
+.rp-screen.active { display:flex; flex-direction:column; }
+
+.rp-h1 {
+  font-size:28px; font-weight:700;
+  color:#111827; margin-bottom:8px; letter-spacing:-0.3px;
+}
+
+.rp-subtitle {
+  font-size:13px; color:#6b7280;
+  margin-bottom:28px;
+}
+
+.input-field {
+  width:100%; max-width:450px;
+  padding:15px 18px;
+  border:1.5px solid #d1d5db;
+  border-radius:10px;
+  font-size:14px; color:#111827;
+  background:#f9fafb;
+  margin-bottom:14px; outline:none;
+  transition:border-color 0.16s, background 0.16s, transform 0.16s;
+  font-family:'Inter',sans-serif;
+}
+.input-field::placeholder { color:#9ca3af; font-size:13.5px; }
+.input-field:focus {
+  border-color:var(--green);
+  background:#ffffff;
+  transform:scale(1.02);
+}
+
+.forgot-link {
+  font-size:13px; color:#6b7280;
+  text-decoration:none; display:block; margin-bottom:24px; cursor:pointer;
+}
+.forgot-link strong { color:#111827; font-weight:700; }
+.forgot-link:hover { text-decoration:underline; }
+
+.btn-signin {
+  width:100%; max-width:450px;
+  padding:15px; background:var(--green);
+  color:#fff; border:none; border-radius:10px;
+  font-size:15px; font-weight:600; cursor:pointer;
+  margin-bottom:24px;
+  transition:background 0.16s, transform 0.16s;
+  font-family:'Inter',sans-serif;
+}
+.btn-signin:hover { background:var(--green-dark); transform:translateY(-1px); }
+
+.signup-text { font-size:13px; color:#6b7280; margin-bottom:12px; }
+.signup-text strong { color:#111827; font-weight:700; }
+
+.btn-signup {
+  display:block; width:100%; max-width:450px;
+  padding:14px; background:#f3f4f6;
+  color:#111827; border:1.5px solid #d1d5db;
+  border-radius:10px; font-size:15px; font-weight:600;
+  cursor:pointer; transition:background 0.16s, border-color 0.16s;
+  font-family:'Inter',sans-serif; text-align:center; text-decoration:none;
+}
+.btn-signup:hover { background:#e5e7eb; border-color:#9ca3af; }
+
+/* ── SIGN UP FORM ── */
+.form-section { margin-bottom:18px; }
+
+.section-title {
+  font-size:13px; font-weight:700;
+  color:#374151; margin-bottom:14px;
+  padding-bottom:7px;
+  border-bottom:1.5px solid rgba(39,167,68,0.50);
+}
+
+.form-group { margin-bottom:14px; }
+
+.form-label {
+  display:block; font-size:12.5px;
+  color:#6b7280; margin-bottom:5px; font-weight:500;
+}
+
+.form-input {
+  width:100%; padding:12px 15px;
+  border:1.5px solid #d1d5db;
+  border-radius:9px; font-size:13.5px;
+  color:#111827; background:#f9fafb;
+  outline:none;
+  transition:border-color 0.16s, background 0.16s, transform 0.16s;
+  font-family:'Inter',sans-serif;
+}
+.form-input::placeholder { color:#9ca3af; font-size:13px; }
+.form-input:focus {
+  border-color:var(--green);
+  background:#ffffff;
+  transform:scale(1.02);
+}
+.form-input option { background:#ffffff; color:#111827; }
+
+.form-row { display:flex; gap:14px; }
+.form-row .form-group { flex:1; }
+
+.submit-btn {
+  width:100%; padding:14px;
+  background:var(--green); color:#fff;
+  border:none; border-radius:10px;
+  font-size:15px; font-weight:600; cursor:pointer;
+  transition:background 0.16s, transform 0.16s;
+  font-family:'Inter',sans-serif;
+  margin-top:8px; margin-bottom:18px;
+}
+.submit-btn:hover { background:var(--green-dark); transform:translateY(-1px); }
+
+.back-to-login { font-size:13px; color:#6b7280; text-align:center; }
+.back-to-login a {
+  color:var(--green); text-decoration:none;
+  font-weight:600; cursor:pointer;
+}
+.back-to-login a:hover { text-decoration:underline; }
+
+/* ─────────────────────────────────────────────
+   MOBILE RESPONSIVE
+───────────────────────────────────────────── */
+@@media (max-width: 900px) {
+  .navbar { padding:20px 28px 18px; }
+  .main-section { padding:0 28px 60px; }
+  .clock { display:none; }
+  .bottom-bar { padding:16px 28px; }
+}
+
+@@media (max-width: 768px) {
+  #loginOverlay { flex-direction:column; }
+
+  .lp-left {
+    width:100%; flex-shrink:0;
+    border-right:none;
+    border-bottom:1px solid rgba(255,255,255,0.10);
+    transform:translateY(-100%);
+    padding:20px 24px 24px;
+    min-height:auto;
+  }
+
+  .lp-right {
+    flex:1; min-height:0;
+    transform:translateY(100%);
+  }
+
+  body.login-open .lp-left  { transform:translateY(0); }
+  body.login-open .lp-right { transform:translateY(0); }
+
+  .lp-headline { font-size:28px; margin-bottom:10px; }
+  .lp-screen { position:static; height:auto; opacity:1; transform:none; }
+  .lp-screen:not(.active) { display:none; }
+
+  .lp-right-inner { padding:40px 24px 40px; justify-content:flex-start; min-height:auto; }
+  .lp-close { top:16px; right:16px; }
+
+  .rp-h1 { font-size:22px; }
+  .input-field, .btn-signin, .btn-signup { max-width:100%; }
+  .form-row { flex-direction:column; gap:0; }
+  .signup-screen-inner { padding:0; }
+}
+
+@@media (max-width: 640px) {
+  .burger-menu { display:flex; }
+  .nav-links {
+    position:fixed;
+    top:70px;
+    right:20px;
+    flex-direction:column;
+    gap:0;
+    background:rgba(10,25,14,0.98);
+    backdrop-filter:blur(20px);
+    padding:12px 8px;
+    border-radius:12px;
+    border:1px solid rgba(255,255,255,0.1);
+    min-width:180px;
+    opacity:0;
+    visibility:hidden;
+    transform:translateY(-10px) scale(0.95);
+    transition:all 0.25s ease;
+    z-index:1000;
+    box-shadow:0 20px 40px rgba(0,0,0,0.4);
+  }
+  .nav-links.active {
+    opacity:1;
+    visibility:visible;
+    transform:translateY(0) scale(1);
+  }
+  .nav-links a {
+    display:block;
+    padding:12px 20px;
+    font-size:14px;
+    border-radius:8px;
+    white-space:nowrap;
+  }
+  .nav-links a:hover { background:rgba(255,255,255,0.08); }
+  .main-title { font-size:34px; }
+}
+
+@@media (max-width: 400px) {
+  .lp-headline { font-size:24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SHARED BACKGROUND ═══ -->
+<div id="heroBg"></div>
+<div id="heroOverlay"></div>
+<div class="top-accent"></div>
+
+<!-- ═══════════════════════════════════════
+     LANDING PAGE
+════════════════════════════════════════ -->
+<div id="landingPage">
+  <nav class="navbar">
+    <div class="logo">
+      <img src="/images/logo.png" alt="SSG Logo">
+      <div class="logo-text">
+        <span class="brand">SSG Finance</span>
+        <span class="sub">Management System</span>
+      </div>
+    </div>
+
+    <button class="burger-menu" onclick="toggleMobileNav()" aria-label="Toggle navigation">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <div class="nav-links" id="mobileNav">
+      <a href="@Url.Action("Index", "Home")" class="active" onclick="setActiveNav(this); closeMobileNav()">Home</a>
+      <a href="@Url.Action("About", "Home")" onclick="setActiveNav(this); closeMobileNav()">About</a>
+      <a href="@Url.Action("Contacts", "Home")" onclick="setActiveNav(this); closeMobileNav()">Contacts</a>
+      <a onclick="openLogin(); setActiveNav(this); closeMobileNav()">Login</a>
+    </div>
+
+    <div id="clock" class="clock"></div>
+  </nav>
+
+  <div class="main-section">
+    <p class="eyebrow">Student Government Finance</p>
+    <h1 class="main-title">Track your<br><span>Organizational Fee</span></h1>
+    <p class="main-desc">
+      Easily monitor your organizational fee status, track submissions, and stay updated with the SSG Finance System.
+    </p>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <p>© 2025 SSG Finance System · Cebu Technological University</p>
+  <div class="bottom-badge">
+    <span></span>
+    System Online
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     LOGIN OVERLAY
+════════════════════════════════════════ -->
+<div id="loginOverlay">
+
+  <!-- LEFT PANEL -->
+  <div class="lp-left">
+    <div class="lp-top">
+      <div class="lp-logo-circle">
+        <img src="/images/logo.png" alt="Ginatilan Logo" />
+      </div>
+      <div class="lp-school-info">
+        <span class="lp-school-name">CTU - Ginatilan</span>
+        <span class="lp-school-sub">Supreme Student Government</span>
+      </div>
+    </div>
+
+    <div class="lp-left-track">
+      <!-- Screen 0: Sign In -->
+      <div class="lp-screen active" id="lpScreen0">
+        <div class="lp-headline"> Welcome<br>Back!</div>
+        <p class="lp-desc">Track your organizational fees with transparency and ease.</p>
+      </div>
+      <!-- Screen 1: Sign Up -->
+      <div class="lp-screen" id="lpScreen1">
+        <div class="lp-headline">Let's<br>Start!</div>
+        <p class="lp-desc">Create your account and start tracking your organizational fees with transparency and ease.</p>
+      </div>
+      <!-- Screen 2: Forgot Password -->
+      <div class="lp-screen" id="lpScreen2">
+        <div class="lp-headline">Reset Your<br>Password</div>
+        <p class="lp-desc">Enter your email address and we'll send you a verification code to reset your password.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="lp-right">
+    <button class="lp-close" onclick="closeLogin()" title="Close">✕</button>
+    <div class="lp-right-inner">
+
+      <!-- ── SCREEN: Sign In ── -->
+      <div class="rp-screen active" id="screenSignIn">
+        <h1 class="rp-h1">Sign in</h1>
+        <p class="rp-subtitle">Enter your credentials below.</p>
+
+        <input class="input-field" type="text" name="schoolId" placeholder="School ID" />
+        <input class="input-field" type="password" name="password" placeholder="Password" />
+        <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
+        <button class="btn-signin" onclick="handleSignIn()">Sign in</button>
+
+        <p class="signup-text">Don't have an account? <a href="#" onclick="goToSignUp()" style="color: #000000; text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign up</a></p>
+      </div>
+
+       <!-- ── SCREEN: Sign Up ── -->
+      <div class="rp-screen" id="screenSignUp">
+         <div class="signup-screen-inner" style="padding:40px 0 20px;">
+        <h1 class="rp-h1">Create Account</h1>
+        <p class="rp-subtitle">Fill requirements below.</p>
+
+        <!-- 1. SECURITY -->
+        <div class="form-section">
+          <div class="section-title">Security</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="studentId">School ID</label>
+              <input type="text" id="studentId" name="studentId" class="form-input" placeholder="Enter here" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="password">Password</label>
+              <input type="password" id="password" name="password" class="form-input" placeholder="Enter here" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="confirmPassword">Confirm Password</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Enter here" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. NAME -->
+        <div class="form-section">
+          <div class="section-title">Name</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="firstName">First Name</label>
+              <input type="text" id="firstName" name="firstName" class="form-input" placeholder="Enter here" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="middleName">Middle Name</label>
+              <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" maxlength="1" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="lastName">Last Name</label>
+              <input type="text" id="lastName" name="lastName" class="form-input" placeholder="Enter here" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. SCHOOL INFORMATION -->
+        <div class="form-section">
+          <div class="section-title">School Information</div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="course">Course</label>
+                <select id="course" name="course" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
+                  <option value="">Select a course</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="yearLevel">Year Level</label>
+                <select id="yearLevel" name="yearLevel" class="form-input" style="appearance:none; background-image:url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http://www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cpath%20fill%3D%22%23000%22%20d%3D%22M7%2010l5%205%205-5z%22/%3E%3C/svg%3E'); background-repeat:no-repeat; background-position:right 10px center; background-size:20px; padding-right:40px;">
+                  <option value="">Select year</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="section">Section</label>
+                <input type="text" id="section" name="section" class="form-input" placeholder="Enter here" />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-input" placeholder="Enter here" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="submit-btn" onclick="handleSignUp()">Submit</button>
+        <p class="back-to-login">Already have an account? <a onclick="goToSignIn()" style="color: #000000; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign in</a></p>
+      </div>
+
+      <!-- ── SCREEN: Email OTP Verification ── -->
+      <div class="rp-screen" id="screenEmailOTP">
+        <div style="padding:40px 0 20px;">
+          <h1 class="rp-h1">Verify Your Email</h1>
+          <p class="rp-subtitle">A 6-digit code was sent to <strong id="otpEmailDisplay"></strong>. Enter it below.</p>
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label">Verification Code</label>
+            <input type="text" id="signupOtpCode" class="form-input" style="max-width:450px;"
+                   placeholder="Enter 6-digit code" maxlength="6" inputmode="numeric" />
+          </div>
+          <button class="submit-btn" style="max-width:450px;" onclick="handleEmailOTPVerify()">Verify & Create Account</button>
+          <p class="back-to-login" style="margin-top:16px;">
+            Didn't receive a code?
+            <a onclick="resendSignupOTP()" style="color:#000;text-decoration:none;font-weight:600;"
+               onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Resend</a>
+            &nbsp;·&nbsp;
+            <a onclick="goToSignUp()" style="color:#000;text-decoration:none;"
+               onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Back</a>
+          </p>
+        </div>
+      </div>
+
+      <!-- ── SCREEN: Forgot Password ── -->
+      <div class="rp-screen" id="screenForgot">
+        <div style="padding:40px 0 20px;">
+          <h1 class="rp-h1">Forgot Password</h1>
+          <p class="rp-subtitle">Enter the Student ID associated with your account.</p>
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label">Student ID</label>
+            <input type="text" id="forgotStudentId" class="form-input" style="max-width:450px;" placeholder="Enter your Student ID" />
+          </div>
+          <div style="position: relative; max-width:450px;">
+            <button class="submit-btn" style="width: 100%;" onclick="handleForgotPassword()">Send Verification Code</button>
+            <p class="back-to-login" style="position: absolute; bottom: -25px; left: 0; margin: 0;">Remember your password? <a onclick="goToSignIn()" style="color: #000000; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign in</a></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SCREEN: Code Verification ── -->
+      <div class="rp-screen" id="screenCodeVerification">
+        <div style="padding:40px 0 20px;">
+          <h1 class="rp-h1">Verify Code</h1>
+          <p class="rp-subtitle">Enter the 6-digit verification code sent to your email.</p>
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label">Verification Code</label>
+            <input type="text" id="verificationCode" class="form-input" style="max-width:450px;" placeholder="Enter 6-digit code" maxlength="6" />
+          </div>
+          <button class="submit-btn" style="max-width:450px;" onclick="handleVerifyCode()">Verify Code</button>
+          <p class="back-to-login"><a onclick="goToForgot()">Back to Forgot Password</a></p>
+        </div>
+      </div>
+
+      <!-- ── SCREEN: Reset Password ── -->
+      <div class="rp-screen" id="screenResetPassword">
+        <div style="padding:40px 0 20px;">
+          <h1 class="rp-h1">Reset Password</h1>
+          <p class="rp-subtitle">Enter your new password to complete the reset.</p>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label">New Password</label>
+            <input type="password" id="newPassword" class="form-input" style="max-width:450px;" placeholder="Enter new password" />
+          </div>
+          <div class="form-group" style="margin-bottom:24px;">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" id="confirmNewPassword" class="form-input" style="max-width:450px;" placeholder="Confirm new password" />
+          </div>
+          <button class="submit-btn" style="max-width:450px;" onclick="handleResetPassword()">Reset Password</button>
+          <p class="back-to-login"><a onclick="goToForgot()">Back to Forgot Password</a></p>
+        </div>
+      </div>
+
+    </div><!-- /lp-right-inner -->
+  </div><!-- /lp-right -->
+</div><!-- /loginOverlay -->
+
+<!-- ═══════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════ -->
+<script>
+/* ── CLOCK ── */
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours();
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  document.getElementById('clock').textContent = `${h}:${m}:${s} ${ap}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ── AUTO-CAPITALIZE NAME FIELDS ── */
+function capitalizeWords(input) {
+  input.value = input.value.replace(/\b\w/g, char => char.toUpperCase());
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  const nameFields = ['firstName', 'middleName', 'lastName'];
+  nameFields.forEach(id => {
+    const field = document.getElementById(id);
+    if (field) {
+      field.addEventListener('input', function() {
+        capitalizeWords(this);
+      });
+    }
+  });
+});
+
+/* ── LOGIN OPEN / CLOSE ── */
+function openLogin() {
+  document.body.classList.add('login-open');
+  // Slight delay before fading landing so panels slide in simultaneously
+  setTimeout(() => {
+    document.getElementById('landingPage').classList.add('hidden');
+  }, 80);
+  showLeftScreen(0);
+  showRightScreen('screenSignIn');
+}
+
+/**
+ * When opening login on first paint (e.g. redirect from About/Contacts with ?login=1),
+ * calling openLogin() in the same turn as DOMContentLoaded skips transforms because the
+ * engine never composites an intermediate frame. Wait for layout + paint first.
+ */
+function openLoginAfterReadyForTransition(done) {
+  const run = typeof done === 'function' ? done : openLogin;
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const overlay = document.getElementById('loginOverlay');
+      if (overlay) void overlay.offsetWidth;
+      run();
+    });
+  });
+}
+
+function showLandingPage() {
+  // Close login if open
+  if (document.body.classList.contains('login-open')) {
+    closeLogin();
+  }
+  // Show landing page content
+  document.getElementById('landingPage').classList.remove('hidden');
+}
+
+function setActiveNav(clickedElement) {
+  document.querySelectorAll('.nav-links a').forEach(link => {
+    link.classList.remove('active');
+  });
+  clickedElement.classList.add('active');
+}
+
+function closeLogin() {
+  document.getElementById('landingPage').classList.remove('hidden');
+  document.body.classList.remove('login-open');
+  // Reset active nav highlight back to Home
+  const homeLink = document.querySelector('#mobileNav a:first-child');
+  if (homeLink) setActiveNav(homeLink);
+}
+
+/* Close on Escape key */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.body.classList.contains('login-open')) closeLogin();
+});
+
+/* ── LEFT PANEL SCREENS ── */
+function showLeftScreen(idx) {
+  document.querySelectorAll('.lp-screen').forEach((s,i) => {
+    s.classList.toggle('active', i === idx);
+  });
+}
+
+/* ── RIGHT PANEL SCREENS ── */
+function showRightScreen(id) {
+  document.querySelectorAll('.rp-screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  if (el) { el.style.display = 'flex'; requestAnimationFrame(() => el.classList.add('active')); }
+}
+
+/* ── NAV HELPERS ── */
+function goToSignUp()         { showLeftScreen(1); showRightScreen('screenSignUp'); }
+function goToSignIn()         { showLeftScreen(0); showRightScreen('screenSignIn'); }
+function goToForgotPassword() { showLeftScreen(2); showRightScreen('screenForgot'); }
+
+/* ── MOBILE NAV ── */
+function toggleMobileNav() {
+  const burger = document.querySelector('.burger-menu');
+  const nav = document.getElementById('mobileNav');
+  burger.classList.toggle('active');
+  nav.classList.toggle('active');
+}
+function closeMobileNav() {
+  const burger = document.querySelector('.burger-menu');
+  const nav = document.getElementById('mobileNav');
+  burger.classList.remove('active');
+  nav.classList.remove('active');
+}
+
+function goToCodeVerification() {
+  showLeftScreen(2);
+  showRightScreen('screenCodeVerification');
+}
+function goToResetPassword() { showRightScreen('screenResetPassword'); }
+function goToForgot()        { showRightScreen('screenForgot'); }
+
+/* ── AUTH HANDLERS ── */
+function handleSignIn() {
+  const schoolId = document.querySelector('input[name="schoolId"]').value;
+  const password = document.querySelector('input[name="password"]').value;
+
+  if (!schoolId || !password) { alert('Please enter your School ID and password'); return; }
+
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+
+  fetch('/Home/Login', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ schoolId, password })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      localStorage.setItem('currentUser', JSON.stringify(data.user));
+      window.location.href = data.redirectUrl || '/Home/Dashboard';
+    } else {
+      alert(`Login failed: ${data.message}`);
+      btn.textContent = orig; btn.disabled = false;
+    }
+  })
+  .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
+}
+
+// Stores the validated payload while waiting for OTP confirmation
+window._pendingSignUpPayload = null;
+
+function handleSignUp() {
+  const firstName       = document.getElementById('firstName')?.value.trim() || '';
+  const lastName        = document.getElementById('lastName')?.value.trim() || '';
+  const middleName      = document.getElementById('middleName')?.value.trim() || '';
+  const email           = document.getElementById('email')?.value.trim() || '';
+  const password        = document.getElementById('password')?.value || '';
+  const confirmPassword = document.getElementById('confirmPassword')?.value || '';
+  const course          = document.getElementById('course')?.value || '';
+  const section         = document.getElementById('section')?.value.trim() || '';
+  const yearLevel       = document.getElementById('yearLevel')?.value || '';
+  const studentId       = document.getElementById('studentId')?.value.trim() || '';
+  const schoolId        = studentId || `STU-${Date.now()}`;
+
+  // --- Validation ---
+  if (!firstName || !lastName || !email || !schoolId || !password || !confirmPassword) {
+    alert('Please fill in all required fields'); return;
+  }
+  if (password !== confirmPassword) { alert('Passwords do not match'); return; }
+  if (password.length < 6)          { alert('Password must be at least 6 characters'); return; }
+  if (!/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email)) { alert('Please enter a valid email address'); return; }
+
+  // Store payload for after OTP is confirmed
+  window._pendingSignUpPayload = {
+    schoolId, firstName, lastName, middleName, email,
+    password, role: 'Student',
+    courseCode: course,
+    yearLevel: yearLevel ? parseInt(yearLevel) : null,
+    section, studentId
+  };
+
+  sendSignupOTP(email);
+}
+
+function sendSignupOTP(email) {
+  const btn = document.querySelector('#screenSignUp .submit-btn');
+  const orig = btn ? btn.textContent : '';
+  if (btn) { btn.textContent = 'Sending Code…'; btn.disabled = true; }
+
+  fetch('/Home/SendEmailOTP', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      document.getElementById('otpEmailDisplay').textContent = email;
+      showLeftScreen(1);
+      showRightScreen('screenEmailOTP');
+      document.getElementById('signupOtpCode').value = '';
+      document.getElementById('signupOtpCode').focus();
+    } else {
+      alert(`Could not send code: ${data.message}`);
+    }
+  })
+  .catch(() => alert('An error occurred. Please try again.'))
+  .finally(() => { if (btn) { btn.textContent = orig; btn.disabled = false; } });
+}
+
+function resendSignupOTP() {
+  const payload = window._pendingSignUpPayload;
+  if (!payload?.email) { goToSignUp(); return; }
+  sendSignupOTP(payload.email);
+}
+
+function handleEmailOTPVerify() {
+  const code    = document.getElementById('signupOtpCode').value.trim();
+  const payload = window._pendingSignUpPayload;
+
+  if (!payload) { alert('Session expired. Please fill the form again.'); goToSignUp(); return; }
+  if (!code || code.length !== 6) { alert('Please enter the 6-digit code'); return; }
+
+  const btn  = event.target;
+  const orig = btn.textContent;
+  btn.textContent = 'Verifying…'; btn.disabled = true;
+
+  // Verify OTP first, then register
+  fetch('/Home/VerifyEmailOTP', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: payload.email, code })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.success) {
+      alert(`Verification failed: ${data.message}`);
+      btn.textContent = orig; btn.disabled = false;
+      return;
+    }
+    // OTP confirmed — now register
+    return fetch('/Home/Register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(regData => {
+      if (regData.success) {
+        alert(`Account created! ${regData.message}`);
+        window._pendingSignUpPayload = null;
+        document.querySelectorAll('.form-input').forEach(i => i.value = '');
+        goToSignIn();
+      } else {
+        alert(`Registration failed: ${regData.message}`);
+        btn.textContent = orig; btn.disabled = false;
+      }
+    });
+  })
+  .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
+}
+
+function handleForgotPassword() {
+  const studentId = document.getElementById('forgotStudentId').value;
+  if (!studentId) { alert('Please enter your student ID'); return; }
+
+  const btn = event.target; const orig = btn.textContent;
+  btn.textContent = 'Sending...'; btn.disabled = true;
+
+  fetch('/Home/ForgotPassword', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ studentId })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      window.forgotStudentId = data.studentId;
+      document.getElementById('forgotStudentId').value = '';
+      goToCodeVerification();
+    } else {
+      alert(`Failed: ${data.message}`);
+      btn.textContent = orig; btn.disabled = false;
+    }
+  })
+  .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
+}
+
+function handleVerifyCode() {
+  const code = document.getElementById('verificationCode').value;
+  const studentId = window.forgotStudentId;
+
+  if (!code) { alert('Please enter the verification code'); return; }
+  if (code.length !== 6) { alert('Verification code must be 6 digits'); return; }
+
+  const btn = event.target; const orig = btn.textContent;
+  btn.textContent = 'Verifying...'; btn.disabled = true;
+
+  fetch('/Home/VerifyResetCode', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ studentId, code })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      window.verifiedStudentId = studentId;
+      goToResetPassword();
+    } else {
+      alert(`Failed: ${data.message}`);
+      btn.textContent = orig; btn.disabled = false;
+    }
+  })
+  .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
+}
+
+function handleResetPassword() {
+  const newPassword     = document.getElementById('newPassword')?.value;
+  const confirmPassword = document.getElementById('confirmNewPassword')?.value;
+  const studentId       = window.verifiedStudentId;
+
+  if (!studentId) { alert('Session expired. Please start over.'); goToForgot(); return; }
+  if (!newPassword) { alert('Please enter a new password'); return; }
+  if (newPassword.length < 6) { alert('Password must be at least 6 characters'); return; }
+  if (newPassword !== confirmPassword) { alert('Passwords do not match'); return; }
+
+  const btn = event.target; const orig = btn.textContent;
+  btn.textContent = 'Resetting...'; btn.disabled = true;
+
+  fetch('/Home/ResetPassword', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ token:'verified', studentId, newPassword })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmNewPassword').value = '';
+      goToSignIn();
+    } else {
+      alert(`Failed: ${data.message}`);
+      btn.textContent = orig; btn.disabled = false;
+    }
+  })
+  .catch(() => { alert('An error occurred. Please try again.'); btn.textContent = orig; btn.disabled = false; });
+}
+
+/* ── LOAD COURSES ── */
+async function loadCourses() {
+  try {
+    const r = await fetch('/Home/GetCourses');
+    const data = await r.json();
+    if (data.success) {
+      const sel = document.getElementById('course');
+      sel.innerHTML = '<option value="">Select a course</option>';
+      data.courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.courseCode;
+        opt.textContent = c.courseName ? `${c.courseCode} - ${c.courseName}` : c.courseCode;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { console.error('Error loading courses:', e); }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  loadCourses();
+
+  /* About/Contacts navbar uses /Home/Login, which redirects here with ?login=1 */
+  (function openLoginFromDeepLink() {
+    const params = new URLSearchParams(window.location.search);
+    const loginParam = params.get('login');
+    const wantsLogin =
+      (loginParam != null && /^(1|true|yes)$/i.test(String(loginParam))) ||
+      window.location.hash === '#login';
+    if (!wantsLogin) return;
+    openLoginAfterReadyForTransition(openLogin);
+    const url = new URL(window.location.href);
+    url.searchParams.delete('login');
+    if (url.hash === '#login') url.hash = '';
+    const q = url.searchParams.toString();
+    window.history.replaceState({}, '', url.pathname + (q ? '?' + q : '') + url.hash);
+  })();
+
+  /**
+   * LOGOUT HANDLER
+   * Detects logout parameter and manages history to prevent back-button access to protected pages
+   * - Cleans up history entries created during logout process
+   * - Ensures back button from login page exits/closes the browser naturally
+   */
+  (function handleLogoutRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const isLogoutRedirect = params.get('logout') === '1' || params.get('auth') === 'required';
+    
+    if (!isLogoutRedirect) return;
+
+    // Check if we came from the logout page's sessionStorage flag
+    const logoutTimestamp = sessionStorage.getItem('ssg_logout_timestamp');
+    const logoutActive = sessionStorage.getItem('ssg_logout_active');
+    
+    if (logoutActive === 'true' && logoutTimestamp) {
+      // This is a confirmed logout redirect - clean up the sessionStorage
+      sessionStorage.removeItem('ssg_logout_active');
+      sessionStorage.removeItem('ssg_logout_timestamp');
+      
+      // Replace the current history entry to remove the logout parameter from URL
+      // This makes the URL clean for the user, and prepares for natural back-button behavior
+      const cleanUrl = window.location.pathname + (window.location.hash || '');
+      try {
+        // Try to replace the current entry with the clean URL
+        window.history.replaceState({ logoutProcessed: true }, '', cleanUrl);
+        
+        // If this was the result of a back button navigation (detected via persisted state),
+        // we might want to push an additional state to create a "dead end"
+        if (window.history.state && window.history.state.logoutProcessed) {
+          // Push a state that will prevent further back navigation to protected pages
+          window.history.pushState({ loginEntry: true }, '', cleanUrl);
+        }
+      } catch (e) {
+        // Fallback: just navigate to clean URL
+        window.location.replace(cleanUrl);
+      }
+    } else {
+      // Direct navigation with logout param (not from logout page) - just clean the URL
+      const cleanUrl = window.location.pathname + (window.location.hash || '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+    
+    // Clear any remaining auth-related session storage
+    sessionStorage.removeItem('ssg_last_auth_check');
+    sessionStorage.removeItem('ssg_last_auth_result');
+  })();
+
+  // First nav `<a>` is Home — highlight when not opening login from deep link
+  const mobileNavEl = document.getElementById('mobileNav');
+  const homeNavLink = mobileNavEl?.querySelector('a');
+  if (homeNavLink && !document.body.classList.contains('login-open')) {
+    setActiveNav(homeNavLink);
+  }
+
+  // Close mobile nav when clicking outside
+  document.addEventListener('click', function(e) {
+    const nav = document.getElementById('mobileNav');
+    const burger = document.querySelector('.burger-menu');
+    if (nav && burger && nav.classList.contains('active')) {
+      if (!nav.contains(e.target) && !burger.contains(e.target)) {
+        closeMobileNav();
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>

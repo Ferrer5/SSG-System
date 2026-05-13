@@ -32,6 +32,8 @@ public class HomeController : Controller
         {
             return RedirectToDashboard(HttpContext.Session.GetString("UserRole"));
         }
+
+        ViewBag.OpenLoginOnLoad = true;
         return View();
     }
 
@@ -104,15 +106,20 @@ public class HomeController : Controller
             // 3. Create payment history for each fee
             foreach (var fee in allFees)
             {
-                var studentPayment = studentPayments.FirstOrDefault(p => p.FullAmountId == fee.FullAmountId);
-                var amountPaid = studentPayment?.Amount ?? 0;
+                var feePayments = studentPayments
+                    .Where(p => p.FullAmountId == fee.FullAmountId)
+                    .OrderBy(p => p.PaymentDate)
+                    .ThenBy(p => p.PaymentId)
+                    .ToList();
+
+                var amountPaid = feePayments.Sum(p => p.Amount);
                 var balance = fee.Amount - amountPaid;
 
                 var status = amountPaid == 0                  ? "Unpaid"
                            : amountPaid >= fee.Amount          ? "Paid"
                                                               : "Partial";
 
-                // Create payment entries: one for the total fee, one for the paid amount (if any)
+                // Create payment entries: one for the total fee plus each recorded transaction.
                 var payments = new List<StudentPaymentViewModel>
                 {
                     new StudentPaymentViewModel
@@ -124,27 +131,25 @@ public class HomeController : Controller
                     }
                 };
 
-                // Add paid amount entry if there's a payment
-                if (amountPaid > 0)
+                // Add each payment transaction so receipts can line up by payment id.
+                foreach (var paymentRecord in feePayments)
                 {
                     var treasurerName = "";
-                    if (studentPayment?.Receiver?.User != null)
+                    if (paymentRecord.Receiver?.User != null)
                     {
-                        var firstName = studentPayment.Receiver.User.FirstName ?? "";
-                        var lastName = studentPayment.Receiver.User.LastName ?? "";
+                        var firstName = paymentRecord.Receiver.User.FirstName ?? "";
+                        var lastName = paymentRecord.Receiver.User.LastName ?? "";
                         treasurerName = $"{firstName} {lastName}".Trim();
                     }
                     
                     var receiptNumber = "";
-                    var receiptIssueDate = (DateTime?)null;
-                    var receiptIssuedBy = "";
+                    var receiptIssueDate = (DateTime?)paymentRecord.PaymentDate;
+                    var receiptIssuedBy = treasurerName;
                     
-                    if (studentPayment?.Receipts != null && studentPayment.Receipts.Any())
+                    if (paymentRecord.Receipts != null && paymentRecord.Receipts.Any())
                     {
-                        var receipt = studentPayment.Receipts.FirstOrDefault();
+                        var receipt = paymentRecord.Receipts.OrderBy(r => r.ReceiptId).FirstOrDefault();
                         receiptNumber = receipt?.ReceiptNumber ?? "";
-                        receiptIssueDate = receipt?.Payment?.PaymentDate;
-                        receiptIssuedBy = "";
                         
                         if (receipt?.Issuer?.User != null)
                         {
@@ -154,11 +159,12 @@ public class HomeController : Controller
                     
                     payments.Add(new StudentPaymentViewModel
                     {
+                        PaymentId = paymentRecord.PaymentId,
                         Semester = fee.Semester.ToString(),
                         Course   = "Org Fee",
-                        Amount   = amountPaid,
-                        Status   = "Paid",
-                        PaymentDate = studentPayment?.PaymentDate,
+                        Amount   = paymentRecord.Amount,
+                        Status   = paymentRecord.PaymentStatus.ToString(),
+                        PaymentDate = paymentRecord.PaymentDate,
                         TreasurerName = treasurerName,
                         ReceiptNumber = receiptNumber,
                         ReceiptIssueDate = receiptIssueDate,

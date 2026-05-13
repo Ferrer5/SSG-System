@@ -1,5 +1,6 @@
 @{
     ViewData["Title"] = "SSG Portal";
+    var openLoginOnLoad = ViewBag.OpenLoginOnLoad as bool? == true;
 }
 
 <!DOCTYPE html>
@@ -625,7 +626,7 @@ body.login-open .lp-right { transform: translateX(0); }
 }
 </style>
 </head>
-<body>
+<body class="@(openLoginOnLoad ? "login-open" : "")">
 
 <!-- ═══ SHARED BACKGROUND ═══ -->
 <div id="heroBg"></div>
@@ -635,7 +636,7 @@ body.login-open .lp-right { transform: translateX(0); }
 <!-- ═══════════════════════════════════════
      LANDING PAGE
 ════════════════════════════════════════ -->
-<div id="landingPage">
+<div id="landingPage" class="@(openLoginOnLoad ? "hidden" : "")">
   <nav class="navbar">
     <div class="logo">
       <img src="/images/logo.png" alt="SSG Logo">

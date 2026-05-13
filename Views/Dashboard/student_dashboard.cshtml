@@ -318,7 +318,7 @@
 <div style="display:flex;min-height:100vh;width:100%;position:relative">
 
 <!-- ── MOBILE MENU BUTTON ── -->
-<button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+<button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle navigation" aria-expanded="false">
   <svg viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
 </button>
 
@@ -392,8 +392,8 @@
     @{
       var totalBalance = Model.PaymentHistory.Sum(h =>
         h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount) -
-        h.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount));
-      var totalPaid    = Model.PaymentHistory.SelectMany(h => h.Payments).Where(p => p.Status == "Paid").Sum(p => p.Amount);
+        h.Payments.Where(p => p.Status != "Total").Sum(p => p.Amount));
+      var totalPaid    = Model.PaymentHistory.SelectMany(h => h.Payments).Where(p => p.Status != "Total").Sum(p => p.Amount);
       var pendingCount = Model.PaymentHistory.Count(h => h.OverallStatus != "Paid");
     }
     <div class="stat-grid">
@@ -449,7 +449,7 @@
               @foreach (var h in Model.PaymentHistory.Take(4))
               {
                 var total = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
-                var paid  = h.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
+                var paid  = h.Payments.Where(p => p.Status != "Total").Sum(p => p.Amount);
                 var bal   = total - paid;
                 string sc;
                 switch (h.OverallStatus.ToLower())
@@ -507,7 +507,7 @@
               @foreach (var h in Model.PaymentHistory.Where(ph => ph.OverallStatus != "Paid"))
               {
                 var total = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
-                var paid  = h.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
+                var paid  = h.Payments.Where(p => p.Status != "Total").Sum(p => p.Amount);
                 var bal   = total - paid;
                 string sc;
                 switch (h.OverallStatus.ToLower())
@@ -553,13 +553,13 @@
     <div class="page-hdr">
       <div>
         <div class="page-title">Payment History</div>
-        <div class="page-sub">@((Model.PaymentHistory?.Where(ph => ph.OverallStatus != "Unpaid").Count() ?? 0)) payment records</div>
+        <div class="page-sub">@((Model.PaymentHistory?.SelectMany(ph => ph.Payments).Count(p => p.Status != "Total") ?? 0)) payment records</div>
       </div>
     </div>
     <div class="content-card">
       <div class="cc-hdr">
         <div class="cc-title">All Transactions</div>
-        <span class="badge bg">@((Model.PaymentHistory?.Where(ph => ph.OverallStatus != "Unpaid").Count() ?? 0)) records</span>
+        <span class="badge bg">@((Model.PaymentHistory?.SelectMany(ph => ph.Payments).Count(p => p.Status != "Total") ?? 0)) records</span>
       </div>
       <div class="tbl-wrap">
         <table>
@@ -567,22 +567,29 @@
             <tr><th>#</th><th>Term</th><th>Semester</th><th>Amount</th><th>Remaining Balance</th><th>Status</th><th>Payment Date</th><th>Receipt</th></tr>
           </thead>
           <tbody>
-            @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
+            @{
+              var sourceHistory = Model.PaymentHistory ?? new List<MyMvcApp.Models.StudentPaymentHistoryViewModel>();
+              var transactionRows = sourceHistory
+                    .SelectMany((h, historyIndex) => h.Payments
+                      .Where(p => p.Status != "Total")
+                      .Select((p, paymentIndex) => new { History = h, Payment = p, HistoryIndex = historyIndex, PaymentIndex = paymentIndex }))
+                    .OrderByDescending(x => x.Payment.PaymentDate ?? DateTime.MinValue)
+                    .ThenByDescending(x => x.Payment.PaymentId)
+                    .ToList();
+            }
+            @if (transactionRows.Any())
             {
               int idx = 1;
-              var filteredHistory = Model.PaymentHistory
-                    .Select((h, i) => new { History = h, OriginalIndex = i })
-                    .Where(x => x.History.OverallStatus != "Unpaid")
-                    .ToList();
-              @foreach (var item in filteredHistory.Select((h, i) => new { Item = h, Index = i }))
+              @foreach (var item in transactionRows.Select((row, i) => new { Row = row, Index = i }))
               {
-                var h       = item.Item.History;
-                var origIdx = item.Item.OriginalIndex;
-                var total   = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
-                var paid    = h.Payments.Where(p => p.Status == "Paid").Sum(p => p.Amount);
-                var balance = total - paid;
+                var h       = item.Row.History;
+                var payment = item.Row.Payment;
+                var required = h.Payments.Where(p => p.Status == "Total").Sum(p => p.Amount);
+                var total   = payment.Amount;
+                var paid    = h.Payments.Where(p => p.Status != "Total").Sum(p => p.Amount);
+                var balance = required - paid;
                 string sc;
-                switch (h.OverallStatus.ToLower())
+                switch (payment.Status.ToLower())
                 {
                   case "paid":    sc = "bg"; break;
                   case "partial": sc = "by"; break;
@@ -596,10 +603,10 @@
                   <td class="td-mono td-m">@(h.Payments.FirstOrDefault()?.Semester ?? "—")</td>
                   <td>₱@total.ToString("N2")</td>
                   <td class="td-mono" style="color:@(balance > 0 ? "#f87171" : "#5fdd8e")">₱@balance.ToString("N2")</td>
-                  <td><span class="badge @sc">@h.OverallStatus</span></td>
+                  <td><span class="badge @sc">@payment.Status</span></td>
                   <td class="td-mono td-m">
                     @{
-                      var paymentDate = h.Payments.FirstOrDefault(p => p.Status == "Paid")?.PaymentDate;
+                      var paymentDate = payment.PaymentDate;
                       @((paymentDate.HasValue ? paymentDate.Value.ToString("MMM dd, yyyy") : "—"))
                     }
                   </td>
@@ -695,7 +702,7 @@
       <span class="receipt-ctrl-title" id="receiptCtrlTitle">Official Receipt</span>
       <button class="btn-pdf" onclick="downloadReceiptPDF()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        Download PDF
+        Save PDF
       </button>
       <button class="btn-receipt-close" onclick="closeReceipt()">✕</button>
     </div>
@@ -772,11 +779,42 @@
 
 
   <script>
-    const paymentHistory = @Html.Raw(Json.Serialize(Model.PaymentHistory));
-    const receipts = @Html.Raw(Json.Serialize(Model.Receipts));
-    const filteredPaymentHistory = paymentHistory
-          .map((h, i) => ({ History: h, OriginalIndex: i }))
-          .filter(x => x.History.OverallStatus !== "Unpaid");
+    const paymentHistoryRaw = @Html.Raw(Json.Serialize(Model.PaymentHistory));
+    const receiptsRaw = @Html.Raw(Json.Serialize(Model.Receipts));
+    const paymentHistory = (paymentHistoryRaw || []).map(history => ({
+      Term: history.Term ?? history.term ?? '',
+      OverallStatus: history.OverallStatus ?? history.overallStatus ?? '',
+      Payments: (history.Payments ?? history.payments ?? []).map(payment => ({
+        PaymentId: payment.PaymentId ?? payment.paymentId ?? 0,
+        Semester: payment.Semester ?? payment.semester ?? '',
+        Course: payment.Course ?? payment.course ?? '',
+        Amount: Number(payment.Amount ?? payment.amount ?? 0),
+        Status: payment.Status ?? payment.status ?? '',
+        PaymentDate: payment.PaymentDate ?? payment.paymentDate ?? null,
+        TreasurerName: payment.TreasurerName ?? payment.treasurerName ?? '',
+        ReceiptNumber: payment.ReceiptNumber ?? payment.receiptNumber ?? '',
+        ReceiptIssueDate: payment.ReceiptIssueDate ?? payment.receiptIssueDate ?? null,
+        ReceiptIssuedBy: payment.ReceiptIssuedBy ?? payment.receiptIssuedBy ?? ''
+      }))
+    }));
+    const receipts = (receiptsRaw || []).map(receipt => ({
+      ReceiptId: receipt.ReceiptId ?? receipt.receiptId ?? 0,
+      ReceiptNumber: receipt.ReceiptNumber ?? receipt.receiptNumber ?? '',
+      PaymentId: receipt.PaymentId ?? receipt.paymentId ?? 0,
+      IssueDate: receipt.IssueDate ?? receipt.issueDate ?? null,
+      IssuedByName: receipt.IssuedByName ?? receipt.issuedByName ?? '',
+      Amount: Number(receipt.Amount ?? receipt.amount ?? 0),
+      Status: receipt.Status ?? receipt.status ?? ''
+    }));
+    const transactionRows = (paymentHistory || [])
+          .flatMap((history, historyIndex) => (history.Payments || [])
+            .filter(payment => payment.Status !== 'Total')
+            .map((payment, paymentIndex) => ({ History: history, Payment: payment, HistoryIndex: historyIndex, PaymentIndex: paymentIndex })))
+          .sort((a, b) => {
+            const bDate = b.Payment.PaymentDate ? new Date(b.Payment.PaymentDate).getTime() : 0;
+            const aDate = a.Payment.PaymentDate ? new Date(a.Payment.PaymentDate).getTime() : 0;
+            return (bDate - aDate) || ((b.Payment.PaymentId || 0) - (a.Payment.PaymentId || 0));
+          });
     const studentName    = '@(firstName + " " + lastName)'.trim().toUpperCase();
     const studentIdVal   = '@studentId';
     const studentCourse  = '@courseCode';
@@ -819,50 +857,43 @@
     /* ── RECEIPT MODAL ── */
     function openReceipt(idx) {
       console.log('Opening receipt for index:', idx);
-      const filteredItem = filteredPaymentHistory[idx];
+      const filteredItem = transactionRows[idx];
       if (!filteredItem) {
         console.log('No item found at index:', idx);
         return;
       }
       
       const history = filteredItem.History;
-      const originalIdx = filteredItem.OriginalIndex;
+      const actualPayment = filteredItem.Payment;
+      const originalIdx = filteredItem.HistoryIndex;
       console.log('Found payment data:', history);
 
       // Find the corresponding receipt from receipts array
-      const receipt = receipts.find(r => {
-        // Match by payment details - this ensures we get the right receipt
-        return r.PaymentId && history.Payments && history.Payments.some(p => 
-          p.Status === 'Paid' && 
-          Math.abs(p.Amount - r.Amount) < 0.01 && // Match amount
-          p.PaymentDate && r.IssueDate && 
-          new Date(p.PaymentDate).getTime() === new Date(r.IssueDate).getTime()
-        );
-      });
+      const receipt = receipts.find(r => Number(r.PaymentId) === Number(actualPayment.PaymentId))
+        || receipts.find(r => actualPayment.ReceiptNumber && r.ReceiptNumber === actualPayment.ReceiptNumber);
       
       console.log('Found receipt:', receipt);
       
       // Find the actual payment record
-      const actualPayment = (history.Payments || [])
-                      .find(p => p.Status === 'Paid');
       console.log('Found paid payment:', actualPayment);
       
       // Use receipt data if available, otherwise fall back to payment data
       const term = history.Term || '';
-      const paid = actualPayment ? actualPayment.Amount : 0;
-      const status = history.OverallStatus || 'Partial';
+      const paid = Number(actualPayment ? actualPayment.Amount : 0);
+      const status = actualPayment.Status || (receipt ? receipt.Status : '') || history.OverallStatus || 'Partial';
       const paymentDate = receipt ? receipt.IssueDate : (actualPayment ? actualPayment.PaymentDate : null);
       const treasurerName = receipt ? receipt.IssuedByName : (actualPayment ? (actualPayment.TreasurerName || '—') : '—');
       const receiptNumber = receipt ? receipt.ReceiptNumber : (actualPayment ? actualPayment.ReceiptNumber : '');
       const receiptIssueDate = receipt ? receipt.IssueDate : (actualPayment ? actualPayment.ReceiptIssueDate : null);
       const receiptIssuedBy = receipt ? receipt.IssuedByName : (actualPayment ? (actualPayment.ReceiptIssuedBy || treasurerName) : treasurerName);
       
-      console.log('Receipt data - Amount:', paid, 'Status:', status, 'Receipt #:', receiptNumber, 'Issue Date:', receiptIssueDate, 'Issued By:', receiptIssuedBy);
+      const receivedByName = receiptIssuedBy || (actualPayment ? (actualPayment.ReceiptIssuedBy || actualPayment.TreasurerName) : '') || '\u2014';
+      console.log('Receipt data - Amount:', paid, 'Status:', status, 'Receipt #:', receiptNumber, 'Issue Date:', receiptIssueDate, 'Issued By:', receivedByName);
 
       document.getElementById('receiptCtrlTitle').textContent  = 'Receipt — ' + term;
       
       // Use actual receipt number from database
-      const receiptNo = receiptNumber || generateReceiptNo(term, originalIdx);
+      const receiptNo = receiptNumber || '—';
       document.getElementById('rp-receipt-no').textContent     = receiptNo;
       
       // Use receipt issue date if available, otherwise payment date
@@ -870,14 +901,14 @@
       const formattedDate = dateToUse.toLocaleDateString('en-PH', { month: '2-digit', day: '2-digit', year: '2-digit' });
       document.getElementById('rp-date').textContent           = formattedDate;
       
-      console.log('Final receipt data - Receipt #:', receiptNo, 'Date:', formattedDate, 'Issued By:', receiptIssuedBy);
+      console.log('Final receipt data - Receipt #:', receiptNo, 'Date:', formattedDate, 'Issued By:', receivedByName);
       
       document.getElementById('rp-name').textContent           = studentName || '—';
       document.getElementById('rp-id').textContent             = studentIdVal || '—';
       document.getElementById('rp-course').textContent         = (studentCourse + ' ' + studentYear + studentSection).trim() || '—';
       document.getElementById('rp-amount').textContent         = '₱ ' + paid.toFixed(2);
       document.getElementById('rp-amount-words').textContent   = amountToWords(paid);
-      document.getElementById('rp-received-by').textContent   = receiptIssuedBy;
+      document.getElementById('rp-received-by').textContent   = receivedByName;
 
       const statusEl = document.getElementById('rp-status');
       statusEl.textContent = status;
@@ -898,7 +929,21 @@
     }
 
     function downloadReceiptPDF() {
+      const receiptNo = (document.getElementById('rp-receipt-no')?.textContent || 'receipt')
+        .replace(/[^\w-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      const previousTitle = document.title;
+      document.title = receiptNo ? `SSG-Receipt-${receiptNo}` : 'SSG-Receipt';
+
+      const restoreTitle = () => {
+        document.title = previousTitle;
+        window.removeEventListener('afterprint', restoreTitle);
+      };
+
+      window.addEventListener('afterprint', restoreTitle);
+      showToast('Choose Save as PDF in the print screen.', 'ok');
       window.print();
+      setTimeout(restoreTitle, 1500);
     }
 
     /* ── PAGES ── */
@@ -912,6 +957,21 @@
     }
 
     /* ── PAY MODAL ── */
+    function toggleMobileMenu() {
+      const sidebar = document.querySelector('.sidebar');
+      const overlay = document.querySelector('.mobile-overlay');
+      const button = document.querySelector('.mobile-menu-btn');
+      const isOpen = sidebar?.classList.toggle('mobile-open') ?? false;
+      overlay?.classList.toggle('active', isOpen);
+      button?.setAttribute('aria-expanded', String(isOpen));
+    }
+
+    function closeMobileMenu() {
+      document.querySelector('.sidebar')?.classList.remove('mobile-open');
+      document.querySelector('.mobile-overlay')?.classList.remove('active');
+      document.querySelector('.mobile-menu-btn')?.setAttribute('aria-expanded', 'false');
+    }
+
     function showPayModal(term, amount) {
       document.getElementById('payModalSub').textContent    = term;
       document.getElementById('payModalAmount').textContent = '₱' + amount.toFixed(2);

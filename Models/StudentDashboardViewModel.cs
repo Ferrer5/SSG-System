@@ -32,6 +32,7 @@ namespace MyMvcApp.Models
 
     public class StudentPaymentViewModel
     {
+        public int PaymentId { get; set; }
         public string Semester { get; set; } = string.Empty;
         public string Course { get; set; } = string.Empty;
         public decimal Amount { get; set; }

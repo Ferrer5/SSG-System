@@ -95,11 +95,7 @@ public class HomeController : Controller
             var studentPayments = await _context.OrgFeePayments
                 .Include(p => p.FullAmount)
                     .ThenInclude(fa => fa.SchoolYear)
-                .Include(p => p.Receiver)
-                    .ThenInclude(r => r.User)
                 .Include(p => p.Receipts)
-                    .ThenInclude(r => r.Issuer)
-                        .ThenInclude(i => i.User)
                 .Where(p => p.UserId == userId)
                 .ToListAsync();
 
@@ -134,26 +130,31 @@ public class HomeController : Controller
                 // Add each payment transaction so receipts can line up by payment id.
                 foreach (var paymentRecord in feePayments)
                 {
-                    var treasurerName = "";
-                    if (paymentRecord.Receiver?.User != null)
-                    {
-                        var firstName = paymentRecord.Receiver.User.FirstName ?? "";
-                        var lastName = paymentRecord.Receiver.User.LastName ?? "";
-                        treasurerName = $"{firstName} {lastName}".Trim();
-                    }
-                    
+                    // Directly query the Users table using ReceivedBy (treasurer's UserId)
+                    var treasurerUser = await _context.Users
+                        .FirstOrDefaultAsync(u => u.UserId == paymentRecord.ReceivedBy);
+                    var treasurerName = treasurerUser != null
+                        ? $"{treasurerUser.FirstName} {treasurerUser.LastName}".Trim()
+                        : "";
+
                     var receiptNumber = "";
                     var receiptIssueDate = (DateTime?)paymentRecord.PaymentDate;
                     var receiptIssuedBy = treasurerName;
-                    
+                    var receiptIssuedByAccountId = paymentRecord.ReceivedBy;
+
                     if (paymentRecord.Receipts != null && paymentRecord.Receipts.Any())
                     {
                         var receipt = paymentRecord.Receipts.OrderBy(r => r.ReceiptId).FirstOrDefault();
                         receiptNumber = receipt?.ReceiptNumber ?? "";
-                        
-                        if (receipt?.Issuer?.User != null)
+
+                        // Directly query using IssuedBy (also a UserId pointing to the treasurer)
+                        if (receipt != null)
                         {
-                            receiptIssuedBy = $"{receipt.Issuer.User.FirstName} {receipt.Issuer.User.LastName}".Trim();
+                            receiptIssuedByAccountId = receipt.IssuedBy;
+                            var issuerUser = await _context.Users
+                                .FirstOrDefaultAsync(u => u.UserId == receipt.IssuedBy);
+                            if (issuerUser != null)
+                                receiptIssuedBy = $"{issuerUser.FirstName} {issuerUser.LastName}".Trim();
                         }
                     }
                     
@@ -168,7 +169,8 @@ public class HomeController : Controller
                         TreasurerName = treasurerName,
                         ReceiptNumber = receiptNumber,
                         ReceiptIssueDate = receiptIssueDate,
-                        ReceiptIssuedBy = receiptIssuedBy
+                        ReceiptIssuedBy = receiptIssuedBy,
+                        ReceiptIssuedByAccountId = receiptIssuedByAccountId
                     });
                 }
 
@@ -196,8 +198,6 @@ public class HomeController : Controller
                         .ThenInclude(fa => fa.SchoolYear)
                 .Include(r => r.Payment)
                     .ThenInclude(p => p.User)
-                .Include(r => r.Issuer)
-                    .ThenInclude(a => a.User)
                 .Where(r => r.Payment != null && r.Payment.UserId == userId)
                 .Select(r => new StudentReceiptViewModel
                 {
@@ -205,9 +205,11 @@ public class HomeController : Controller
                     ReceiptNumber = r.ReceiptNumber,
                     PaymentId = r.PaymentId.HasValue ? r.PaymentId.Value : 0,
                     IssueDate = r.Payment != null ? r.Payment.PaymentDate : null,
-                    IssuedByName = r.Issuer != null && r.Issuer.User != null 
-                        ? $"{r.Issuer.User.FirstName} {r.Issuer.User.LastName}".Trim() 
-                        : "",
+                    IssuedByAccountId = r.IssuedBy,
+                    IssuedByName = _context.Users
+                        .Where(u => u.UserId == r.IssuedBy)
+                        .Select(u => u.FirstName + " " + u.LastName)
+                        .FirstOrDefault() ?? "",
                     StudentName = r.Payment != null && r.Payment.User != null 
                         ? $"{r.Payment.User.FirstName} {r.Payment.User.LastName}".Trim() 
                         : "",
@@ -2285,6 +2287,151 @@ Best regards,<br>SSG Financial Management System";
         }
     }
 
+    private async Task<TreasurerSignature?> GetActiveTreasurerSignatureAsync(int accountOrUserId)
+    {
+        var signature = await _context.TreasurerSignatures
+            .Where(s => s.AccountId == accountOrUserId && s.IsActive)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync();
+
+        if (signature != null)
+            return signature;
+
+        var mappedAccountId = await _context.Users
+            .Where(u => u.UserId == accountOrUserId)
+            .Select(u => (int?)u.AccountId)
+            .FirstOrDefaultAsync();
+
+        if (mappedAccountId == null || mappedAccountId.Value == accountOrUserId)
+            return null;
+
+        return await _context.TreasurerSignatures
+            .Where(s => s.AccountId == mappedAccountId.Value && s.IsActive)
+            .OrderByDescending(s => s.CreatedAt)
+            .FirstOrDefaultAsync();
+    }
+
+    // ----------------------------------------------------------------
+    // TREASURER SIGNATURE
+    // ----------------------------------------------------------------
+
+    [HttpPost]
+    public async Task<IActionResult> SaveTreasurerSignature([FromBody] SaveSignatureRequest request)
+    {
+        try
+        {
+            var role = HttpContext.Session.GetString("UserRole");
+            if (!string.Equals(role, UserRole.Treasurer.ToString(), StringComparison.OrdinalIgnoreCase))
+                return Json(new { success = false, message = "Only treasurers can save signatures." });
+
+            var accountIdStr = HttpContext.Session.GetString("AccountId");
+            if (!int.TryParse(accountIdStr, out var accountId))
+                return Json(new { success = false, message = "Invalid session." });
+
+            if (string.IsNullOrWhiteSpace(request.SignatureData))
+                return Json(new { success = false, message = "Signature data is required." });
+
+            if (!request.SignatureData.StartsWith("data:image/png;base64,", StringComparison.OrdinalIgnoreCase))
+                return Json(new { success = false, message = "Invalid signature image format." });
+
+            var previous = await _context.TreasurerSignatures
+                .Where(s => s.AccountId == accountId && s.IsActive)
+                .ToListAsync();
+
+            foreach (var signature in previous)
+                signature.IsActive = false;
+
+            _context.TreasurerSignatures.Add(new TreasurerSignature
+            {
+                AccountId = accountId,
+                SignatureData = request.SignatureData,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            });
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true, message = "Signature saved successfully." });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetMySignature()
+    {
+        try
+        {
+            var accountIdStr = HttpContext.Session.GetString("AccountId");
+            if (!int.TryParse(accountIdStr, out var accountId))
+                return Json(new { success = false, message = "Invalid session." });
+
+            var signature = await GetActiveTreasurerSignatureAsync(accountId);
+
+            return Json(new
+            {
+                success = signature != null,
+                signatureData = signature?.SignatureData,
+                createdAt = signature?.CreatedAt
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetSignatureByAccountId(int accountId)
+    {
+        try
+        {
+            var signature = await GetActiveTreasurerSignatureAsync(accountId);
+
+            return Json(new
+            {
+                success = signature != null,
+                signatureData = signature?.SignatureData,
+                createdAt = signature?.CreatedAt
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllTreasurerSignatures()
+    {
+        try
+        {
+            var signatures = await _context.TreasurerSignatures
+                .Include(s => s.Account)
+                    .ThenInclude(a => a!.User)
+                .OrderByDescending(s => s.CreatedAt)
+                .Select(s => new
+                {
+                    s.SignatureId,
+                    s.AccountId,
+                    s.SignatureData,
+                    s.CreatedAt,
+                    s.IsActive,
+                    treasurerName = s.Account != null && s.Account.User != null
+                        ? ((s.Account.User.FirstName ?? "") + " " + (s.Account.User.LastName ?? "")).Trim()
+                        : "Unknown"
+                })
+                .ToListAsync();
+
+            return Json(new { success = true, signatures });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpPost]
     public async Task<IActionResult> EditFee([FromBody] EditFeeRequest request)
     {
@@ -2505,6 +2652,11 @@ public class UpdateExpenseRequest
     public string?   Description { get; set; }
     public decimal   Amount      { get; set; }
     public DateTime? ExpenseDate { get; set; }
+}
+
+public class SaveSignatureRequest
+{
+    public string SignatureData { get; set; } = string.Empty;
 }
 
 public record SendOtpRequest(string Email);

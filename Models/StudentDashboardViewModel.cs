@@ -12,6 +12,7 @@ namespace MyMvcApp.Models
         public string ReceiptNumber { get; set; } = string.Empty;
         public int PaymentId { get; set; }
         public DateTime? IssueDate { get; set; }
+        public int IssuedByAccountId { get; set; }
         public string IssuedByName { get; set; } = string.Empty;
         public string StudentName { get; set; } = string.Empty;
         public string StudentId { get; set; } = string.Empty;
@@ -42,5 +43,6 @@ namespace MyMvcApp.Models
         public string ReceiptNumber { get; set; } = string.Empty;
         public DateTime? ReceiptIssueDate { get; set; }
         public string ReceiptIssuedBy { get; set; } = string.Empty;
+        public int ReceiptIssuedByAccountId { get; set; }
     }
 }

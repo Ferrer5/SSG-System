@@ -311,6 +311,8 @@
       .btn-download{font-size:11px;padding:8px 16px;margin:12px 16px}
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -767,7 +769,10 @@
       <div class="rp-signature-section">
         <div class="rp-sig-block">
           <div class="rp-sig-label">Received by:</div>
-          <div class="rp-sig-line" id="rp-received-by">&nbsp;</div>
+          <div class="rp-sig-line">
+            <img id="rp-sig-image" src="" alt="Treasurer signature" style="display:none;max-height:48px;max-width:180px;object-fit:contain;margin-bottom:2px"/>
+          </div>
+          <div class="rp-sig-name-label" id="rp-received-by" style="font-size:12px;font-weight:700;color:#111;margin-top:4px">&nbsp;</div>
           <div class="rp-sig-name-label">(Signature over Printed Name)</div>
         </div>
       </div>
@@ -794,7 +799,8 @@
         TreasurerName: payment.TreasurerName ?? payment.treasurerName ?? '',
         ReceiptNumber: payment.ReceiptNumber ?? payment.receiptNumber ?? '',
         ReceiptIssueDate: payment.ReceiptIssueDate ?? payment.receiptIssueDate ?? null,
-        ReceiptIssuedBy: payment.ReceiptIssuedBy ?? payment.receiptIssuedBy ?? ''
+        ReceiptIssuedBy: payment.ReceiptIssuedBy ?? payment.receiptIssuedBy ?? '',
+        ReceiptIssuedByAccountId: payment.ReceiptIssuedByAccountId ?? payment.receiptIssuedByAccountId ?? 0
       }))
     }));
     const receipts = (receiptsRaw || []).map(receipt => ({
@@ -802,6 +808,7 @@
       ReceiptNumber: receipt.ReceiptNumber ?? receipt.receiptNumber ?? '',
       PaymentId: receipt.PaymentId ?? receipt.paymentId ?? 0,
       IssueDate: receipt.IssueDate ?? receipt.issueDate ?? null,
+      IssuedByAccountId: receipt.IssuedByAccountId ?? receipt.issuedByAccountId ?? 0,
       IssuedByName: receipt.IssuedByName ?? receipt.issuedByName ?? '',
       Amount: Number(receipt.Amount ?? receipt.amount ?? 0),
       Status: receipt.Status ?? receipt.status ?? ''
@@ -886,6 +893,7 @@
       const receiptNumber = receipt ? receipt.ReceiptNumber : (actualPayment ? actualPayment.ReceiptNumber : '');
       const receiptIssueDate = receipt ? receipt.IssueDate : (actualPayment ? actualPayment.ReceiptIssueDate : null);
       const receiptIssuedBy = receipt ? receipt.IssuedByName : (actualPayment ? (actualPayment.ReceiptIssuedBy || treasurerName) : treasurerName);
+      const issuedByAccountId = receipt ? receipt.IssuedByAccountId : (actualPayment ? actualPayment.ReceiptIssuedByAccountId : 0);
       
       const receivedByName = receiptIssuedBy || (actualPayment ? (actualPayment.ReceiptIssuedBy || actualPayment.TreasurerName) : '') || '\u2014';
       console.log('Receipt data - Amount:', paid, 'Status:', status, 'Receipt #:', receiptNumber, 'Issue Date:', receiptIssueDate, 'Issued By:', receivedByName);
@@ -910,6 +918,26 @@
       document.getElementById('rp-amount-words').textContent   = amountToWords(paid);
       document.getElementById('rp-received-by').textContent   = receivedByName;
 
+      const sigImg = document.getElementById('rp-sig-image');
+      if (sigImg) {
+        sigImg.removeAttribute('src');
+        sigImg.style.display = 'none';
+
+        if (issuedByAccountId) {
+          fetch('/Home/GetSignatureByAccountId?accountId=' + encodeURIComponent(issuedByAccountId))
+            .then(r => r.json())
+            .then(data => {
+              if (data.success && data.signatureData) {
+                sigImg.src = data.signatureData;
+                sigImg.style.display = 'block';
+              }
+            })
+            .catch(() => {
+              sigImg.style.display = 'none';
+            });
+        }
+      }
+
       const statusEl = document.getElementById('rp-status');
       statusEl.textContent = status;
       statusEl.className   = 'rp-status-badge ' + status.toLowerCase();
@@ -928,22 +956,54 @@
       }
     }
 
-    function downloadReceiptPDF() {
+    async function downloadReceiptPDF() {
+      const receiptEl = document.getElementById('receiptPaper');
       const receiptNo = (document.getElementById('rp-receipt-no')?.textContent || 'receipt')
         .replace(/[^\w-]+/g, '-')
         .replace(/^-+|-+$/g, '');
-      const previousTitle = document.title;
-      document.title = receiptNo ? `SSG-Receipt-${receiptNo}` : 'SSG-Receipt';
 
-      const restoreTitle = () => {
-        document.title = previousTitle;
-        window.removeEventListener('afterprint', restoreTitle);
-      };
+      // Hide watermark temporarily for a clean PDF
+      const watermark = receiptEl.querySelector('.rp-watermark');
+      const originalDisplay = watermark ? watermark.style.display : '';
+      if (watermark) watermark.style.display = 'none';
 
-      window.addEventListener('afterprint', restoreTitle);
-      showToast('Choose Save as PDF in the print screen.', 'ok');
-      window.print();
-      setTimeout(restoreTitle, 1500);
+      showToast('Generating PDF...', 'ok');
+
+      try {
+        const canvas = await html2canvas(receiptEl, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#f9f8f5',
+          logging: false
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+
+        const { jsPDF } = window.jspdf;
+        // Long bond paper: 216mm x 330mm
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: [216, 330]
+        });
+
+        const pageWidth  = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+
+        const margin    = 8;
+        const imgWidth  = pageWidth - margin * 2;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, Math.min(imgHeight, pageHeight - margin * 2));
+        pdf.save(`SSG-Receipt-${receiptNo}.pdf`);
+
+        showToast('PDF downloaded successfully.', 'ok');
+      } catch (err) {
+        console.error('PDF generation failed:', err);
+        showToast('Failed to generate PDF. Please try again.', 'fail');
+      } finally {
+        if (watermark) watermark.style.display = originalDisplay;
+      }
     }
 
     /* ── PAGES ── */

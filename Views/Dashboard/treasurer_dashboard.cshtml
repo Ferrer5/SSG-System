@@ -201,12 +201,22 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
 .rp-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:500}
 
 /* ── SETTINGS ── */
-.settings-tabs{display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.06)}
+.settings-tabs{display:flex;gap:2px;margin-bottom:20px;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap}
 .settings-tab{display:flex;align-items:center;gap:7px;padding:9px 16px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-m);font-size:12.5px;font-weight:500;cursor:pointer;font-family:inherit;transition:all .15s;margin-bottom:-1px}
 .settings-tab:hover{color:var(--text)}
 .settings-tab.active{color:#5fdd8e;border-bottom-color:#27a744}
 .settings-panel{display:none}.settings-panel.active{display:block}
 .settings-label{font-size:11px;color:var(--text-m);display:block;margin-bottom:4px}
+.sig-pad-note{font-size:12px;color:var(--text-m);margin-bottom:14px;line-height:1.6}
+.sig-canvas-wrap{position:relative;border:1.5px solid rgba(255,255,255,.15);border-radius:10px;background:#fff;overflow:hidden;cursor:crosshair;width:100%;max-width:560px}
+#sig-canvas{display:block;width:100%;touch-action:none}
+#sig-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:13px;color:rgba(0,0,0,.3);font-style:italic}
+.sig-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.sig-preview-wrap{display:none;margin-top:22px;padding-top:18px;border-top:1px solid rgba(255,255,255,.06)}
+.sig-preview-label{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-d);margin-bottom:10px}
+.sig-preview-box{background:#fff;border-radius:8px;padding:12px 16px;display:inline-block;border:1px solid rgba(255,255,255,.1)}
+.sig-preview-box img{max-height:80px;max-width:400px;display:block}
+.sig-preview-date{font-size:11px;color:var(--text-d);margin-top:6px}
 
 /* ── TOAST ── */
 #toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;border-radius:9px;font-size:12.5px;font-weight:500;background:#1f2937;color:#fff;opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;z-index:999;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.4)}
@@ -277,9 +287,9 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
   <div class="sb-spacer"></div>
   <div class="sb-user">
     <div class="user-card">
-      <div class="user-av" id="user-initials">TR</div>
+      <div class="user-av">@initials.ToUpper()</div>
       <div>
-        <div class="user-name" id="user-name">Treasurer</div>
+        <div class="user-name">@firstName @lastName</div>
         <div class="user-role">Treasurer</div>
       </div>
     </div>
@@ -534,6 +544,13 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.8"/><path d="M12 6v2m0 8v2M9 9.5A3 3 0 0112 8a3 3 0 010 6 3 3 0 00-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         Set Fee Amount
       </button>
+      <button class="settings-tab" onclick="switchSettingsTab('signature',this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <path d="M20 19c0 1-1.5 2-4 2s-4-1-4-2 1.5-2 4-2 4 1 4 2z" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M20 19V5L9 14l-2 5 5-2 8-8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Signature
+      </button>
     </div>
 
     <!-- SCHOOL YEAR & SEMESTER -->
@@ -662,6 +679,63 @@ td{padding:11px 16px;color:var(--text);vertical-align:middle}
           <thead><tr><th>School Year</th><th>Semester</th><th>Amount</th><th>Status</th><th></th></tr></thead>
           <tbody id="fee-history-tbody">
             <tr class="empty-row"><td colspan="5">No fee records found.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SIGNATURE -->
+    <div class="settings-panel" id="settings-signature">
+      <div class="content-card" style="margin-bottom:14px">
+        <div class="cc-hdr">
+          <div class="cc-title">My Signature</div>
+          <span class="badge by" id="sig-status-badge">Not saved</span>
+        </div>
+        <div style="padding:20px 24px">
+          <div class="sig-pad-note">Sign inside the white area. Saved versions remain in the signature history.</div>
+
+          <div class="sig-canvas-wrap">
+            <canvas id="sig-canvas" width="560" height="160"></canvas>
+            <div id="sig-placeholder">Draw your signature here...</div>
+          </div>
+
+          <div class="sig-actions">
+            <button class="btn-primary" onclick="saveSignature()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M17 21v-8H7v8M7 3v5h8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+              Save Signature
+            </button>
+            <button class="btn-outline" onclick="clearSignature()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Clear
+            </button>
+          </div>
+
+          <div id="sig-preview-wrap" class="sig-preview-wrap">
+            <div class="sig-preview-label">Currently Saved Signature</div>
+            <div class="sig-preview-box">
+              <img id="sig-preview-img" src="" alt="Saved signature"/>
+            </div>
+            <div class="sig-preview-date" id="sig-preview-date"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card">
+        <div class="cc-hdr">
+          <div class="cc-title">Signature History</div>
+          <span class="badge by" id="sig-history-count">0 records</span>
+        </div>
+        <table>
+          <thead>
+            <tr><th>#</th><th>Treasurer</th><th>Date Saved</th><th>Status</th><th>Preview</th></tr>
+          </thead>
+          <tbody id="sig-history-tbody">
+            <tr class="empty-row"><td colspan="5">No signatures found.</td></tr>
           </tbody>
         </table>
       </div>
@@ -807,6 +881,15 @@ function fd(d) {
   return new Date(d.split('T')[0] + 'T00:00').toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function today() { return new Date().toISOString().split('T')[0]; }
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, ch => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+}
 
 async function loadDashboardData() {
   try {
@@ -1606,11 +1689,205 @@ async function switchSettingsTab(name, btn) {
   document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('settings-' + name).classList.add('active');
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
 
   if (name === 'sy')      await refreshSchoolYears();
   if (name === 'courses') await refreshCourses();
   if (name === 'fees')    await refreshFees();
+  if (name === 'signature') {
+    initSignaturePad();
+    await refreshSignature();
+  }
+}
+
+// SIGNATURE PAD
+let sigCanvas, sigCtx, sigDrawing = false, sigHasContent = false, sigPadReady = false;
+
+function initSignaturePad() {
+  sigCanvas = document.getElementById('sig-canvas');
+  if (!sigCanvas) return;
+
+  sigCtx = sigCanvas.getContext('2d');
+  setupSignatureCanvas();
+
+  if (sigPadReady) return;
+  sigPadReady = true;
+
+  window.addEventListener('resize', setupSignatureCanvas);
+
+  sigCanvas.addEventListener('pointerdown', startSignatureStroke);
+  sigCanvas.addEventListener('pointermove', drawSignatureStroke);
+  sigCanvas.addEventListener('pointerup', endSignatureStroke);
+  sigCanvas.addEventListener('pointercancel', endSignatureStroke);
+  sigCanvas.addEventListener('pointerleave', endSignatureStroke);
+}
+
+function setupSignatureCanvas() {
+  if (!sigCanvas || !sigCtx) return;
+
+  const rect = sigCanvas.getBoundingClientRect();
+  const cssWidth = rect.width || 560;
+  const cssHeight = rect.height || 160;
+  const dpr = window.devicePixelRatio || 1;
+  const previousImage = sigHasContent ? sigCanvas.toDataURL('image/png') : null;
+
+  sigCanvas.width = Math.round(cssWidth * dpr);
+  sigCanvas.height = Math.round(cssHeight * dpr);
+  sigCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  sigCtx.strokeStyle = '#111';
+  sigCtx.lineWidth = 2;
+  sigCtx.lineCap = 'round';
+  sigCtx.lineJoin = 'round';
+
+  if (previousImage) {
+    const img = new Image();
+    img.onload = () => sigCtx.drawImage(img, 0, 0, cssWidth, cssHeight);
+    img.src = previousImage;
+  }
+}
+
+function getSignaturePos(e) {
+  const rect = sigCanvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function startSignatureStroke(e) {
+  if (!sigCtx) return;
+  e.preventDefault();
+  sigDrawing = true;
+  sigCanvas.setPointerCapture?.(e.pointerId);
+  const pos = getSignaturePos(e);
+  sigCtx.beginPath();
+  sigCtx.moveTo(pos.x, pos.y);
+}
+
+function drawSignatureStroke(e) {
+  if (!sigDrawing || !sigCtx) return;
+  e.preventDefault();
+  const pos = getSignaturePos(e);
+  sigCtx.lineTo(pos.x, pos.y);
+  sigCtx.stroke();
+  sigHasContent = true;
+  hideSignaturePlaceholder();
+}
+
+function endSignatureStroke(e) {
+  sigDrawing = false;
+  if (sigCanvas && e?.pointerId != null) {
+    try { sigCanvas.releasePointerCapture?.(e.pointerId); } catch {}
+  }
+}
+
+function hideSignaturePlaceholder() {
+  const placeholder = document.getElementById('sig-placeholder');
+  if (placeholder) placeholder.style.display = 'none';
+}
+
+function clearSignature() {
+  if (!sigCanvas || !sigCtx) return;
+  sigCtx.save();
+  sigCtx.setTransform(1, 0, 0, 1, 0, 0);
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigCtx.restore();
+  setupSignatureCanvas();
+  sigHasContent = false;
+
+  const placeholder = document.getElementById('sig-placeholder');
+  if (placeholder) placeholder.style.display = 'flex';
+}
+
+async function saveSignature() {
+  if (!sigCanvas || !sigHasContent) {
+    showToast('Please draw your signature first.', 'fail');
+    return;
+  }
+
+  try {
+    const res = await fetch('/Home/SaveTreasurerSignature', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': getToken() },
+      body: JSON.stringify({ signatureData: sigCanvas.toDataURL('image/png') })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      showToast('Signature saved successfully.', 'ok');
+      clearSignature();
+      await refreshSignature();
+    } else {
+      showToast(data.message || 'Failed to save signature.', 'fail');
+    }
+  } catch {
+    showToast('Request failed.', 'fail');
+  }
+}
+
+async function refreshSignature() {
+  try {
+    const res = await fetch('/Home/GetMySignature');
+    const data = await res.json();
+    const badge = document.getElementById('sig-status-badge');
+    const previewWrap = document.getElementById('sig-preview-wrap');
+    const previewImg = document.getElementById('sig-preview-img');
+    const previewDate = document.getElementById('sig-preview-date');
+
+    if (data.success && data.signatureData) {
+      if (previewWrap) previewWrap.style.display = 'block';
+      if (previewImg) previewImg.src = data.signatureData;
+      if (previewDate) {
+        previewDate.textContent = 'Saved on ' + new Date(data.createdAt).toLocaleDateString('en-PH', {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric'
+        });
+      }
+      if (badge) {
+        badge.textContent = 'Saved';
+        badge.className = 'badge bg';
+      }
+    } else {
+      if (previewWrap) previewWrap.style.display = 'none';
+      if (previewImg) previewImg.src = '';
+      if (previewDate) previewDate.textContent = '';
+      if (badge) {
+        badge.textContent = 'Not saved';
+        badge.className = 'badge by';
+      }
+    }
+  } catch {}
+
+  try {
+    const res = await fetch('/Home/GetAllTreasurerSignatures');
+    const data = await res.json();
+    const signatures = Array.isArray(data.signatures) ? data.signatures : [];
+    const tbody = document.getElementById('sig-history-tbody');
+    const count = document.getElementById('sig-history-count');
+
+    if (!tbody) return;
+
+    if (!data.success || signatures.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No signatures found.</td></tr>';
+      if (count) count.textContent = '0 records';
+      return;
+    }
+
+    if (count) count.textContent = signatures.length + ' record' + (signatures.length !== 1 ? 's' : '');
+    tbody.innerHTML = signatures.map((signature, index) => `
+      <tr>
+        <td class="td-mono td-m">${index + 1}</td>
+        <td><strong>${escapeHtml(signature.treasurerName || 'Unknown')}</strong></td>
+        <td class="td-mono td-m">${new Date(signature.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
+        <td>${signature.isActive
+          ? '<span class="badge bg">Active</span>'
+          : '<span class="badge" style="background:rgba(255,255,255,.05);color:var(--text-d)">Superseded</span>'}</td>
+        <td>
+          <div style="background:#fff;border-radius:6px;padding:4px 8px;display:inline-block">
+            <img src="${signature.signatureData}" alt="Signature preview" style="height:36px;max-width:160px;display:block;object-fit:contain"/>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  } catch {}
 }
 
 async function addSchoolYear() {
@@ -2031,9 +2308,7 @@ async function init() {
 
 init();
 
-// ── SESSION (replace with actual session values from Razor) ──────
-// document.getElementById('user-initials').textContent = '@initials';
-// document.getElementById('user-name').textContent = '@firstName @lastName';
+// ── SESSION ──────
 </script>
 </body>
 </html>

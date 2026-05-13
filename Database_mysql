@@ -73,13 +73,14 @@ CREATE TABLE school_years (
   CONSTRAINT chk_year_range CHECK (year_end = year_start + 1)
 );
 
--- 6. full_amount  (no unique key — allows multiple records per school year/semester)
+-- 6. full_amount
+--    No unique key on (school_year_id, semester) — allows multiple records per semester
 CREATE TABLE full_amount (
-  full_amount_id  INT                        NOT NULL AUTO_INCREMENT,
-  school_year_id  INT                        NOT NULL,
-  semester        ENUM('First','Second')     NOT NULL,
-  full_amount     DECIMAL(10,2)              NOT NULL,
-  semester_status ENUM('Current','Ended')    NOT NULL DEFAULT 'Current',
+  full_amount_id  INT                     NOT NULL AUTO_INCREMENT,
+  school_year_id  INT                     NOT NULL,
+  semester        ENUM('First','Second')  NOT NULL,
+  full_amount     DECIMAL(10,2)           NOT NULL,
+  semester_status ENUM('Current','Ended') NOT NULL DEFAULT 'Current',
 
   PRIMARY KEY (full_amount_id),
   CONSTRAINT fk_full_amount_sy
@@ -87,7 +88,7 @@ CREATE TABLE full_amount (
     ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
--- 7. org_fee_payments  (uses full_amount_id — no school_year_id/semester/amount_required)
+-- 7. org_fee_payments
 CREATE TABLE org_fee_payments (
   payment_id     INT           NOT NULL AUTO_INCREMENT,
   user_id        INT           NOT NULL,
@@ -152,5 +153,19 @@ CREATE TABLE receipts (
     ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT fk_receipt_issuer
     FOREIGN KEY (issued_by) REFERENCES accounts (account_id)
+    ON UPDATE CASCADE ON DELETE RESTRICT
+);
+
+-- 11. treasurer_signatures
+CREATE TABLE treasurer_signatures (
+  signature_id   INT          NOT NULL AUTO_INCREMENT,
+  account_id     INT          NOT NULL,
+  signature_data MEDIUMTEXT   NOT NULL,        -- base64 PNG of the drawn signature
+  created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  is_active      BOOLEAN      NOT NULL DEFAULT TRUE,
+
+  PRIMARY KEY (signature_id),
+  CONSTRAINT fk_sig_account
+    FOREIGN KEY (account_id) REFERENCES accounts (account_id)
     ON UPDATE CASCADE ON DELETE RESTRICT
 );

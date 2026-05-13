@@ -19,6 +19,7 @@ namespace MyMvcApp.Data
         public DbSet<OtherFund> OtherFunds { get; set; }
         public DbSet<Expense> Expenses { get; set; }
         public DbSet<Receipt> Receipts { get; set; }
+        public DbSet<TreasurerSignature> TreasurerSignatures { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -222,6 +223,23 @@ namespace MyMvcApp.Data
                 entity.HasOne(e => e.Issuer)
                     .WithMany(a => a.IssuedReceipts)
                     .HasForeignKey(e => e.IssuedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // TreasurerSignature configuration
+            modelBuilder.Entity<TreasurerSignature>(entity =>
+            {
+                entity.ToTable("treasurer_signatures");
+                entity.HasKey(e => e.SignatureId);
+                entity.Property(e => e.SignatureId).HasColumnName("signature_id");
+                entity.Property(e => e.AccountId).IsRequired().HasColumnName("account_id");
+                entity.Property(e => e.SignatureData).IsRequired().HasColumnType("mediumtext").HasColumnName("signature_data");
+                entity.Property(e => e.CreatedAt).IsRequired().HasDefaultValueSql("CURRENT_TIMESTAMP").HasColumnName("created_at");
+                entity.Property(e => e.IsActive).IsRequired().HasDefaultValue(true).HasColumnName("is_active");
+
+                entity.HasOne(e => e.Account)
+                    .WithMany()
+                    .HasForeignKey(e => e.AccountId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
         }

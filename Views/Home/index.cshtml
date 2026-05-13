@@ -727,9 +727,9 @@ body.login-open .lp-right { transform: translateX(0); }
         <h1 class="rp-h1">Sign in</h1>
         <p class="rp-subtitle">Enter your credentials below.</p>
 
-        <input class="input-field" type="text" name="schoolId" placeholder="School ID" />
+        <input class="input-field" type="text" name="schoolId" placeholder="CTU ID" />
         <input class="input-field" type="password" name="password" placeholder="Password" />
-        <a class="forgot-link" onclick="goToForgotPassword()">Forgot <strong>password</strong>?</a>
+        <a class="forgot-link" onclick="goToForgotPassword()"><strong>Forgot password</strong>?</a>
         <button class="btn-signin" onclick="handleSignIn()">Sign in</button>
 
         <p class="signup-text">Don't have an account? <a href="#" onclick="goToSignUp()" style="color: #000000; text-decoration: none; font-weight: 600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Sign up</a></p>
@@ -746,7 +746,7 @@ body.login-open .lp-right { transform: translateX(0); }
           <div class="section-title">Security</div>
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="studentId">School ID</label>
+              <label class="form-label" for="studentId">CTU ID</label>
               <input type="text" id="studentId" name="studentId" class="form-input" placeholder="Enter here" />
             </div>
             <div class="form-group">
@@ -769,7 +769,7 @@ body.login-open .lp-right { transform: translateX(0); }
               <input type="text" id="firstName" name="firstName" class="form-input" placeholder="Enter here" />
             </div>
             <div class="form-group">
-              <label class="form-label" for="middleName">Middle Name</label>
+              <label class="form-label" for="middleName">M. I.</label>
               <input type="text" id="middleName" name="middleName" class="form-input" placeholder="Enter here" maxlength="1" />
             </div>
             <div class="form-group">
@@ -1028,7 +1028,7 @@ function handleSignIn() {
   const schoolId = document.querySelector('input[name="schoolId"]').value;
   const password = document.querySelector('input[name="password"]').value;
 
-  if (!schoolId || !password) { alert('Please enter your School ID and password'); return; }
+  if (!schoolId || !password) { alert('Please enter your CTU ID and password'); return; }
 
   const btn = event.target;
   const orig = btn.textContent;
